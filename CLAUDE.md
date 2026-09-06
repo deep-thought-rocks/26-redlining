@@ -36,3 +36,7 @@ These are settled in the PRD; do not reopen them without asking.
 ## Naming
 
 Package `redlining`; `withRedlining` from `redlining/next`; component `<Redlining />`; output dir `.redlining/`; command `/redline` (short form, deliberately). Config options and their defaults are listed in PRD §17.2 — add new knobs there first.
+
+## Design system
+
+The overlay adopts **silverballmania** v2.0.0 from `~/Repositories/design-systems/silverballmania/`. `.claude/design-system.json` is the single source of truth for the assignment, theme policy (light default), divergences and open gaps; read it before styling anything in `src/overlay/`. The canon's `SKILL.md` and `README.md § Design tokens` carry the rules. Components use only `--color-*` semantic tokens, never `--sbm-*` raw values.
