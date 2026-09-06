@@ -1,10 +1,12 @@
 {
   "system": "silverballmania",
   "version": "2.0.0",
-  "adoption": "assigned",
+  "adoption": "partial",
   "adopted_at": "2026-09-06",
   "canon": "~/Repositories/design-systems/silverballmania/",
-  "vendored": [],
+  "vendored": [
+    "packages/redlining/src/overlay/tokens.generated.ts (from canon tokens.css via packages/redlining/scripts/vendor-tokens.mjs)"
+  ],
   "theme_policy": "light-default",
   "divergences": [
     {
@@ -21,27 +23,14 @@
       "id": "D3",
       "what": "Fonts resolve to system fallbacks unless the host app already loads Space Grotesk / Inter",
       "why": "PRD section 13: nothing leaves the machine. The canon's Google Fonts @import and the Montserrat @font-face are stripped from the vendored copy; the token fallback stacks apply."
+    },
+    {
+      "id": "D4",
+      "what": "No Tailwind in the overlay; component styles are hand-written CSS on the vendored tokens",
+      "why": "The overlay is a small shadow-scoped UI; a Tailwind compile step would add build complexity for a dozen classes. The PRD listed Tailwind 4; the tokens, not the utility layer, carry the design."
     }
   ],
   "gaps": [
-    {
-      "id": "G1",
-      "what": "Vendor tokens: copy canon tokens.css + tokens/theme.css + the non-body parts of tokens/base.css into packages/redlining/src/overlay/styles/, truncated at the broadcast seam, with a SOURCE comment carrying slug, version and date",
-      "call_sites": 0,
-      "trigger": "pnpm scaffold and src/overlay/ exist (PRD section 11)"
-    },
-    {
-      "id": "G2",
-      "what": "Shadow-root selector transform: :root becomes :host; [data-theme=\"light\"], .light becomes :host([data-theme=\"light\"]), :host(.light). Set data-theme=\"light\" on the shadow host per D1",
-      "call_sites": 0,
-      "trigger": "with G1; decide build step vs one-time rewrite at scaffold time"
-    },
-    {
-      "id": "G3",
-      "what": "Font strategy: strip the @import and the Montserrat @font-face; document that Space Grotesk / Inter render only when the host loads them; consider a fonts option later (PRD section 17.2 pattern)",
-      "call_sites": 0,
-      "trigger": "with G1"
-    },
     {
       "id": "G4",
       "what": "Port Button, IconButton, Tooltip, Toast, Dialog, ConfirmDialog, Badge, Textarea from canon components/{core,overlay}/*.jsx into src/overlay/ui/ as TSX. Tooltip, Dialog and Toast portal to document.body in the canon; in Redlining they must portal to the shadow root",
@@ -55,12 +44,6 @@
       "trigger": "M1 select/draw modes"
     },
     {
-      "id": "G6",
-      "what": "Expose theme: 'light' | 'dark' on <Redlining />. Dark is the canon default and needs no extra tokens once G2 lands",
-      "call_sites": 0,
-      "trigger": "after G2; PRD section 17.2 options table"
-    },
-    {
       "id": "G7",
       "what": "Re-measure contrast for pin labels and hover badges. The canon's claims are measured on its own four surfaces; the overlay adds a fifth, the host page under a scrim",
       "call_sites": 0,
@@ -68,5 +51,27 @@
     }
   ],
   "known_debt": [],
-  "notes": "Pre-code repo as of 2026-09-06. Adoption is a pointer; vendoring happens with the scaffold. The PRD names the owner as Frank (kpunkt); kpunkt is the other complete canon system, so if this assignment was a slip, change the system field."
+  "notes": "Overlay built 2026-09-06 on the vendored tokens. Remaining gaps: G4 (port canon components \u2014 the overlay uses its own small set), G5 (spec review of pins/popover/panel against the canon), G7 (contrast re-measure over host pages).",
+  "applied": [
+    {
+      "id": "G1",
+      "what": "tokens.css vendored as a CSS string, comments and broadcast section stripped; theme.css and base.css not vendored (no Tailwind in the overlay; overlay CSS is hand-written on the tokens)",
+      "date": "2026-09-06"
+    },
+    {
+      "id": "G2",
+      "what": ":root \u2192 :host and [data-theme=light] \u2192 :host([data-theme=light]) applied by the vendor script; the shadow host carries data-theme=\"light\" by default",
+      "date": "2026-09-06"
+    },
+    {
+      "id": "G3",
+      "what": "Google Fonts @import and Montserrat @font-face stripped; fallback stacks apply",
+      "date": "2026-09-06"
+    },
+    {
+      "id": "G6",
+      "what": "theme prop on <Redlining /> (light | dark), light default",
+      "date": "2026-09-06"
+    }
+  ]
 }

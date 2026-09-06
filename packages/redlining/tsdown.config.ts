@@ -6,7 +6,7 @@ export default defineConfig([
   {
     // The overlay is a client component; the bundler drops the directive, so
     // it is re-added as a banner. React comes from the host app.
-    entry: { index: 'src/index.ts' },
+    entry: { index: 'src/index.ts', 'index.prod': 'src/index.prod.ts' },
     format: 'esm',
     platform: 'neutral',
     dts: true,
