@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { toMarkdown } from '../export'
 import type { Action } from '../types'
+import { pageRect } from './dom'
 import { DrawLayer } from './DrawLayer'
 import { ListPanel } from './ListPanel'
 import { NotePopover } from './NotePopover'
 import { Pins } from './Pins'
 import { SelectLayer } from './SelectLayer'
-import { Toolbar, type Position, type Tool } from './Toolbar'
+import { Toolbar, type Position as Corner, type Tool } from './Toolbar'
 import { isEditable, matchesHotkey } from './hotkey'
-import { reduce, toSession, type Draft } from './session'
+import { reduce, toSession, type Draft, type Position } from './session'
 import { loadEntries, saveEntries } from './storage'
 
 /** PRD §7.6: larger batches degrade agent output. */
@@ -18,29 +19,31 @@ export interface AppProps {
   host: HTMLElement
   endpoint: string
   hotkey: string
-  position: Position
+  position: Corner
   maxAnnotations: number
 }
 
 export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppProps) {
   const [active, setActive] = useState(false)
   const [tool, setTool] = useState<Tool>('select')
-  const [entries, dispatch] = useReducer(reduce, [])
-  const [loaded, setLoaded] = useState(false)
+  // Session persistence per route (PRD §6): restored on first render, saved on change.
+  const [entries, dispatch] = useReducer(reduce, undefined, () =>
+    reduce([], {
+      type: 'load',
+      entries: loadEntries(window.localStorage, window.location.pathname),
+    }),
+  )
   const [draft, setDraft] = useState<Draft | null>(null)
+  /** Move mode, step one: the element to move; the next pick is its destination. */
+  const [moveSource, setMoveSource] = useState<Draft | null>(null)
   const [panel, setPanel] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   const notify = useCallback((message: string) => setToast(message), [])
 
-  // Session persistence per route (PRD §6): restored on mount, saved on change.
   useEffect(() => {
-    dispatch({ type: 'load', entries: loadEntries(window.localStorage, window.location.pathname) })
-    setLoaded(true)
-  }, [])
-  useEffect(() => {
-    if (loaded) saveEntries(window.localStorage, window.location.pathname, entries)
-  }, [entries, loaded])
+    saveEntries(window.localStorage, window.location.pathname, entries)
+  }, [entries])
   useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(null), 3000)
@@ -79,11 +82,24 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
       dispatch({ type: 'clear' })
   }, [entries.length])
 
+  const reset = useCallback(() => {
+    setDraft(null)
+    setMoveSource(null)
+  }, [])
+
   const toggle = useCallback(() => {
     setActive((a) => !a)
-    setDraft(null)
+    reset()
     setPanel(false)
-  }, [])
+  }, [reset])
+
+  const switchTool = useCallback(
+    (t: Tool) => {
+      setTool(t)
+      reset()
+    },
+    [reset],
+  )
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -95,30 +111,33 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
       if (!active) return
       if (e.key === 'Escape') {
         if (draft) setDraft(null)
+        else if (moveSource) setMoveSource(null)
         else if (panel) setPanel(false)
         else toggle()
         return
       }
       if (isEditable(e.target) || draft) return
       const mod = e.metaKey || e.ctrlKey
-      if (mod && e.shiftKey && e.key.toLowerCase() === 'c') {
+      const key = e.key.toLowerCase()
+      if (mod && e.shiftKey && key === 'c') {
         e.preventDefault()
         void copy()
       } else if (mod && e.key === 'Enter') {
         e.preventDefault()
         void send()
-      } else if (!mod && e.key.toLowerCase() === 's') setTool('select')
-      else if (!mod && e.key.toLowerCase() === 'd') setTool('draw')
-      else if (!mod && e.key.toLowerCase() === 'l') setPanel((p) => !p)
+      } else if (!mod && key === 's') switchTool('select')
+      else if (!mod && key === 'd') switchTool('draw')
+      else if (!mod && key === 'm') switchTool('move')
+      else if (!mod && key === 'l') setPanel((p) => !p)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [active, draft, panel, hotkey, toggle, copy, send])
+  }, [active, draft, moveSource, panel, hotkey, toggle, switchTool, copy, send])
 
   const full = entries.length >= maxAnnotations
   const fullMessage = `Session is full (${maxAnnotations}). Save it and start a new one.`
 
-  const saveDraft = (action: Action, note: string) => {
+  const saveDraft = (action: Action, note: string, position?: Position) => {
     if (!draft) return
     if (full) {
       notify(fullMessage)
@@ -129,31 +148,59 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
       draft,
       action,
       note,
+      position,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     })
-    setDraft(null)
+    reset()
     if (entries.length + 1 === WARN_AT)
       notify(`${WARN_AT} annotations — smaller batches land better. Consider saving.`)
   }
 
   const pick = useCallback(
     (d: Draft) => {
-      if (full) notify(fullMessage)
-      else setDraft(d)
+      if (full) {
+        notify(fullMessage)
+        return
+      }
+      if (tool !== 'move') {
+        setDraft(d)
+        return
+      }
+      if (!moveSource) {
+        setMoveSource({ ...d, kind: 'move' })
+        return
+      }
+      if (d.element === moveSource.element) return
+      setDraft({ ...moveSource, target: { element: d.element, anchor: d.anchor } })
     },
-    [full, fullMessage, notify],
+    [full, fullMessage, notify, tool, moveSource],
   )
+
+  const sourceRect = moveSource ? pageRect(moveSource.element) : null
+  const picking = active && !draft
 
   return (
     <>
       <div className="rl-layer">
         {active ? <Pins entries={entries} /> : null}
-        {active && !draft && tool === 'select' ? <SelectLayer host={host} onPick={pick} /> : null}
-        {active && !draft && tool === 'draw' ? <DrawLayer host={host} onDraw={pick} /> : null}
-        {draft ? (
-          <NotePopover draft={draft} onSave={saveDraft} onCancel={() => setDraft(null)} />
+        {sourceRect ? (
+          <div
+            className="rl-outline rl-outline--source"
+            style={{
+              left: sourceRect.x,
+              top: sourceRect.y,
+              width: sourceRect.w,
+              height: sourceRect.h,
+            }}
+          />
         ) : null}
+        {picking && tool === 'select' ? <SelectLayer host={host} onPick={pick} /> : null}
+        {picking && tool === 'move' ? (
+          <SelectLayer host={host} onPick={pick} prefix={moveSource ? 'Move to' : 'Move'} />
+        ) : null}
+        {picking && tool === 'draw' ? <DrawLayer host={host} onDraw={pick} /> : null}
+        {draft ? <NotePopover draft={draft} onSave={saveDraft} onCancel={reset} /> : null}
       </div>
       <Toolbar
         active={active}
@@ -163,7 +210,7 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
         position={position}
         hotkey={hotkey}
         onToggle={toggle}
-        onTool={setTool}
+        onTool={switchTool}
         onPanel={() => setPanel((p) => !p)}
         onCopy={() => void copy()}
         onSend={() => void send()}

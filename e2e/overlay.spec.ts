@@ -124,3 +124,26 @@ test('the session survives a reload and can be cleared', async ({ page }) => {
   await openOverlay(page)
   await expect(page.getByTestId('rl-pin')).toHaveCount(0)
 })
+
+test('move mode: source, target and a position produce a MOVE with from and to', async ({
+  page,
+}) => {
+  await openOverlay(page)
+  await page.keyboard.press('m')
+  await page.locator('[data-spike="14"]').click()
+  await expect(page.locator('.rl-outline--source')).toBeVisible()
+  await page.locator('[data-spike="4"]').click()
+  const popover = page.getByTestId('rl-popover')
+  await expect(popover).toContainText('Move <aside>')
+  await page.getByRole('button', { name: 'after', exact: true }).click()
+  await page.getByTestId('rl-note').fill('Aside belongs under the nav.')
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  await expect(page.locator('.rl-pin--target')).toHaveText('→1')
+
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('## 1 · MOVE — "aside" aside')
+  expect(clipboard).toContain('- From: `<aside>` · app/spike/page.tsx:25')
+  expect(clipboard).toContain('- To: after `<nav>` · app/spike/page.tsx:7')
+})

@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import type { Action } from '../types'
-import type { Draft } from './session'
+import type { Action, Anchor } from '../types'
+import type { Draft, Position } from './session'
 
 const HINTS = ['Table', 'Form', 'Button', 'Card', 'Modal', 'Nav', 'List', 'Chart']
+const POSITIONS: Position[] = ['before', 'after', 'inside']
 const WIDTH = 340
 
-export function NotePopover({
-  draft,
-  onSave,
-  onCancel,
-}: {
+export interface NotePopoverProps {
   draft: Draft
-  onSave(action: Action, note: string): void
+  onSave(action: Action, note: string, position?: Position): void
   onCancel(): void
-}) {
-  const [action, setAction] = useState<Action>(draft.kind === 'draw' ? 'add' : 'change')
+}
+
+export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
+  const [action, setAction] = useState<Action>(
+    draft.kind === 'draw' ? 'add' : draft.kind === 'move' ? 'move' : 'change',
+  )
+  const [position, setPosition] = useState<Position>('before')
   const [note, setNote] = useState('')
   const [hint, setHint] = useState<string | null>(null)
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -23,7 +25,7 @@ export function NotePopover({
   const save = () => {
     const text = note.trim()
     if (!text) return
-    onSave(action, hint ? `${hint}: ${text}` : text)
+    onSave(action, hint ? `${hint}: ${text}` : text, draft.kind === 'move' ? position : undefined)
   }
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Stop here: the overlay's window handler would otherwise see the same
@@ -39,13 +41,12 @@ export function NotePopover({
     }
   }
 
-  const r = draft.box ?? draft.anchor.rect
+  const r = draft.box ?? draft.target?.anchor.rect ?? draft.anchor.rect
   const left = Math.max(
     8,
     Math.min(r.x + window.scrollX, window.innerWidth - WIDTH - 8 + window.scrollX),
   )
   const top = r.y + r.h + 8 + window.scrollY
-  const owner = draft.anchor.owners[draft.anchor.owners.length - 1]
 
   return (
     <div
@@ -56,10 +57,20 @@ export function NotePopover({
       style={{ left, top }}
     >
       <header>
-        <b>
-          {draft.kind === 'draw' ? 'Add inside' : ''} {owner ?? `<${draft.anchor.tag}>`}
-        </b>
-        {draft.anchor.file ? `${draft.anchor.file}:${draft.anchor.line}` : 'unresolved'}
+        {draft.kind === 'move' && draft.target ? (
+          <>
+            <b>Move {label(draft.anchor)}</b> → {label(draft.target.anchor)} ·{' '}
+            {where(draft.target.anchor)}
+          </>
+        ) : (
+          <>
+            <b>
+              {draft.kind === 'draw' ? 'Add inside ' : ''}
+              {label(draft.anchor)}
+            </b>
+            {where(draft.anchor)}
+          </>
+        )}
       </header>
       <div className="rl-chips">
         {draft.kind === 'select'
@@ -74,23 +85,41 @@ export function NotePopover({
                 {a === 'change' ? 'Change' : 'Remove'}
               </button>
             ))
-          : HINTS.map((h) => (
-              <button
-                key={h}
-                type="button"
-                className="rl-chip"
-                aria-pressed={hint === h}
-                onClick={() => setHint(hint === h ? null : h)}
-              >
-                {h}
-              </button>
-            ))}
+          : draft.kind === 'move'
+            ? POSITIONS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="rl-chip"
+                  aria-pressed={position === p}
+                  onClick={() => setPosition(p)}
+                >
+                  {p}
+                </button>
+              ))
+            : HINTS.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  className="rl-chip"
+                  aria-pressed={hint === h}
+                  onClick={() => setHint(hint === h ? null : h)}
+                >
+                  {h}
+                </button>
+              ))}
       </div>
       <textarea
         ref={ref}
         className="rl-textarea"
         data-testid="rl-note"
-        placeholder={draft.kind === 'draw' ? 'What goes here?' : 'What should change?'}
+        placeholder={
+          draft.kind === 'draw'
+            ? 'What goes here?'
+            : draft.kind === 'move'
+              ? 'Why move it?'
+              : 'What should change?'
+        }
         value={note}
         onChange={(e) => setNote(e.target.value)}
         onKeyDown={onKey}
@@ -106,4 +135,12 @@ export function NotePopover({
       </div>
     </div>
   )
+}
+
+function label(a: Anchor): string {
+  return a.owners[a.owners.length - 1] ?? `<${a.tag}>`
+}
+
+function where(a: Anchor): string {
+  return a.file ? `${a.file}:${a.line}` : 'unresolved'
 }

@@ -1,4 +1,5 @@
 import {
+  ArrowRightLeft,
   Copy,
   ListChecks,
   MousePointerClick,
@@ -11,7 +12,7 @@ import {
 import type { ReactNode } from 'react'
 
 export type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
-export type Tool = 'select' | 'draw'
+export type Tool = 'select' | 'draw' | 'move'
 
 export interface ToolbarProps {
   active: boolean
@@ -46,8 +47,8 @@ export function Toolbar(p: ToolbarProps) {
     <div
       className="rl-fixed rl-toolbar"
       data-pos={p.position}
-      data-testid="rl-toolbar"
       data-panel={p.panelOpen || undefined}
+      data-testid="rl-toolbar"
       role="toolbar"
       aria-label="Redlining"
     >
@@ -60,6 +61,9 @@ export function Toolbar(p: ToolbarProps) {
       </IconButton>
       <IconButton label="Draw (D)" pressed={p.tool === 'draw'} onClick={() => p.onTool('draw')}>
         <SquareDashedMousePointer size={18} />
+      </IconButton>
+      <IconButton label="Move (M)" pressed={p.tool === 'move'} onClick={() => p.onTool('move')}>
+        <ArrowRightLeft size={18} />
       </IconButton>
       <IconButton label="Annotations (L)" pressed={p.panelOpen} onClick={p.onPanel}>
         <ListChecks size={18} />

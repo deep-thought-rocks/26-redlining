@@ -44,6 +44,20 @@ describe('session reducer', () => {
     expect(reduce(s, { type: 'clear' })).toEqual([])
   })
 
+  test('a move draft stores the target anchor with its position', () => {
+    const target = { ...anchor, tag: 'nav', selector: 'nav' }
+    const s = reduce([], {
+      type: 'add',
+      draft: { kind: 'move', element: el(), anchor, target: { element: el(), anchor: target } },
+      action: 'move',
+      note: 'n',
+      id: 'm',
+      createdAt: 't',
+      position: 'after',
+    })
+    expect(s[0]!.target).toEqual({ ...target, position: 'after' })
+  })
+
   test('load replaces the session and normalises indexes', () => {
     const loaded = reduce(add([], 'old'), {
       type: 'load',

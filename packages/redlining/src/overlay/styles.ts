@@ -32,6 +32,8 @@ button { font: inherit; color: inherit; }
 .rl-drawbox { position: fixed; pointer-events: none; border: var(--sbm-border-w-thick) dashed var(--color-border-focus); background: color-mix(in srgb, var(--color-accent-primary) 8%, transparent); border-radius: var(--sbm-radius-sm); }
 
 .rl-pin { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: var(--sbm-radius-full); background: var(--color-accent-fill); color: var(--color-on-accent); border: 2px solid var(--color-background); box-shadow: var(--shadow-2); font-family: var(--sbm-font-heading); font-size: 11px; font-weight: var(--sbm-weight-semibold); line-height: 18px; text-align: center; pointer-events: none; }
+.rl-pin--target { width: auto; padding: 0 6px; border-radius: var(--sbm-radius-md); background: var(--color-background-overlay); color: var(--color-text-accent); border-color: var(--color-border-focus); }
+.rl-outline--source { outline-style: dashed; }
 .rl-pinbox { position: absolute; pointer-events: none; border: var(--sbm-border-w) dashed var(--color-border-focus); border-radius: var(--sbm-radius-sm); }
 
 .rl-popover { position: absolute; pointer-events: auto; width: 340px; padding: var(--sbm-space-3); background: var(--color-background-overlay); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-xl); box-shadow: var(--shadow-3); animation: sbmSlideUp var(--sbm-duration-slow) var(--sbm-ease-out) both; }

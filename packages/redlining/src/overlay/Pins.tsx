@@ -29,8 +29,29 @@ export function Pins({ entries }: { entries: Entry[] }) {
         const el = entry.element?.isConnected ? entry.element : findByAnchor(entry.anchor)
         if (!el) return null
         const rect = pageRect(el)
+        const targetEl = entry.target ? findByAnchor(entry.target) : null
+        const targetRect = targetEl ? pageRect(targetEl) : null
         return (
           <span key={entry.id}>
+            {targetRect ? (
+              <>
+                <div
+                  className="rl-pinbox"
+                  style={{
+                    left: targetRect.x,
+                    top: targetRect.y,
+                    width: targetRect.w,
+                    height: targetRect.h,
+                  }}
+                />
+                <div
+                  className="rl-pin rl-pin--target"
+                  style={{ left: targetRect.x, top: targetRect.y }}
+                >
+                  →{entry.index}
+                </div>
+              </>
+            ) : null}
             {entry.box ? (
               <div
                 className="rl-pinbox"

@@ -13,7 +13,14 @@ function targetOf(h: Hover | null): Element | null {
   return h ? (ancestorsOf(h.base)[h.depth] ?? h.base) : null
 }
 
-export function SelectLayer({ host, onPick }: { host: Element; onPick(draft: Draft): void }) {
+export interface SelectLayerProps {
+  host: Element
+  onPick(draft: Draft): void
+  /** Shown before the badge, e.g. "Move to" while picking a move target. */
+  prefix?: string
+}
+
+export function SelectLayer({ host, onPick, prefix }: SelectLayerProps) {
   // The ref is the source of truth (a click can follow a mousemove before React
   // commits); the state only drives rendering.
   const hoverRef = useRef<Hover | null>(null)
@@ -87,6 +94,7 @@ export function SelectLayer({ host, onPick }: { host: Element; onPick(draft: Dra
           top: rect.y - 26 < window.scrollY ? rect.y + rect.h + 4 : rect.y - 26,
         }}
       >
+        {prefix ? <span>{prefix} </span> : null}
         {owner ? <b>{owner}</b> : null}
         {owner ? ' · ' : null}
         {anchor.file ? `${anchor.file}:${anchor.line}` : <span>unresolved</span>}

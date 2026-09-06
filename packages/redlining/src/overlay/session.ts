@@ -1,12 +1,16 @@
 import type { Action, Anchor, Annotation, Rect, Session } from '../types'
 
+export type Position = 'before' | 'after' | 'inside'
+
 /** Overlay-side annotation with a live handle to the element it was created on. */
 export interface Draft {
-  kind: 'select' | 'draw'
+  kind: 'select' | 'draw' | 'move'
   element: Element
   anchor: Anchor
   /** draw only: box in viewport px and the insert index */
   box?: Rect & { childIndex: number }
+  /** move only: the destination */
+  target?: { element: Element; anchor: Anchor }
 }
 
 export interface Entry extends Annotation {
@@ -16,7 +20,15 @@ export interface Entry extends Annotation {
 
 export type SessionAction =
   | { type: 'load'; entries: Entry[] }
-  | { type: 'add'; draft: Draft; action: Action; note: string; id: string; createdAt: string }
+  | {
+      type: 'add'
+      draft: Draft
+      action: Action
+      note: string
+      id: string
+      createdAt: string
+      position?: Position
+    }
   | { type: 'note'; id: string; note: string }
   | { type: 'remove'; id: string }
   | { type: 'clear' }
@@ -46,6 +58,7 @@ export function reduce(entries: Entry[], a: SessionAction): Entry[] {
           childIndex: draft.box.childIndex,
         }
       }
+      if (draft.target) entry.target = { ...draft.target.anchor, position: a.position ?? 'before' }
       return [...entries, entry]
     }
     case 'note':
