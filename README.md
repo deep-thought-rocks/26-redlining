@@ -65,7 +65,7 @@ Claude Code reads `.redlining/annotations.md`, which looks like this:
 Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.
 ```
 
-Redlining never edits code. Claude Code stays the only thing that changes your codebase.
+Redlining never edits code. Claude Code stays the only thing that changes your codebase. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
 
 ## How it works
 
@@ -76,15 +76,16 @@ Redlining never edits code. Claude Code stays the only thing that changes your c
 
 ## Overlay
 
-| Key       | Action                                          |
-| --------- | ----------------------------------------------- |
-| `Alt+R`   | Toggle the overlay (`hotkey` option)            |
-| `S` / `D` | Select mode / Draw mode                         |
-| `[` / `]` | Walk the selection up / down the ancestor chain |
-| `L`       | Annotation list                                 |
-| `⌘⇧C`     | Copy the prompt to the clipboard                |
-| `⌘⏎`      | Save to `.redlining/`                           |
-| `Esc`     | Close popover → panel → overlay                 |
+| Key                       | Action                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `Alt+R`                   | Toggle the overlay (`hotkey` option)                                             |
+| `S` / `D` / `M`           | Select / Draw / Move mode                                                        |
+| `[` / `]` or `⌥` + scroll | Walk the selection up / down the ancestor chain                                  |
+| `⇧` + click               | Add another element to the open note (one note, several anchors)                 |
+| `L`                       | Annotation list                                                                  |
+| `⌘⇧C`                     | Copy the prompt to the clipboard                                                 |
+| `⌘⏎`                      | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off) |
+| `Esc`                     | Close popover → panel → overlay                                                  |
 
 ## Options
 
@@ -94,6 +95,8 @@ Redlining never edits code. Claude Code stays the only thing that changes your c
   hotkey="Alt+R"
   position="bottom-right" // Next DevTools sits bottom-left
   theme="light" // or "dark"
+  maxAnnotations={15} // a warning shows at 10
+  screenshot // include screenshot.png with burned-in pins
 />
 ```
 
