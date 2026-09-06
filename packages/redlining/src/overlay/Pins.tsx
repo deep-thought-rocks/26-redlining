@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { Anchor, Rect } from '../types'
 import { findByAnchor, pageRect } from './dom'
 import type { Entry } from './session'
 
@@ -26,13 +27,45 @@ export function Pins({ entries }: { entries: Entry[] }) {
   return (
     <>
       {entries.map((entry) => {
-        const el = entry.element?.isConnected ? entry.element : findByAnchor(entry.anchor)
-        if (!el) return null
-        const rect = pageRect(el)
-        const targetEl = entry.target ? findByAnchor(entry.target) : null
-        const targetRect = targetEl ? pageRect(targetEl) : null
+        const rect = liveRect(entry.element, entry.anchor)
+        if (!rect) return null
+        const extras = (entry.anchors ?? [])
+          .slice(1)
+          .map((a, i) => liveRect(entry.extraElements?.[i] ?? null, a))
+        const targetRect = entry.target ? liveRect(null, entry.target) : null
+        const offset = { x: entry.box?.x ?? 0, y: entry.box?.y ?? 0 }
         return (
           <span key={entry.id}>
+            {entry.box ? (
+              <div
+                className="rl-pinbox"
+                style={{
+                  left: rect.x + entry.box.x,
+                  top: rect.y + entry.box.y,
+                  width: entry.box.w,
+                  height: entry.box.h,
+                }}
+              />
+            ) : null}
+            <div
+              className="rl-pin"
+              data-testid="rl-pin"
+              style={{ left: rect.x + offset.x, top: rect.y + offset.y }}
+            >
+              {entry.index}
+            </div>
+            {extras.map((r, i) =>
+              r ? (
+                <div
+                  key={i}
+                  className="rl-pin"
+                  data-testid="rl-pin"
+                  style={{ left: r.x, top: r.y }}
+                >
+                  {entry.index}
+                </div>
+              ) : null,
+            )}
             {targetRect ? (
               <>
                 <div
@@ -52,30 +85,15 @@ export function Pins({ entries }: { entries: Entry[] }) {
                 </div>
               </>
             ) : null}
-            {entry.box ? (
-              <div
-                className="rl-pinbox"
-                style={{
-                  left: rect.x + entry.box.x,
-                  top: rect.y + entry.box.y,
-                  width: entry.box.w,
-                  height: entry.box.h,
-                }}
-              />
-            ) : null}
-            <div
-              className="rl-pin"
-              data-testid="rl-pin"
-              style={{
-                left: rect.x + (entry.box ? entry.box.x : 0),
-                top: rect.y + (entry.box ? entry.box.y : 0),
-              }}
-            >
-              {entry.index}
-            </div>
           </span>
         )
       })}
     </>
   )
+}
+
+/** The element's current page rect, re-finding it after HMR; null when it is gone. */
+export function liveRect(element: Element | null, anchor: Anchor): Rect | null {
+  const el = element?.isConnected ? element : findByAnchor(anchor)
+  return el ? pageRect(el) : null
 }

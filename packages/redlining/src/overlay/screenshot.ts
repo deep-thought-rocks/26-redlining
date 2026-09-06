@@ -1,5 +1,4 @@
-import type { Rect } from '../types'
-import { findByAnchor, pageRect } from './dom'
+import { liveRect } from './Pins'
 import type { Entry } from './session'
 
 /** PRD §11: the route caps the body at 8 MB; leave headroom for the JSON around it. */
@@ -12,23 +11,23 @@ export interface Pin {
   y: number
 }
 
-/** Pin positions in page coordinates for every entry that is still attached. */
+/** Pin positions in page coordinates for every anchor that is still attached. */
 export function pinsFor(entries: Entry[]): Pin[] {
   const pins: Pin[] = []
   for (const entry of entries) {
-    const el = entry.element?.isConnected ? entry.element : findByAnchor(entry.anchor)
-    if (!el) continue
-    const r = pageRect(el)
+    const r = liveRect(entry.element, entry.anchor)
+    if (!r) continue
     pins.push({
       label: String(entry.index),
       x: r.x + (entry.box?.x ?? 0),
       y: r.y + (entry.box?.y ?? 0),
     })
-    const target = entry.target ? findByAnchor(entry.target) : null
-    if (target) {
-      const t = pageRect(target)
-      pins.push({ label: `→${entry.index}`, x: t.x, y: t.y })
-    }
+    ;(entry.anchors ?? []).slice(1).forEach((a, i) => {
+      const x = liveRect(entry.extraElements?.[i] ?? null, a)
+      if (x) pins.push({ label: String(entry.index), x: x.x, y: x.y })
+    })
+    const t = entry.target ? liveRect(null, entry.target) : null
+    if (t) pins.push({ label: `→${entry.index}`, x: t.x, y: t.y })
   }
   return pins
 }
@@ -70,7 +69,7 @@ export function drawPins(ctx: PinCanvas, pins: Pin[], scale = 1): void {
 
 /**
  * Captures the page (without the overlay) as a PNG data URL with pins burned
- * in. Returns null when the capture fails or would exceed the route's cap.
+ * in. Returns an error instead when the capture fails or would exceed the cap.
  */
 export async function captureScreenshot(
   entries: Entry[],
@@ -89,8 +88,4 @@ export async function captureScreenshot(
   if (dataUrl.length > MAX_DATA_URL)
     return { error: `screenshot too large (${Math.round(dataUrl.length / 1024 / 1024)} MB)` }
   return { dataUrl }
-}
-
-export function viewportBox(): Rect {
-  return { x: window.scrollX, y: window.scrollY, w: window.innerWidth, h: window.innerHeight }
 }

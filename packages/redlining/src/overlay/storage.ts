@@ -26,7 +26,7 @@ export function saveEntries(storage: Storage, route: string, entries: Entry[]): 
     storage.removeItem(key)
     return
   }
-  const plain = entries.map(({ element: _element, ...a }) => a)
+  const plain = entries.map(({ element: _element, extraElements: _extra, ...a }) => a)
   storage.setItem(key, JSON.stringify(plain))
 }
 

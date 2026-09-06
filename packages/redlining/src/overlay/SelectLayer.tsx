@@ -18,9 +18,11 @@ export interface SelectLayerProps {
   onPick(draft: Draft): void
   /** Shown before the badge, e.g. "Move to" while picking a move target. */
   prefix?: string
+  /** While a note is open: Shift+click adds anchors; other clicks are swallowed. */
+  onExtend?(draft: Draft): void
 }
 
-export function SelectLayer({ host, onPick, prefix }: SelectLayerProps) {
+export function SelectLayer({ host, onPick, prefix, onExtend }: SelectLayerProps) {
   // The ref is the source of truth (a click can follow a mousemove before React
   // commits); the state only drives rendering.
   const hoverRef = useRef<Hover | null>(null)
@@ -50,6 +52,17 @@ export function SelectLayer({ host, onPick, prefix }: SelectLayerProps) {
         update({ ...cur, depth: Math.min(cur.depth + 1, ancestorsOf(cur.base).length - 1) })
       if (e.key === ']') update({ ...cur, depth: Math.max(cur.depth - 1, 0) })
     }
+    const wheel = (e: WheelEvent) => {
+      // Option+scroll walks the ancestor chain, like [ and ].
+      const cur = hoverRef.current
+      if (!cur || !e.altKey) return
+      e.preventDefault()
+      const depth =
+        e.deltaY < 0
+          ? Math.min(cur.depth + 1, ancestorsOf(cur.base).length - 1)
+          : Math.max(cur.depth - 1, 0)
+      update({ ...cur, depth })
+    }
     const click = (e: MouseEvent) => {
       if (isOverlay(host, e.target as Element)) return
       e.preventDefault()
@@ -61,20 +74,31 @@ export function SelectLayer({ host, onPick, prefix }: SelectLayerProps) {
         cur = { base: el, depth: 0 }
       }
       const target = targetOf(cur)
-      if (target)
-        onPick({ kind: 'select', element: target, anchor: anchorFor(target, domLayout(document)) })
+      if (!target) return
+      const draft: Draft = {
+        kind: 'select',
+        element: target,
+        anchor: anchorFor(target, domLayout(document)),
+      }
+      if (onExtend) {
+        if (e.shiftKey) onExtend(draft)
+      } else {
+        onPick(draft)
+      }
     }
     document.addEventListener('mousemove', move, true)
     document.addEventListener('click', click, true)
+    document.addEventListener('wheel', wheel, { capture: true, passive: false })
     window.addEventListener('keydown', key)
     document.body.style.cursor = 'crosshair'
     return () => {
       document.removeEventListener('mousemove', move, true)
       document.removeEventListener('click', click, true)
+      document.removeEventListener('wheel', wheel, { capture: true })
       window.removeEventListener('keydown', key)
       document.body.style.cursor = ''
     }
-  }, [host, onPick])
+  }, [host, onPick, onExtend])
 
   const target = targetOf(hover)
   if (!target) return null

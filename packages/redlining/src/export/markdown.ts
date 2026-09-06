@@ -46,7 +46,12 @@ function annotationBlock(a: Annotation): string[] {
       if (a.target) out.push(`- To: ${a.target.position} ${location(a.target)}`)
       break
     default:
-      out.push(`- Anchor: ${location(a.anchor)}`)
+      if (a.anchors && a.anchors.length > 1) {
+        out.push('- Anchors:')
+        a.anchors.forEach((anchor, i) => out.push(`  ${i + 1}. ${location(anchor)}`))
+      } else {
+        out.push(`- Anchor: ${location(a.anchor)}`)
+      }
   }
   if (a.anchor.text && a.action !== 'add') out.push(`- Text: "${a.anchor.text}"`)
   const fallback = fallbackNote(a.anchor)
@@ -58,10 +63,11 @@ function annotationBlock(a: Annotation): string[] {
 function title(a: Annotation): string {
   const { anchor } = a
   const owner = anchor.owners[anchor.owners.length - 1]
+  const more = a.anchors && a.anchors.length > 1 ? ` (+${a.anchors.length - 1})` : ''
   if (a.action === 'add') return owner ? `inside ${owner}` : `inside <${anchor.tag}>`
   if (a.action === 'remove' && anchor.text && anchor.text.length <= 40)
-    return `"${anchor.text}" ${anchor.tag}`
-  return owner ?? (anchor.text ? `"${anchor.text}" ${anchor.tag}` : `<${anchor.tag}>`)
+    return `"${anchor.text}" ${anchor.tag}${more}`
+  return (owner ?? (anchor.text ? `"${anchor.text}" ${anchor.tag}` : `<${anchor.tag}>`)) + more
 }
 
 function location(anchor: Anchor): string {

@@ -11,11 +11,15 @@ export interface Draft {
   box?: Rect & { childIndex: number }
   /** move only: the destination */
   target?: { element: Element; anchor: Anchor }
+  /** select only: further anchors added with Shift+click */
+  extra?: { element: Element; anchor: Anchor }[]
 }
 
 export interface Entry extends Annotation {
   /** Live element, used to keep the pin attached across scroll and HMR. */
   element: Element | null
+  /** Live elements for `anchors[1..]`, parallel to that slice. */
+  extraElements?: (Element | null)[]
 }
 
 export type SessionAction =
@@ -59,6 +63,10 @@ export function reduce(entries: Entry[], a: SessionAction): Entry[] {
         }
       }
       if (draft.target) entry.target = { ...draft.target.anchor, position: a.position ?? 'before' }
+      if (draft.extra?.length) {
+        entry.anchors = [draft.anchor, ...draft.extra.map((x) => x.anchor)]
+        entry.extraElements = draft.extra.map((x) => x.element)
+      }
       return [...entries, entry]
     }
     case 'note':
@@ -84,6 +92,8 @@ export function toSession(
     route: location.pathname,
     url: location.href,
     viewport,
-    annotations: entries.map(({ element: _element, ...annotation }) => annotation),
+    annotations: entries.map(
+      ({ element: _element, extraElements: _extra, ...annotation }) => annotation,
+    ),
   }
 }

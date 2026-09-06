@@ -180,6 +180,24 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     )
   })
 
+  test('lists every anchor of a multi-select annotation', () => {
+    const a1 = anchor({ tag: 'article', file: 'app/a.tsx', line: 3, owners: ['Grid', 'Card'] })
+    const a2 = anchor({ tag: 'article', file: 'app/a.tsx', line: 9, owners: ['Grid', 'Card'] })
+    const md = toMarkdown(
+      {
+        ...session,
+        screenshot: undefined,
+        annotations: [
+          ann({ index: 1, action: 'change', anchor: a1, anchors: [a1, a2], note: 'Same height.' }),
+        ],
+      },
+      { now: NOW },
+    )
+    expect(md).toContain(
+      '## 1 · CHANGE — Card (+1)\n- Anchors:\n  1. `<article>` · app/a.tsx:3 · owners: Grid › Card\n  2. `<article>` · app/a.tsx:9 · owners: Grid › Card\n- Note: Same height.',
+    )
+  })
+
   test('describes add positions at start, at end and with a partial width', () => {
     const base = anchor({ tag: 'ul', owners: ['List'], rect: { x: 0, y: 0, w: 1000, h: 500 } })
     const start = ann({

@@ -193,6 +193,14 @@ export function App({
     [full, fullMessage, notify, tool, moveSource],
   )
 
+  const extend = useCallback((d: Draft) => {
+    setDraft((cur) => {
+      if (!cur || cur.kind !== 'select') return cur
+      if (cur.element === d.element || cur.extra?.some((x) => x.element === d.element)) return cur
+      return { ...cur, extra: [...(cur.extra ?? []), { element: d.element, anchor: d.anchor }] }
+    })
+  }, [])
+
   const sourceRect = moveSource ? pageRect(moveSource.element) : null
   const picking = active && !draft
 
@@ -212,6 +220,9 @@ export function App({
           />
         ) : null}
         {picking && tool === 'select' ? <SelectLayer host={host} onPick={pick} /> : null}
+        {active && draft?.kind === 'select' && tool === 'select' ? (
+          <SelectLayer host={host} onPick={pick} onExtend={extend} />
+        ) : null}
         {picking && tool === 'move' ? (
           <SelectLayer host={host} onPick={pick} prefix={moveSource ? 'Move to' : 'Move'} />
         ) : null}

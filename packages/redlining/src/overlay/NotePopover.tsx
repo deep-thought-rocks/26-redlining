@@ -67,8 +67,12 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
             <b>
               {draft.kind === 'draw' ? 'Add inside ' : ''}
               {label(draft.anchor)}
+              {draft.extra?.length ? ` +${draft.extra.length}` : ''}
             </b>
             {where(draft.anchor)}
+            {draft.kind === 'select' && !draft.extra?.length ? (
+              <span> · ⇧click adds more</span>
+            ) : null}
           </>
         )}
       </header>

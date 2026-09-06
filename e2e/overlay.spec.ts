@@ -152,3 +152,22 @@ test('move mode: source, target and a position produce a MOVE with from and to',
   expect(clipboard).toContain('- From: `<aside>` · app/spike/page.tsx:25')
   expect(clipboard).toContain('- To: after `<nav>` · app/spike/page.tsx:7')
 })
+
+test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
+  await openOverlay(page)
+  await page.locator('[data-spike="5"]').click()
+  await expect(page.getByTestId('rl-popover')).toContainText('⇧click adds more')
+  await page.locator('[data-spike="6"]').click({ modifiers: ['Shift'] })
+  await expect(page.getByTestId('rl-popover')).toContainText('+1')
+  await page.getByTestId('rl-note').fill('Same padding on both.')
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveCount(2)
+  await expect(page.getByTestId('rl-pin').nth(1)).toHaveText('1')
+
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('## 1 · CHANGE — "Dashboard" a (+1)')
+  expect(clipboard).toContain(
+    '- Anchors:\n  1. `<a>` · app/spike/page.tsx:8\n  2. `<a>` · app/spike/page.tsx:11',
+  )
+})

@@ -32,6 +32,15 @@ describe('session storage', () => {
     ])
     expect(loadEntries(localStorage, '/b')).toHaveLength(1)
     expect(JSON.parse(localStorage.getItem(storageKey('/a'))!)[0]).not.toHaveProperty('element')
+    const multi = {
+      ...entry('m', 1),
+      anchors: [entry('m', 1).anchor, entry('m', 1).anchor],
+      extraElements: [document.createElement('i')],
+    }
+    saveEntries(localStorage, '/m', [multi])
+    const stored = JSON.parse(localStorage.getItem(storageKey('/m'))!)[0]
+    expect(stored).not.toHaveProperty('extraElements')
+    expect(stored.anchors).toHaveLength(2)
   })
 
   test('an empty session removes the key', () => {

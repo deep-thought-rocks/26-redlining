@@ -44,6 +44,16 @@ describe('session reducer', () => {
     expect(reduce(s, { type: 'clear' })).toEqual([])
   })
 
+  test('extra anchors from Shift+click become anchors[] with the primary first', () => {
+    const second = { ...anchor, tag: 'li', selector: 'li' }
+    const s = add([], 'multi', { extra: [{ element: el(), anchor: second }] })
+    expect(s[0]!.anchors).toEqual([anchor, second])
+    expect(s[0]!.extraElements).toHaveLength(1)
+    const session = toSession(s, { pathname: '/', href: 'h' }, { w: 1, h: 1 })
+    expect(session.annotations[0]).not.toHaveProperty('extraElements')
+    expect(session.annotations[0]!.anchors).toHaveLength(2)
+  })
+
   test('a move draft stores the target anchor with its position', () => {
     const target = { ...anchor, tag: 'nav', selector: 'nav' }
     const s = reduce([], {

@@ -36,6 +36,8 @@ export interface Annotation {
   index: number
   action: Action
   anchor: Anchor
+  /** Multi-select: every anchor this note applies to, `anchor` first. Absent for a single anchor. */
+  anchors?: Anchor[]
   /** `move` only. */
   target?: Anchor & { position: 'before' | 'after' | 'inside' }
   /** `add` only. Relative to `anchor.rect`; `childIndex` = insert before that child (children.length = at end). */
