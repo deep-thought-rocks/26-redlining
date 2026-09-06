@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## State of the repo
 
-Scaffold only. Every package entry is a stub with a smoke test; no feature code exists yet. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
+Early M1. The loader (`src/loader/`) and `withRedlining()` are real and verified 20/20 on the fixture page under both Turbopack and webpack; the overlay, route handler and CLI are still stubs with smoke tests. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
 
 ## What Redlining is
 
@@ -34,7 +34,7 @@ pnpm monorepo: `packages/redlining/` (published as unscoped npm `redlining`) wit
 
 Build shape in `tsdown.config.ts`: `.` and `./next/route` are ESM-only with `platform: neutral`; `./next` and `./loader` are ESM + CJS (`.mjs`/`.cjs`) so `next.config` can load them either way; the CLI is ESM with no d.ts. The bundler strips `'use client'`, so the overlay entry re-adds it via `banner` — keep the overlay in its own config block for that reason. React is never bundled.
 
-TypeScript 5.9 strict (not 7: typescript-eslint caps below 6.1), Vitest 5 in node environment, ESLint 10 flat + typescript-eslint + react-hooks + prettier-compat, Changesets (config written by hand; `changeset init` needs a TTY). Not yet set up: Playwright, Tailwind in the overlay, CI.
+TypeScript 5.9 strict (not 7: typescript-eslint caps below 6.1), Vitest 5 in node environment, ESLint 10 flat + typescript-eslint + react-hooks + prettier-compat, Changesets (config written by hand; `changeset init` needs a TTY). Not yet set up: Playwright, Tailwind in the overlay, CI. Known gap for the overlay slice: `<Redlining />` still ships ~50 bytes (`return null`) in production bundles; PRD §13 wants zero, which needs a `production` export condition pointing at an empty module.
 
 ## Design decisions that constrain code
 
@@ -42,7 +42,9 @@ These are settled in the PRD; do not reopen them without asking.
 
 - **Zero production footprint.** `<Redlining />` returns `null` outside `NODE_ENV === 'development'` so it dead-code-eliminates; `withRedlining()` is a no-op outside `PHASE_DEVELOPMENT_SERVER`; the route handler refuses outside dev. CI will assert 0 bytes and no `data-rl` in `next build` output.
 - **Loader decorates host elements only** (lowercase JSX tags) with `data-rl="<relpath>:<line>:<col>"`. Never decorate components — it leaks an unknown prop. Component identity comes from the runtime fiber walk instead.
-- **Loader is SWC-based, not Babel.** Turbopack does not run Babel and a Babel config would disable SWC. Parse with `@swc/core` (resolved from Next), emit source maps via `magic-string`. Same loader is registered under `turbopack.rules` and the `webpack()` fallback.
+- **Loader parses with `@babel/parser`, not SWC.** The PRD assumed `@swc/core` comes with Next; it does not (Next ships only its own native bindings behind an undocumented `parse`). `@babel/parser` is parse-only, pure JS, no native binaries, and never touches Next's SWC compile pipeline. `magic-string` writes the stamp and the source map and is **bundled into `dist/loader.*`** (it is ESM-only and rolldown's CJS interop hands `new` the namespace object). The map is passed to the bundler as an **object**: webpack's downstream SWC loader rejects JSON text.
+- **Rules match by filename glob plus a path regex, not root-relative globs.** Turbopack's root follows the lockfile, so in a pnpm workspace `app/**` never matches `examples/next-app/app/…`. `withRedlining` registers `'*.tsx'`/`'*.jsx'` with `condition: { all: [{ not: 'foreign' }, { path: /(^|\/)(app|components|src)\/.*\.tsx$/ }] }` and a webpack `enforce: 'pre'` rule with absolute `include` dirs. Stamped paths are relative to `projectRoot` (`process.cwd()` at config time), passed as a plain loader option.
+- **`withRedlining` returns a config function** so it can see the phase; rules exist only under `PHASE_DEVELOPMENT_SERVER`, and a function config passed in is composed, sync or async.
 - **React internals are quarantined.** `__reactFiber$…` and `fiber._debugOwner` live only in `resolve/fiber.ts`, feature-detected, degrading to file:line-only when absent. Server-only subtrees have no client fiber: `owners` is `[]` and the anchor is still exact via `data-rl`.
 - **Pure cores.** `src/resolve/`, `src/export/` and the loader `transform(src, filename) → { code, map }` are pure functions with no DOM or Next dependency, so they are unit-testable and formatters stay pluggable.
 - **Overlay isolation.** Shadow DOM host; Tailwind compiled to a CSS string injected into the shadow root; no global CSS; when inactive only the `Alt+R` hotkey listener exists and no pointer events are captured.

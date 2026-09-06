@@ -24,6 +24,10 @@ export default defineConfig([
     format: ['esm', 'cjs'],
     platform: 'node',
     dts: true,
+    // The loader entry has a default export (the loader) and named ones (transform).
+    outputOptions: { exports: 'named' },
+    // magic-string is ESM-only; bundling it avoids a broken CJS default-import interop.
+    deps: { alwaysBundle: ['magic-string'] },
   },
   {
     entry: { cli: 'src/cli/index.ts' },
