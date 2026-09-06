@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## State of the repo
 
-M1 feature-complete as of 2026-09-06: loader, resolve core, export, route handler, `redlining init`, the overlay (select + draw, pins, note popover, list panel, copy/save) and a Playwright e2e suite on the fixture page. Not yet done from M1: README (PRD §17.3). M2 items (move mode, screenshot with pins, multi-select, session persistence, annotation cap) are untouched. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
+M1 feature-complete as of 2026-09-06: loader, resolve core, export, route handler, `redlining init`, the overlay (select + draw, pins, note popover, list panel, copy/save) and a Playwright e2e suite on the fixture page. README (PRD §17.3) and CI (`.github/workflows/ci.yml`: checks, production-footprint assertion, e2e, weekly next@canary job) are in place. M2 items (move mode, screenshot with pins, multi-select, session persistence, annotation cap) are untouched. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
 
 ## What Redlining is
 
@@ -36,7 +36,7 @@ pnpm monorepo: `packages/redlining/` (published as unscoped npm `redlining`) wit
 
 Build shape in `tsdown.config.ts`: `.` and `./next/route` are ESM-only with `platform: neutral`; `./next` and `./loader` are ESM + CJS (`.mjs`/`.cjs`) so `next.config` can load them either way; the CLI is ESM with no d.ts. The bundler strips `'use client'`, so the overlay entry re-adds it via `banner` — keep the overlay in its own config block for that reason. React is never bundled.
 
-TypeScript 5.9 strict (not 7: typescript-eslint caps below 6.1), Vitest 5 in node environment, ESLint 10 flat + typescript-eslint + react-hooks + prettier-compat, Changesets (config written by hand; `changeset init` needs a TTY). Not yet set up: CI. Playwright lives at the root (`playwright.config.ts`, `e2e/`); Chromium was installed with `pnpm exec playwright install chromium`.
+TypeScript 5.9 strict (not 7: typescript-eslint caps below 6.1), Vitest 5 in node environment, ESLint 10 flat + typescript-eslint + react-hooks + prettier-compat, Changesets (config written by hand; `changeset init` needs a TTY). Playwright lives at the root (`playwright.config.ts`, `e2e/`); Chromium was installed with `pnpm exec playwright install chromium`.
 
 ## Overlay conventions
 
