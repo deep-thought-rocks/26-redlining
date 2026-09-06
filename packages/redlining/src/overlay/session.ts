@@ -15,6 +15,7 @@ export interface Entry extends Annotation {
 }
 
 export type SessionAction =
+  | { type: 'load'; entries: Entry[] }
   | { type: 'add'; draft: Draft; action: Action; note: string; id: string; createdAt: string }
   | { type: 'note'; id: string; note: string }
   | { type: 'remove'; id: string }
@@ -22,6 +23,8 @@ export type SessionAction =
 
 export function reduce(entries: Entry[], a: SessionAction): Entry[] {
   switch (a.type) {
+    case 'load':
+      return reindex(a.entries)
     case 'add': {
       const { draft } = a
       const entry: Entry = {

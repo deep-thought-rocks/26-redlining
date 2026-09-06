@@ -103,3 +103,24 @@ test('Escape unwinds popover, panel and overlay; the host page is untouched when
   await page.locator('[data-spike="18"]').click()
   await expect(page.locator('[data-spike="17"]')).toHaveValue('1')
 })
+
+test('the session survives a reload and can be cleared', async ({ page }) => {
+  await openOverlay(page)
+  await page.locator('[data-spike="9"]').click()
+  await page.getByTestId('rl-note').fill('Shorter copy.')
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+
+  await page.reload()
+  await openOverlay(page)
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  await page.keyboard.press('l')
+  await expect(page.getByTestId('rl-panel')).toContainText('Shorter copy.')
+
+  page.once('dialog', (d) => d.accept())
+  await page.getByRole('button', { name: 'Clear session' }).click()
+  await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+  await page.reload()
+  await openOverlay(page)
+  await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+})

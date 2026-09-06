@@ -9,23 +9,38 @@ import { SelectLayer } from './SelectLayer'
 import { Toolbar, type Position, type Tool } from './Toolbar'
 import { isEditable, matchesHotkey } from './hotkey'
 import { reduce, toSession, type Draft } from './session'
+import { loadEntries, saveEntries } from './storage'
+
+/** PRD §7.6: larger batches degrade agent output. */
+const WARN_AT = 10
 
 export interface AppProps {
   host: HTMLElement
   endpoint: string
   hotkey: string
   position: Position
+  maxAnnotations: number
 }
 
-export function App({ host, endpoint, hotkey, position }: AppProps) {
+export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppProps) {
   const [active, setActive] = useState(false)
   const [tool, setTool] = useState<Tool>('select')
   const [entries, dispatch] = useReducer(reduce, [])
+  const [loaded, setLoaded] = useState(false)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [panel, setPanel] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   const notify = useCallback((message: string) => setToast(message), [])
+
+  // Session persistence per route (PRD §6): restored on mount, saved on change.
+  useEffect(() => {
+    dispatch({ type: 'load', entries: loadEntries(window.localStorage, window.location.pathname) })
+    setLoaded(true)
+  }, [])
+  useEffect(() => {
+    if (loaded) saveEntries(window.localStorage, window.location.pathname, entries)
+  }, [entries, loaded])
   useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(null), 3000)
@@ -100,8 +115,15 @@ export function App({ host, endpoint, hotkey, position }: AppProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [active, draft, panel, hotkey, toggle, copy, send])
 
+  const full = entries.length >= maxAnnotations
+  const fullMessage = `Session is full (${maxAnnotations}). Save it and start a new one.`
+
   const saveDraft = (action: Action, note: string) => {
     if (!draft) return
+    if (full) {
+      notify(fullMessage)
+      return
+    }
     dispatch({
       type: 'add',
       draft,
@@ -111,16 +133,24 @@ export function App({ host, endpoint, hotkey, position }: AppProps) {
       createdAt: new Date().toISOString(),
     })
     setDraft(null)
+    if (entries.length + 1 === WARN_AT)
+      notify(`${WARN_AT} annotations — smaller batches land better. Consider saving.`)
   }
+
+  const pick = useCallback(
+    (d: Draft) => {
+      if (full) notify(fullMessage)
+      else setDraft(d)
+    },
+    [full, fullMessage, notify],
+  )
 
   return (
     <>
       <div className="rl-layer">
         {active ? <Pins entries={entries} /> : null}
-        {active && !draft && tool === 'select' ? (
-          <SelectLayer host={host} onPick={setDraft} />
-        ) : null}
-        {active && !draft && tool === 'draw' ? <DrawLayer host={host} onDraw={setDraft} /> : null}
+        {active && !draft && tool === 'select' ? <SelectLayer host={host} onPick={pick} /> : null}
+        {active && !draft && tool === 'draw' ? <DrawLayer host={host} onDraw={pick} /> : null}
         {draft ? (
           <NotePopover draft={draft} onSave={saveDraft} onCancel={() => setDraft(null)} />
         ) : null}

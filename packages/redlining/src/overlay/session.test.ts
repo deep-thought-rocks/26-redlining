@@ -44,6 +44,20 @@ describe('session reducer', () => {
     expect(reduce(s, { type: 'clear' })).toEqual([])
   })
 
+  test('load replaces the session and normalises indexes', () => {
+    const loaded = reduce(add([], 'old'), {
+      type: 'load',
+      entries: [
+        { ...add([], 'a')[0]!, index: 7 },
+        { ...add([], 'b')[0]!, index: 9 },
+      ],
+    })
+    expect(loaded.map((e) => [e.id, e.index])).toEqual([
+      ['a', 1],
+      ['b', 2],
+    ])
+  })
+
   test('toSession strips the element handle', () => {
     const s = add([], 'a')
     const session = toSession(s, { pathname: '/p', href: 'http://x/p' }, { w: 1, h: 2 })

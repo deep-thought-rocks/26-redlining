@@ -18,6 +18,8 @@ export interface RedliningProps {
   theme?: 'light' | 'dark'
   /** Defaults to `NODE_ENV === 'development'`; the overlay renders nothing otherwise. */
   enabled?: boolean
+  /** Annotations per session before new ones are refused. Default 15. */
+  maxAnnotations?: number
 }
 
 const HOST_STYLE: CSSProperties = {
@@ -46,6 +48,7 @@ function Host({
   hotkey = 'Alt+R',
   position = 'bottom-right',
   theme = 'light',
+  maxAnnotations = 15,
 }: RedliningProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [mount, setMount] = useState<Mount | null>(null)
@@ -64,7 +67,13 @@ function Host({
     <div ref={ref} data-redlining="" data-theme={theme} style={HOST_STYLE}>
       {mount
         ? createPortal(
-            <App host={mount.host} endpoint={endpoint} hotkey={hotkey} position={position} />,
+            <App
+              host={mount.host}
+              endpoint={endpoint}
+              hotkey={hotkey}
+              position={position}
+              maxAnnotations={maxAnnotations}
+            />,
             mount.root,
           )
         : null}
