@@ -1,0 +1,105 @@
+import { existsSync, readFileSync, rmSync } from 'node:fs'
+import path from 'node:path'
+import { expect, test, type Page } from '@playwright/test'
+
+const OUT = path.resolve('examples/next-app/.redlining')
+
+/** The overlay lives in a shadow root; Playwright pierces it with plain locators. */
+async function openOverlay(page: Page) {
+  await page.goto('/spike')
+  // The toggle is client-rendered after hydration; the hotkey listener registers with it.
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+}
+
+test.beforeEach(() => rmSync(OUT, { recursive: true, force: true }))
+
+test('the loader anchors every fixture element', async ({ page }) => {
+  await page.goto('/spike')
+  const rows = await page
+    .locator('[data-spike]')
+    .evaluateAll((els) =>
+      els.map((el) => [el.getAttribute('data-spike'), el.getAttribute('data-rl')]),
+    )
+  expect(rows).toHaveLength(20)
+  for (const [n, rl] of rows) expect(rl, `element ${n}`).toMatch(/^app\/spike\/\w+\.tsx:\d+:\d+$/)
+})
+
+test('select mode: hover badge, click, note, pin, list, save to project', async ({ page }) => {
+  await openOverlay(page)
+
+  const nav = page.locator('[data-spike="4"]')
+  await nav.hover()
+  await expect(page.locator('.rl-badge')).toContainText('app/spike/page.tsx:7')
+  await nav.click()
+
+  const popover = page.getByTestId('rl-popover')
+  await expect(popover).toBeVisible()
+  await expect(popover).toContainText('app/spike/page.tsx:7')
+  await page.getByTestId('rl-note').fill('Turn this into a horizontal top nav.')
+  await page.keyboard.press('Enter')
+  await expect(popover).toBeHidden()
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+
+  await page.keyboard.press('l')
+  const panel = page.getByTestId('rl-panel')
+  await expect(panel).toContainText('Annotations (1)')
+  await expect(panel.getByTestId('rl-row')).toContainText('change')
+  await expect(panel.getByTestId('rl-row')).toContainText('Turn this into a horizontal top nav.')
+
+  await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
+  await expect(page.getByTestId('rl-toast')).toContainText('Saved')
+  const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
+  expect(md).toContain('# Redlining — /spike')
+  expect(md).toContain('## 1 · CHANGE — "DashboardReports" nav')
+  expect(md).toContain('- Anchor: `<nav>` · app/spike/page.tsx:7')
+  expect(md).toContain('- Note: Turn this into a horizontal top nav.')
+  expect(existsSync(path.join(OUT, 'annotations.json'))).toBe(true)
+})
+
+test('draw mode: a dragged box resolves its container and exports an ADD with a position', async ({
+  page,
+}) => {
+  await openOverlay(page)
+  await page.keyboard.press('d')
+  const section = page.locator('[data-spike="1"]')
+  const box = (await section.boundingBox())!
+  // Drag across the lower half of the layout section; it covers ≥ 60 % of the box.
+  await page.mouse.move(box.x + 20, box.y + box.height - 60)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width - 20, box.y + box.height - 10, { steps: 8 })
+  await page.mouse.up()
+  const popover = page.getByTestId('rl-popover')
+  await expect(popover).toContainText('Add inside')
+  await page.getByRole('button', { name: 'Table' }).click()
+  await page.getByTestId('rl-note').fill('Sortable results table.')
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  await expect(page.getByTestId('rl-toast')).toContainText('Copied')
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('## 1 · ADD — inside <section>')
+  expect(clipboard).toMatch(/- Position: (at end|after child \d+) · full width · ≈ \d+ px tall/)
+  expect(clipboard).toContain('- Note: Table: Sortable results table.')
+})
+
+test('Escape unwinds popover, panel and overlay; the host page is untouched when inactive', async ({
+  page,
+}) => {
+  await openOverlay(page)
+  await page.locator('[data-spike="8"]').click()
+  await expect(page.getByTestId('rl-popover')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('rl-popover')).toBeHidden()
+  await page.keyboard.press('l')
+  await expect(page.getByTestId('rl-panel')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('rl-panel')).toBeHidden()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeHidden()
+  // Inactive: a click reaches the page's own handler.
+  await page.locator('[data-spike="18"]').click()
+  await expect(page.locator('[data-spike="17"]')).toHaveValue('1')
+})

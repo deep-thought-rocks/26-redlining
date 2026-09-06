@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## State of the repo
 
-Early M1. The loader (`src/loader/`), `withRedlining()` and the resolve core (`src/resolve/`, `src/types.ts`) are real and tested; the overlay, route handler and CLI are still stubs with smoke tests. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
+M1 feature-complete as of 2026-09-06: loader, resolve core, export, route handler, `redlining init`, the overlay (select + draw, pins, note popover, list panel, copy/save) and a Playwright e2e suite on the fixture page. Not yet done from M1: README (PRD §17.3). M2 items (move mode, screenshot with pins, multi-select, session persistence, annotation cap) are untouched. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
 
 ## What Redlining is
 
@@ -24,6 +24,8 @@ pnpm format:check # prettier; docs/ is ignored (PRD is hand-formatted)
 pnpm --filter redlining test -- src/loader          # one test dir
 pnpm --filter redlining exec vitest run -t 'name'   # one test by name
 pnpm --filter next-app dev                          # example app; needs a prior `pnpm build`
+pnpm e2e                                            # Playwright; starts its own `next dev` on :3199, needs a prior `pnpm build`
+pnpm --filter redlining vendor-tokens               # re-vendor design tokens from the canon
 ```
 
 The example app consumes `redlining` through `workspace:*` and resolves the built `dist/`, so rebuild the package before running or typechecking the example. `next dev` regenerates `examples/next-app/AGENTS.md` and `CLAUDE.md`; commit them rather than fighting them.
@@ -34,7 +36,15 @@ pnpm monorepo: `packages/redlining/` (published as unscoped npm `redlining`) wit
 
 Build shape in `tsdown.config.ts`: `.` and `./next/route` are ESM-only with `platform: neutral`; `./next` and `./loader` are ESM + CJS (`.mjs`/`.cjs`) so `next.config` can load them either way; the CLI is ESM with no d.ts. The bundler strips `'use client'`, so the overlay entry re-adds it via `banner` — keep the overlay in its own config block for that reason. React is never bundled.
 
-TypeScript 5.9 strict (not 7: typescript-eslint caps below 6.1), Vitest 5 in node environment, ESLint 10 flat + typescript-eslint + react-hooks + prettier-compat, Changesets (config written by hand; `changeset init` needs a TTY). Not yet set up: Playwright, Tailwind in the overlay, CI. Known gap for the overlay slice: `<Redlining />` still ships ~50 bytes (`return null`) in production bundles; PRD §13 wants zero, which needs a `production` export condition pointing at an empty module.
+TypeScript 5.9 strict (not 7: typescript-eslint caps below 6.1), Vitest 5 in node environment, ESLint 10 flat + typescript-eslint + react-hooks + prettier-compat, Changesets (config written by hand; `changeset init` needs a TTY). Not yet set up: CI. Playwright lives at the root (`playwright.config.ts`, `e2e/`); Chromium was installed with `pnpm exec playwright install chromium`.
+
+## Overlay conventions
+
+- **Shadow DOM host.** `<Redlining />` renders a 0×0 absolutely positioned host with `data-theme` and portals the app into its shadow root. The host is at page origin, so `.rl-layer` children positioned in page coordinates (`pageRect`) scroll with the page; `.rl-fixed` elements (toolbar, panel, toast) are viewport-fixed. Host page pointer events are intercepted with capture-phase listeners on `document`, never with a covering layer, so `elementFromPoint` keeps working. Layouts must ignore the host (`layoutIgnoring`).
+- **Styles are plain CSS on the vendored tokens**, not Tailwind (design-system divergence D4). `tokens.generated.ts` is produced by `scripts/vendor-tokens.mjs` from the canon; never edit it by hand. Overlay rules live in `styles.ts` under the `rl-` prefix.
+- **Keyboard.** Letter hotkeys match on `event.code` (macOS Option+R types `®`). Editors inside the overlay stop propagation of Escape/Enter, because the window handler would otherwise see the same keypress after React has already committed the state change and close the overlay.
+- **Click after hover.** `SelectLayer` keeps the hover target in a ref, not only state: a click can follow a mousemove before React commits.
+- **Zero production bytes.** `package.json` exports `.` with a `production` condition → `dist/index.prod.js` (`Redlining` returns null); the component also checks `NODE_ENV`. Verified: a `next build` of the example has no overlay class names in client bundles; the floor is the `return null` stub the layout imports (~30 bytes), which only the consumer can remove.
 
 ## Design decisions that constrain code
 
