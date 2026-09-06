@@ -14,9 +14,10 @@ export default defineConfig([
     deps: { neverBundle: ['react', 'react-dom', /^react\//] },
   },
   {
+    // The route handler runs in the Node runtime: it writes files.
     entry: { 'next/route': 'src/next/route.ts' },
     format: 'esm',
-    platform: 'neutral',
+    platform: 'node',
     dts: true,
   },
   {
