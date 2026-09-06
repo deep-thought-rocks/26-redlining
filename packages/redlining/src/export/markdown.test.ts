@@ -1,0 +1,214 @@
+import { describe, expect, test } from 'vitest'
+import type { Anchor, Annotation, Session } from '../types'
+import { toJson } from './json'
+import { toMarkdown } from './markdown'
+
+const rect = { x: 0, y: 0, w: 800, h: 40 }
+function anchor(over: Partial<Anchor>): Anchor {
+  return {
+    tag: 'div',
+    owners: [],
+    selector: 'div',
+    rect,
+    resolved: 'exact',
+    file: 'app/page.tsx',
+    line: 1,
+    ...over,
+  }
+}
+function ann(
+  over: Partial<Annotation> & Pick<Annotation, 'index' | 'action' | 'anchor' | 'note'>,
+): Annotation {
+  return { id: `id${over.index}`, createdAt: '2026-09-06T12:12:00.000Z', ...over }
+}
+
+const NOW = new Date(2026, 8, 6, 14, 12)
+
+// The PRD §9.1 dashboard scenario, verbatim where the data allows it.
+const session: Session = {
+  route: '/dashboard',
+  url: 'http://localhost:3000/dashboard',
+  viewport: { w: 1440, h: 900 },
+  screenshot: 'data:image/png;base64,AAAA',
+  annotations: [
+    ann({
+      index: 1,
+      action: 'change',
+      anchor: anchor({
+        tag: 'nav',
+        file: 'app/(app)/layout.tsx',
+        line: 42,
+        owners: ['RootLayout', 'Header', 'MainNav'],
+        text: 'Dashboard · Reports · Settings',
+      }),
+      note: 'Replace the dropdown with a horizontal top nav. Same items, same order.\nActive item underlined.',
+    }),
+    ann({
+      index: 2,
+      action: 'add',
+      anchor: anchor({
+        tag: 'section',
+        file: 'app/(app)/dashboard/page.tsx',
+        line: 87,
+        owners: ['DashboardPage', 'FilterPanel'],
+        rect: { x: 0, y: 0, w: 800, h: 600 },
+      }),
+      box: { x: 0, y: 120, w: 790, h: 220, childIndex: 2 },
+      note: 'Sortable table. Columns: Name, Status, Updated. Status filter chips above it.\nReuse our existing DataTable if present.',
+    }),
+    ann({
+      index: 3,
+      action: 'remove',
+      anchor: anchor({
+        tag: 'button',
+        file: 'components/toolbar.tsx',
+        line: 31,
+        owners: ['DashboardPage', 'Toolbar'],
+        text: 'Export CSV',
+      }),
+      note: "Remove; the action moves into the new table's row menu.",
+    }),
+    ann({
+      index: 4,
+      action: 'move',
+      anchor: anchor({
+        tag: 'aside',
+        file: 'components/sidebar.tsx',
+        line: 12,
+        owners: ['DashboardPage', 'Sidebar', 'QuickStats'],
+      }),
+      target: {
+        ...anchor({
+          tag: 'section',
+          file: 'app/(app)/dashboard/page.tsx',
+          line: 60,
+          owners: ['DashboardPage', 'Main'],
+        }),
+        position: 'before',
+      },
+      note: 'Show quick stats above the main content on this page only.',
+    }),
+  ],
+}
+
+describe('toMarkdown', () => {
+  test('renders the PRD §9.1 scenario', () => {
+    expect(toMarkdown(session, { now: NOW })).toBe(
+      `# Redlining — /dashboard  (2026-09-06 14:12 · viewport 1440×900)
+
+Screenshot: .redlining/screenshot.png (pins numbered as below)
+
+## 1 · CHANGE — MainNav
+- Anchor: \`<nav>\` · app/(app)/layout.tsx:42 · owners: RootLayout › Header › MainNav
+- Text: "Dashboard · Reports · Settings"
+- Note: Replace the dropdown with a horizontal top nav. Same items, same order.
+  Active item underlined.
+
+## 2 · ADD — inside FilterPanel
+- Container: \`<section>\` · app/(app)/dashboard/page.tsx:87 · owners: DashboardPage › FilterPanel
+- Position: after child 2 · full width · ≈ 220 px tall
+- Note: Sortable table. Columns: Name, Status, Updated. Status filter chips above it.
+  Reuse our existing DataTable if present.
+
+## 3 · REMOVE — "Export CSV" button
+- Anchor: \`<button>\` · components/toolbar.tsx:31 · owners: DashboardPage › Toolbar
+- Text: "Export CSV"
+- Note: Remove; the action moves into the new table's row menu.
+
+## 4 · MOVE — QuickStats
+- From: \`<aside>\` · components/sidebar.tsx:12 · owners: DashboardPage › Sidebar › QuickStats
+- To: before \`<section>\` · app/(app)/dashboard/page.tsx:60 · owners: DashboardPage › Main
+- Note: Show quick stats above the main content on this page only.
+
+---
+Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.
+`,
+    )
+  })
+
+  test('omits the screenshot line without a screenshot, sorts by index, and titles by tag when there is no owner', () => {
+    const s: Session = {
+      ...session,
+      screenshot: undefined,
+      annotations: [
+        ann({ index: 2, action: 'change', anchor: anchor({ tag: 'p' }), note: 'two' }),
+        ann({
+          index: 1,
+          action: 'change',
+          anchor: anchor({ tag: 'h1', text: 'Hello' }),
+          note: 'one',
+        }),
+      ],
+    }
+    const md = toMarkdown(s, { now: NOW })
+    expect(md).not.toContain('Screenshot:')
+    expect(md.indexOf('## 1 · CHANGE — "Hello" h1')).toBeLessThan(md.indexOf('## 2 · CHANGE — <p>'))
+  })
+
+  test('explains the fallback rungs', () => {
+    const s: Session = {
+      ...session,
+      screenshot: undefined,
+      annotations: [
+        ann({
+          index: 1,
+          action: 'change',
+          anchor: anchor({ resolved: 'ancestor', selector: 'main > div > span', tag: 'span' }),
+          note: 'a',
+        }),
+        ann({
+          index: 2,
+          action: 'remove',
+          anchor: anchor({
+            resolved: 'selector-only',
+            file: undefined,
+            line: undefined,
+            selector: '#x > i',
+            tag: 'i',
+            text: 'hi',
+          }),
+          note: 'b',
+        }),
+      ],
+    }
+    const md = toMarkdown(s, { now: NOW })
+    expect(md).toContain(
+      '- Anchor: `<span>` · app/page.tsx:1\n- Resolved: nearest decorated ancestor; locate the child by selector `main > div > span`',
+    )
+    expect(md).toContain(
+      '- Anchor: `<i>` · unresolved\n- Text: "hi"\n- Resolved: unresolved — locate by selector `#x > i` and text',
+    )
+  })
+
+  test('describes add positions at start, at end and with a partial width', () => {
+    const base = anchor({ tag: 'ul', owners: ['List'], rect: { x: 0, y: 0, w: 1000, h: 500 } })
+    const start = ann({
+      index: 1,
+      action: 'add',
+      anchor: base,
+      box: { x: 0, y: 0, w: 400, h: 50, childIndex: 0 },
+      note: 'n',
+    })
+    const end = ann({
+      index: 2,
+      action: 'add',
+      anchor: base,
+      box: { x: 0, y: 0, w: 950, h: 50 },
+      note: 'n',
+    })
+    const md = toMarkdown(
+      { ...session, screenshot: undefined, annotations: [start, end] },
+      { now: NOW },
+    )
+    expect(md).toContain('- Position: at start · ≈ 400 px wide · ≈ 50 px tall')
+    expect(md).toContain('- Position: at end · full width · ≈ 50 px tall')
+  })
+})
+
+describe('toJson', () => {
+  test('round-trips the session and ends with a newline', () => {
+    const out = toJson(session)
+    expect(out.endsWith('\n')).toBe(true)
+    expect(JSON.parse(out)).toEqual(session)
+  })
+})
