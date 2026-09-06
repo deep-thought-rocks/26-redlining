@@ -20,6 +20,8 @@ export interface RedliningProps {
   enabled?: boolean
   /** Annotations per session before new ones are refused. Default 15. */
   maxAnnotations?: number
+  /** Include a screenshot with burned-in pins when saving. Default true. */
+  screenshot?: boolean
 }
 
 const HOST_STYLE: CSSProperties = {
@@ -49,6 +51,7 @@ function Host({
   position = 'bottom-right',
   theme = 'light',
   maxAnnotations = 15,
+  screenshot = true,
 }: RedliningProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [mount, setMount] = useState<Mount | null>(null)
@@ -73,6 +76,7 @@ function Host({
               hotkey={hotkey}
               position={position}
               maxAnnotations={maxAnnotations}
+              screenshot={screenshot}
             />,
             mount.root,
           )

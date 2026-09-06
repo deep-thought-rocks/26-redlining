@@ -10,6 +10,7 @@ import { SelectLayer } from './SelectLayer'
 import { Toolbar, type Position as Corner, type Tool } from './Toolbar'
 import { isEditable, matchesHotkey } from './hotkey'
 import { reduce, toSession, type Draft, type Position } from './session'
+import { captureScreenshot } from './screenshot'
 import { loadEntries, saveEntries } from './storage'
 
 /** PRD §7.6: larger batches degrade agent output. */
@@ -21,9 +22,17 @@ export interface AppProps {
   hotkey: string
   position: Corner
   maxAnnotations: number
+  screenshot: boolean
 }
 
-export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppProps) {
+export function App({
+  host,
+  endpoint,
+  hotkey,
+  position,
+  maxAnnotations,
+  screenshot: screenshotDefault,
+}: AppProps) {
   const [active, setActive] = useState(false)
   const [tool, setTool] = useState<Tool>('select')
   // Session persistence per route (PRD §6): restored on first render, saved on change.
@@ -37,6 +46,7 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
   /** Move mode, step one: the element to move; the next pick is its destination. */
   const [moveSource, setMoveSource] = useState<Draft | null>(null)
   const [panel, setPanel] = useState(false)
+  const [screenshot, setScreenshot] = useState(screenshotDefault)
   const [toast, setToast] = useState<string | null>(null)
 
   const notify = useCallback((message: string) => setToast(message), [])
@@ -62,10 +72,16 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
 
   const send = useCallback(async () => {
     try {
+      const payload = session()
+      if (screenshot) {
+        const shot = await captureScreenshot(entries, host)
+        if ('dataUrl' in shot) payload.screenshot = shot.dataUrl
+        else notify(`Saving without screenshot: ${shot.error}`)
+      }
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ session: session() }),
+        body: JSON.stringify({ session: payload }),
       })
       notify(
         res.ok
@@ -75,7 +91,7 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
     } catch (err) {
       notify(`Save failed: ${String(err)}`)
     }
-  }, [endpoint, session, notify])
+  }, [endpoint, session, notify, screenshot, entries, host])
 
   const clear = useCallback(() => {
     if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`))
@@ -207,11 +223,13 @@ export function App({ host, endpoint, hotkey, position, maxAnnotations }: AppPro
         tool={tool}
         count={entries.length}
         panelOpen={panel}
+        screenshot={screenshot}
         position={position}
         hotkey={hotkey}
         onToggle={toggle}
         onTool={switchTool}
         onPanel={() => setPanel((p) => !p)}
+        onScreenshot={() => setScreenshot((v) => !v)}
         onCopy={() => void copy()}
         onSend={() => void send()}
         onClear={clear}

@@ -1,5 +1,6 @@
 import {
   ArrowRightLeft,
+  Camera,
   Copy,
   ListChecks,
   MousePointerClick,
@@ -19,11 +20,13 @@ export interface ToolbarProps {
   tool: Tool
   count: number
   panelOpen: boolean
+  screenshot: boolean
   position: Position
   hotkey: string
   onToggle(): void
   onTool(tool: Tool): void
   onPanel(): void
+  onScreenshot(): void
   onCopy(): void
   onSend(): void
   onClear(): void
@@ -70,6 +73,13 @@ export function Toolbar(p: ToolbarProps) {
         {p.count > 0 ? <span className="rl-count">{p.count}</span> : null}
       </IconButton>
       <span className="rl-sep" />
+      <IconButton
+        label="Include screenshot in export"
+        pressed={p.screenshot}
+        onClick={p.onScreenshot}
+      >
+        <Camera size={18} />
+      </IconButton>
       <IconButton label="Copy prompt (⌘⇧C)" onClick={p.onCopy}>
         <Copy size={18} />
       </IconButton>

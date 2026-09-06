@@ -56,6 +56,11 @@ test('select mode: hover badge, click, note, pin, list, save to project', async 
   expect(md).toContain('- Anchor: `<nav>` · app/spike/page.tsx:7')
   expect(md).toContain('- Note: Turn this into a horizontal top nav.')
   expect(existsSync(path.join(OUT, 'annotations.json'))).toBe(true)
+  // Screenshot with burned-in pins, on by default.
+  expect(md).toContain('Screenshot: .redlining/screenshot.png (pins numbered as below)')
+  const png = readFileSync(path.join(OUT, 'screenshot.png'))
+  expect(png.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  expect(png.length).toBeGreaterThan(1000)
 })
 
 test('draw mode: a dragged box resolves its container and exports an ADD with a position', async ({
