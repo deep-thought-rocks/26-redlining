@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## State of the repo
 
-Scaffold only. Every package entry is a stub with a smoke test; no feature code exists yet. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. Next milestone: M0 spike (PRD §14).
+Scaffold only. Every package entry is a stub with a smoke test; no feature code exists yet. The PRD at `docs/redlining-prd.md` is the single source of truth for scope, data model, export format and architecture — read it before implementing anything, and treat its section numbers (§6 data model, §8 anchor resolution, §9 export format, §11 package layout) as the reference for naming and structure. M0 is done: `docs/m0-spike.md` records the anchor-resolution decision (loader is the default; `_debugStack` is not shipped in v1) and the Turbopack rule shape that works in a pnpm workspace. Next milestone: M1 (PRD §14).
 
 ## What Redlining is
 
