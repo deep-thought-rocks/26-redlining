@@ -145,7 +145,7 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
   - padding-left, padding-right: 12px → 16px
   - background-color: rgb(243, 244, 246) → rgb(37, 99, 235) (token --accent)
   - visual nudge: +8px right, −4px up — previewed with a transform; implement as spacing or alignment, never ship a transform
-- Applies at: ≤ 768px (approximate; viewport preset, not a media query)</code></pre>
+- Applies at: ≤ 768px (made in a 768px device frame)</code></pre>
         <p>
           <code>Classes</code> is the element's class list, so a value can be mapped to a utility
           class. Each change is <em>computed before → after</em>; sizes add their share of the
@@ -177,7 +177,7 @@ interface Annotation {
   target?: Anchor &amp; { position: 'before' | 'after' | 'inside' }   // move
   box?: { x: number; y: number; w: number; h: number; childIndex?: number } // add, relative to anchor.rect
   changes?: Change[]       // tweak deltas, see below
-  appliesAt?: number       // viewport preset width the annotation was made at
+  appliesAt?: number       // device-frame width the annotation was made in
   note: string
   createdAt: string        // ISO
 }

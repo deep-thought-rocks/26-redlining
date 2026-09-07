@@ -168,6 +168,35 @@ expect(stripRedlining(html)).toMatchSnapshot()</code></pre>
           </p>
         </details>
 
+        <h2 id="frame">Device frame</h2>
+        <details open>
+          <summary>The narrow view looks different from my phone</summary>
+          <p>
+            The frame is an iframe at exactly the chosen CSS width, so media queries and fixed bars
+            behave as in a browser window of that size. What it cannot reproduce is device pixel
+            ratio, touch input and the platform's own UI, so treat it as the layout check it is, not
+            a device emulator.
+          </p>
+        </details>
+        <details>
+          <summary>My page refuses to load inside the frame</summary>
+          <p>
+            A <code>frame-ancestors</code> Content-Security-Policy or an
+            <code>X-Frame-Options</code> header that forbids same-origin framing blocks it. In
+            development, allow <code>'self'</code> for those headers, or annotate at full width and
+            say the breakpoint in the note.
+          </p>
+        </details>
+        <details>
+          <summary>Annotations made in the frame do not show in the panel outside</summary>
+          <p>
+            They sync through the browser's storage event, which fires only across documents of the
+            same origin and route. Close the frame or press <kbd>L</kbd> twice to refresh the panel;
+            if the frame page has a different path (a redirect, a locale prefix), it is a different
+            session by design.
+          </p>
+        </details>
+
         <h2 id="production">Production</h2>
         <details open>
           <summary>Does any of this ship?</summary>

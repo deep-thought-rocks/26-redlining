@@ -87,6 +87,13 @@
               <td>Annotation list panel</td>
             </tr>
             <tr>
+              <td>Width select (375 / 768 / 1280)</td>
+              <td>
+                Open the page in a device frame of that width; annotations made inside sync into
+                this session
+              </td>
+            </tr>
+            <tr>
               <td>Camera button</td>
               <td>Include a screenshot with pins when saving (on by default)</td>
             </tr>
@@ -186,10 +193,13 @@
             distance between the two; it is a ruler and records nothing.
           </li>
           <li>
-            <strong>Viewport presets.</strong> The toolbar's width select constrains the page to
-            375, 768 or 1280 px. Annotations made at a preset carry <em>Applies at: ≤ 768px</em>; it
-            is a max-width on <code>&lt;html&gt;</code>, not a media query, so treat it as
-            approximate.
+            <strong>Device frame.</strong> The toolbar's width select (375, 768, 1280) opens the
+            same page in an iframe of that width over the current one. It is a real viewport: media
+            queries fire, fixed bars and bottom tab bars behave as on a phone. The overlay inside
+            the frame opens by itself and shows a width badge; annotate there as usual, the notes
+            land in the same session, and each carries
+            <em>Applies at: ≤ 375px (made in a 375px device frame)</em>. Close the frame with the ×
+            or by choosing Full.
           </li>
           <li>
             <strong>Before/after.</strong> With the camera on, the second toggle also saves
