@@ -1,5 +1,11 @@
 # redlining
 
+## 0.2.0
+
+### Minor Changes
+
+- Anchors carry a **usage site** (`context`): the nearest decorated ancestor from another file and the branch's position among its children. The Markdown prints it as `instance 2 of 3 in `<section>` · app/page.tsx:41`, and the `To` line of a move adds the target's text, so instances of one reusable component are no longer ambiguous. The list panel rows expand to the full anchor, owners, usage site, target or box, and the complete note.
+
 ## 0.1.1
 
 ### Patch Changes
