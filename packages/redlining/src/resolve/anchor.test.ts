@@ -59,6 +59,28 @@ describe('anchorFor', () => {
     expect(a.text).toBeUndefined()
   })
 
+  test('context: the nearest decorated ancestor from another file, with the branch index', () => {
+    document.body.innerHTML = `
+      <section data-rl="app/page.tsx:10">
+        <h2 data-rl="app/page.tsx:11">Training</h2>
+        <div data-rl="components/card.tsx:33"><b data-rl="components/card.tsx:34">A</b></div>
+        <div data-rl="components/card.tsx:33"><b data-rl="components/card.tsx:34">B</b></div>
+      </section>`
+    const [, second] = Array.from(document.querySelectorAll('b'))
+    const a = anchorFor(second!, layout)
+    expect(a.file).toBe('components/card.tsx')
+    expect(a.context).toEqual({
+      file: 'app/page.tsx',
+      line: 10,
+      column: undefined,
+      tag: 'section',
+      index: 3,
+      count: 3,
+    })
+    // Same-file ancestors are skipped; nothing from another file means no context.
+    expect(anchorFor(document.querySelector('h2')!, layout).context).toBeUndefined()
+  })
+
   test('text is whitespace-collapsed and capped at 80 characters with an ellipsis', () => {
     document.body.innerHTML = `<p data-rl="a.tsx:1">${'word '.repeat(30)}</p>`
     const a = anchorFor(document.querySelector('p')!, layout)

@@ -1,4 +1,4 @@
-export { anchorFor, parseRl } from './anchor'
+export { anchorFor, contextFor, parseRl } from './anchor'
 export type { RlLocation } from './anchor'
 export { coverage, resolveContainer } from './container'
 export type { Placement } from './container'

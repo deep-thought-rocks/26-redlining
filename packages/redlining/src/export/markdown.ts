@@ -46,7 +46,7 @@ function annotationBlock(a: Annotation): string[] {
       break
     case 'move':
       out.push(`- From: ${location(a.anchor)}`)
-      if (a.target) out.push(`- To: ${a.target.position} ${location(a.target)}`)
+      if (a.target) out.push(`- To: ${a.target.position} ${location(a.target, true)}`)
       break
     default:
       if (a.anchors && a.anchors.length > 1) {
@@ -74,11 +74,14 @@ function title(a: Annotation): string {
   return (owner ?? short ?? `<${anchor.tag}>`) + more
 }
 
-function location(anchor: Anchor): string {
+function location(anchor: Anchor, withText = false): string {
   const parts = [`\`<${anchor.tag}>\``]
   if (anchor.file) parts.push(`${anchor.file}:${anchor.line}`)
   else parts.push('unresolved')
   if (anchor.owners.length) parts.push(`owners: ${anchor.owners.join(' › ')}`)
+  const c = anchor.context
+  if (c) parts.push(`instance ${c.index} of ${c.count} in \`<${c.tag}>\` · ${c.file}:${c.line}`)
+  if (withText && anchor.text) parts.push(`text: "${anchor.text}"`)
   return parts.join(' · ')
 }
 

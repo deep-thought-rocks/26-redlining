@@ -28,6 +28,22 @@ export interface Anchor {
   /** Viewport px at capture time. */
   rect: Rect
   resolved: Resolved
+  /**
+   * Usage site: the nearest decorated ancestor in a *different* file, and the
+   * position of this element's branch among its children. Tells instances of a
+   * reusable component apart (three cards from card.tsx:33 on one page).
+   */
+  context?: AnchorContext
+}
+
+export interface AnchorContext {
+  file: string
+  line: number
+  column?: number
+  tag: string
+  /** 1-based position among the ancestor's element children. */
+  index: number
+  count: number
 }
 
 export interface Annotation {

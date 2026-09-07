@@ -1,4 +1,4 @@
-import type { Anchor } from '../types'
+import type { Anchor, AnchorContext } from '../types'
 import { ownerChain } from './fiber'
 import type { Layout } from './layout'
 import { cssPath } from './selector'
@@ -29,11 +29,38 @@ export function anchorFor(el: Element, layout: Layout): Anchor {
   }
   const own = el.getAttribute('data-rl')
   const ownLoc = own ? parseRl(own) : null
-  if (ownLoc) return { ...base, ...ownLoc, resolved: 'exact' }
+  if (ownLoc) return withContext({ ...base, ...ownLoc, resolved: 'exact' }, el)
   const ancestor = el.parentElement?.closest('[data-rl]') ?? null
   const ancestorLoc = ancestor ? parseRl(ancestor.getAttribute('data-rl')!) : null
-  if (ancestorLoc) return { ...base, ...ancestorLoc, resolved: 'ancestor' }
+  if (ancestorLoc) return withContext({ ...base, ...ancestorLoc, resolved: 'ancestor' }, el)
   return { ...base, resolved: 'selector-only' }
+}
+
+function withContext(anchor: Anchor, el: Element): Anchor {
+  const context = contextFor(el, anchor.file!)
+  return context ? { ...anchor, context } : anchor
+}
+
+/** The nearest decorated ancestor from another file, with this branch's index among its children. */
+export function contextFor(el: Element, file: string): AnchorContext | undefined {
+  let child: Element = el
+  let parent = el.parentElement
+  while (parent) {
+    const rl = parent.getAttribute('data-rl')
+    const loc = rl ? parseRl(rl) : null
+    if (loc && loc.file !== file) {
+      const children = Array.from(parent.children)
+      return {
+        ...loc,
+        tag: parent.tagName.toLowerCase(),
+        index: children.indexOf(child) + 1,
+        count: children.length,
+      }
+    }
+    child = parent
+    parent = parent.parentElement
+  }
+  return undefined
 }
 
 function textOf(el: Element): string | undefined {

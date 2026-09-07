@@ -201,6 +201,40 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     )
   })
 
+  test('names the usage site for reusable components, and the target text of a move', () => {
+    const context = { file: 'app/heute/page.tsx', line: 41, tag: 'section', index: 1, count: 3 }
+    const from = anchor({
+      file: 'src/components/ui/card.tsx',
+      line: 33,
+      text: 'Kettlebell Ganzkörper',
+      context,
+    })
+    const to = {
+      ...anchor({
+        file: 'src/components/ui/card.tsx',
+        line: 33,
+        text: '0 Tage Serie',
+        context: { ...context, line: 22, index: 1, count: 1 },
+      }),
+      position: 'before' as const,
+    }
+    const md = toMarkdown(
+      {
+        ...session,
+        screenshot: undefined,
+        annotations: [ann({ index: 1, action: 'move', anchor: from, target: to, note: 'n' })],
+      },
+      { now: NOW },
+    )
+    expect(md).toContain(
+      '- From: `<div>` · src/components/ui/card.tsx:33 · instance 1 of 3 in `<section>` · app/heute/page.tsx:41',
+    )
+    expect(md).toContain(
+      '- To: before `<div>` · src/components/ui/card.tsx:33 · instance 1 of 1 in `<section>` · app/heute/page.tsx:22 · text: "0 Tage Serie"',
+    )
+    expect(md).toContain('- Text: "Kettlebell Ganzkörper"')
+  })
+
   test('lists every anchor of a multi-select annotation', () => {
     const a1 = anchor({ tag: 'article', file: 'app/a.tsx', line: 3, owners: ['Grid', 'Card'] })
     const a2 = anchor({ tag: 'article', file: 'app/a.tsx', line: 9, owners: ['Grid', 'Card'] })

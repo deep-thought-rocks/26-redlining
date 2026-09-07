@@ -108,9 +108,21 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
         </table>
         <p>
           Every location is <code>`&lt;tag&gt;` · file:line · owners: A › B › C</code>; the owners
-          part is omitted for server-only subtrees. A multi-select annotation replaces
-          <code>Anchor</code> with a numbered <code>Anchors:</code> list and suffixes the title with
-          <code>(+N)</code>. Fallback rungs add a <code>Resolved:</code> line, for example
+          part is omitted for server-only subtrees. When the element comes from a reusable
+          component, the location also names its <strong>usage site</strong>:
+          <code>instance 2 of 3 in `&lt;section&gt;` · app/page.tsx:41</code> is the nearest
+          decorated ancestor from another file and this branch's position among its children, which
+          is how three cards rendered by one <code>card.tsx:33</code> are told apart. The
+          <code>To</code> line of a move adds the target's text for the same reason. When the
+          element comes from a reusable component, the location also names its
+          <strong>usage site</strong>:
+          <code>instance 2 of 3 in `&lt;section&gt;` · app/page.tsx:41</code> is the nearest
+          decorated ancestor from another file and this branch's position among its children, which
+          is how three cards rendered by one <code>card.tsx:33</code> are told apart. The
+          <code>To</code> line of a move adds the target's text for the same reason. A multi-select
+          annotation replaces <code>Anchor</code> with a numbered <code>Anchors:</code> list and
+          suffixes the title with <code>(+N)</code>. Fallback rungs add a
+          <code>Resolved:</code> line, for example
           <em>nearest decorated ancestor; locate the child by selector `main &gt; div &gt; span`</em
           >, or the location itself reads <em>unresolved</em>.
         </p>

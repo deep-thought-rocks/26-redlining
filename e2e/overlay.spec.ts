@@ -64,7 +64,10 @@ test('select mode: hover badge, click, note, pin, list, save to project', async 
   const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
   expect(md).toContain('# Redlining — /spike')
   expect(md).toContain('## 1 · CHANGE — "DashboardReports" nav')
-  expect(md).toContain(`- Anchor: \`<nav>\` · ${at['4']}`)
+  // The nav lives in page.tsx; its usage site is the layout's <section>, where <main> is the 2nd of 2 children.
+  expect(md).toContain(
+    `- Anchor: \`<nav>\` · ${at['4']} · instance 2 of 2 in \`<section>\` · ${at['1']}`,
+  )
   expect(md).toContain('- Note: Turn this into a horizontal top nav.')
   expect(existsSync(path.join(OUT, 'annotations.json'))).toBe(true)
   // Screenshot with burned-in pins, on by default.
@@ -182,7 +185,9 @@ test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · CHANGE — "Dashboard" a (+1)')
-  expect(clipboard).toContain(`- Anchors:\n  1. \`<a>\` · ${at['5']}\n  2. \`<a>\` · ${at['6']}`)
+  expect(clipboard).toContain('- Anchors:\n')
+  expect(clipboard).toContain(`  1. \`<a>\` · ${at['5']}`)
+  expect(clipboard).toContain(`  2. \`<a>\` · ${at['6']}`)
 })
 
 test('dashboard: the owner chain names client components and the anchor points into components/', async ({
@@ -200,8 +205,24 @@ test('dashboard: the owner chain names client components and the anchor points i
   await exportButton.click()
   await expect(page.getByTestId('rl-popover')).toContainText('Toolbar')
   await page.getByRole('button', { name: 'Remove' }).click()
-  await page.getByTestId('rl-note').fill('Move into the row menu.')
+  await page.getByTestId('rl-note').fill('Move into the row menu. '.repeat(8).trim())
   await page.keyboard.press('Enter')
+
+  // The list row expands to the full anchor, owners, usage site and note.
+  await page.keyboard.press('l')
+  const row = page.getByTestId('rl-row')
+  await expect(row.locator('.rl-row-note--clamp')).toBeVisible()
+  await expect(page.getByTestId('rl-row-details')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Expand annotation 1' }).click()
+  const details = page.getByTestId('rl-row-details')
+  await expect(details).toContainText('components/toolbar.tsx:')
+  await expect(details).toContainText('owners: Toolbar')
+  await expect(details).toContainText('instance')
+  await expect(details).toContainText('“Export CSV”')
+  await expect(row.locator('.rl-row-note--clamp')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Collapse annotation 1' }).click()
+  await expect(page.getByTestId('rl-row-details')).toHaveCount(0)
+  await page.keyboard.press('l')
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · REMOVE — "Export CSV" button')

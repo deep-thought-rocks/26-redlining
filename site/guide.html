@@ -139,8 +139,10 @@
 
         <h2 id="list">List panel</h2>
         <p>
-          <kbd>L</kbd> opens a panel on the right with every annotation: number, action, owner
-          chain, file and note. Click a note to edit it inline (<kbd>⏎</kbd> saves,
+          <kbd>L</kbd> opens a panel on the right with every annotation: number, action, component
+          and file, and the note clamped to two lines. The chevron expands a row to the full anchor
+          (file and line, owner chain, usage site, element text), the target of a move or the box of
+          an add, and the complete note. Click the note to edit it inline (<kbd>⏎</kbd> saves,
           <kbd>Esc</kbd> cancels); the × deletes and renumbers the rest. The toolbar moves aside
           while the panel is open.
         </p>
@@ -197,6 +199,13 @@
             </tr>
           </tbody>
         </table>
+        <p>
+          Anchors from a reusable component also carry their <em>usage site</em>: the nearest
+          decorated ancestor in another file and the branch's position among its children, so
+          "instance 2 of 3 in <code>&lt;section&gt;</code> · app/page.tsx:41" tells the second card
+          apart from the first and third even though all three are written at
+          <code>card.tsx:33</code>.
+        </p>
         <p>
           Components are never decorated, only host elements like <code>&lt;nav&gt;</code> and
           <code>&lt;button&gt;</code>: an unknown prop on your components would leak into prop
