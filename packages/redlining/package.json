@@ -1,12 +1,33 @@
 {
   "name": "redlining",
-  "type": "module",
   "version": "0.1.0",
   "description": "Figma-style comments on your running Next.js app, exported as a file-anchored spec for Claude Code.",
+  "keywords": [
+    "nextjs",
+    "vite",
+    "react",
+    "claude-code",
+    "annotations",
+    "dev-tools"
+  ],
   "license": "MIT",
+  "homepage": "https://frankgoeltl.github.io/26-redlining/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frankgoeltl/26-redlining.git",
+    "directory": "packages/redlining"
+  },
+  "bugs": "https://github.com/frankgoeltl/26-redlining/issues",
+  "type": "module",
   "sideEffects": false,
+  "engines": {
+    "node": ">=22.18"
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "bin": {
     "redlining": "./dist/cli.mjs"
@@ -57,15 +78,25 @@
       "default": "./dist/vite.mjs"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "vendor-tokens": "node scripts/vendor-tokens.mjs"
+    "vendor-tokens": "node scripts/vendor-tokens.mjs",
+    "prepublishOnly": "pnpm build && cp ../../README.md ../../LICENSE .",
+    "postpublish": "rm -f README.md LICENSE"
   },
   "peerDependencies": {
     "next": ">=16",
     "react": ">=19"
+  },
+  "dependencies": {
+    "@babel/parser": "^8.0.4",
+    "html-to-image": "^1.11.13",
+    "lucide-react": "^1.41.0"
   },
   "devDependencies": {
     "@babel/types": "^8.0.4",
@@ -80,18 +111,5 @@
     "tsdown": "^0.23.0",
     "typescript": "^5.9.3",
     "vitest": "^5.0.0"
-  },
-  "dependencies": {
-    "@babel/parser": "^8.0.4",
-    "html-to-image": "^1.11.13",
-    "lucide-react": "^1.41.0"
-  },
-  "keywords": [
-    "nextjs",
-    "vite",
-    "react",
-    "claude-code",
-    "annotations",
-    "dev-tools"
-  ]
+  }
 }
