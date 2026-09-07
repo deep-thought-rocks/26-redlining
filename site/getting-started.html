@@ -26,7 +26,8 @@
     <div class="wrap layout">
       <aside class="toc">
         <h4>On this page</h4>
-        <a href="#install">Install</a><a href="#next">Next.js setup</a><a href="#vite">Vite setup</a
+        <a href="#install">Install</a><a href="#agent">Set up with an agent</a
+        ><a href="#next">Next.js setup</a><a href="#vite">Vite setup</a
         ><a href="#first">Your first session</a><a href="#claude">Applying with Claude Code</a
         ><a href="#options">Options</a>
       </aside>
@@ -57,6 +58,48 @@ npx redlining init</code></pre>
         </ul>
         <p>
           If there is no <code>app/</code> directory it prints what to create instead of guessing.
+        </p>
+
+        <h2 id="agent">Set up with an agent</h2>
+        <p>
+          Paste this into Claude Code (or any coding agent) inside the repository. It installs,
+          wires, initialises and verifies Redlining, and reports back without committing.
+        </p>
+        <div class="prompt">
+          <div class="prompt-bar">
+            <span>Setup prompt</span
+            ><button type="button" class="copy" data-copy="setup-prompt">Copy</button>
+          </div>
+          <pre
+            id="setup-prompt"
+          ><code>Set up Redlining in this repository. Redlining is a development-only overlay for Next.js (and Vite + React) that lets me annotate the running app; the annotations become a file-anchored spec you apply with the /redline command. Do exactly the steps below, verify, and report. Do not commit.
+
+1. Detect the setup. Look for next.config.* or vite.config.*, and for the lockfile to learn the package manager (pnpm-lock.yaml, yarn.lock, package-lock.json, bun.lockb). Use that package manager for everything; never switch it.
+
+2. Install: add `redlining` as a dev dependency (e.g. `pnpm add -D redlining`). If the registry does not have the package, stop and tell me instead of improvising.
+
+3. Wire it in.
+   Next.js (16 or newer, React 19):
+   - In next.config.*, wrap the exported config with `withRedlining` from 'redlining/next'. Preserve everything already there; if the config is a function, pass the function to withRedlining unchanged.
+   - In the ROOT layout (app/layout.tsx or src/app/layout.tsx, not a nested layout), import { Redlining } from 'redlining' and render &lt;Redlining /&gt; as the last child of &lt;body&gt;.
+   Vite + React:
+   - In vite.config.*, add `redlining()` from 'redlining/vite' as the first plugin.
+   - Render &lt;Redlining /&gt; once in the root component.
+
+4. Run `npx redlining init`. It writes app/api/redlining/route.ts (or src/app/...), a `.redlining/` line in .gitignore, and .claude/commands/redline.md, and skips anything that already exists. If it reports that there is no app/ directory (Vite, Pages Router), do not invent a route; the overlay's "Copy prompt" works without one.
+
+5. If the components that should be annotatable live outside app/, components/ and src/, pass the directories as `{ include: [...] }` in the second argument of withRedlining (or redlining()).
+
+6. Verify, then stop the server:
+   - Start the dev server, fetch one page, and confirm the HTML contains `data-rl="…"` attributes on host elements such as &lt;nav&gt; or &lt;button&gt;.
+   - Run the production build and confirm its output contains no `data-rl` attribute.
+   - Next.js only: POST to /api/redlining with body {"session":{"route":"/","url":"http://localhost:3000/","viewport":{"w":1,"h":1},"annotations":[]}} while the dev server runs; expect 200 and .redlining/annotations.md to appear. Delete .redlining/ afterwards.
+
+7. Report: the files you changed, the include list in effect, how to open the overlay (Alt+R in the running app), and anything you could not verify and why.</code></pre>
+        </div>
+        <p>
+          Afterwards, press <kbd>Alt</kbd>+<kbd>R</kbd> in the running app, annotate, save, and run
+          <code>/redline</code>.
         </p>
 
         <h2 id="next">Next.js setup</h2>
@@ -188,5 +231,26 @@ export const POST = createHandler({ outDir: '.redlining', maxBytes: 8 * 1024 * 1
         that changes your codebase.
       </div>
     </footer>
+    <script>
+      document.querySelectorAll('button.copy').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const source = document.getElementById(button.dataset.copy)
+          const text = source.textContent
+          try {
+            await navigator.clipboard.writeText(text)
+            button.textContent = 'Copied'
+          } catch {
+            // No clipboard permission: select the text so ⌘C / Ctrl+C works.
+            const range = document.createRange()
+            range.selectNodeContents(source)
+            const selection = window.getSelection()
+            selection.removeAllRanges()
+            selection.addRange(range)
+            button.textContent = 'Selected — press ⌘C'
+          }
+          setTimeout(() => (button.textContent = 'Copy'), 2500)
+        })
+      })
+    </script>
   </body>
 </html>
