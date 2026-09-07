@@ -124,6 +124,14 @@ test('Escape unwinds popover, panel and overlay; the host page is untouched when
   await expect(page.getByTestId('rl-panel')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('rl-panel')).toBeHidden()
+  // The toolbar can be moved to another corner; the choice survives a reload.
+  await expect(page.getByTestId('rl-toolbar')).toHaveAttribute('data-pos', 'bottom-right')
+  await page.getByRole('button', { name: 'Move toolbar to another corner' }).click()
+  await expect(page.getByTestId('rl-toolbar')).toHaveAttribute('data-pos', 'bottom-left')
+  await page.reload()
+  await expect(page.getByTestId('rl-toolbar')).toHaveAttribute('data-pos', 'bottom-left')
+  await page.evaluate(() => localStorage.removeItem('redlining:position'))
+  await page.keyboard.press('Alt+r')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeHidden()
   // Inactive: a click reaches the page's own handler.

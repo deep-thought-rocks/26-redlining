@@ -17,6 +17,9 @@ import { captureScreenshot } from './screenshot'
 import { reduce, toSession, type Draft, type Entry, type Position } from './session'
 import { loadEntries, saveEntries, storageKey } from './storage'
 
+const CORNERS: Corner[] = ['bottom-right', 'bottom-left', 'top-left', 'top-right']
+const CORNER_KEY = 'redlining:position'
+
 /** Restores an entry's element when it carried a tweak preview; the handle may be gone after a reload. */
 function resetEntry(e: Entry): void {
   if (!e.changes?.length) return
@@ -83,6 +86,26 @@ export function App({
   const [screenshot, setScreenshot] = useState(screenshotDefault)
   const [beforeAfter, setBeforeAfter] = useState(false)
   const [viewport, setViewport] = useState<number | null>(null)
+  // The corner is remembered per browser; the prop is the default.
+  const [corner, setCorner] = useState<Corner>(() => {
+    try {
+      const saved = window.localStorage.getItem(CORNER_KEY) as Corner | null
+      return saved && CORNERS.includes(saved) ? saved : position
+    } catch {
+      return position
+    }
+  })
+  const nextCorner = useCallback(() => {
+    setCorner((c) => {
+      const next = CORNERS[(CORNERS.indexOf(c) + 1) % CORNERS.length]!
+      try {
+        window.localStorage.setItem(CORNER_KEY, next)
+      } catch {
+        // storage unavailable: the choice just does not persist
+      }
+      return next
+    })
+  }, [])
   const [toast, setToast] = useState<string | null>(null)
 
   const notify = useCallback((message: string) => setToast(message), [])
@@ -401,7 +424,7 @@ export function App({
         beforeAfter={beforeAfter}
         viewport={framed ? null : viewport}
         framed={framed}
-        position={position}
+        position={corner}
         hotkey={hotkey}
         onToggle={toggle}
         onTool={switchTool}
@@ -409,6 +432,7 @@ export function App({
         onScreenshot={() => setScreenshot((v) => !v)}
         onBeforeAfter={() => setBeforeAfter((v) => !v)}
         onViewport={setViewport}
+        onCorner={nextCorner}
         onCopy={() => void copy()}
         onSend={() => void send()}
         onClear={clear}

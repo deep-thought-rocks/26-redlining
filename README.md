@@ -80,17 +80,19 @@ Prefer to have Claude Code do the setup? Paste the prompt from the docs' [Set up
 
 ## Overlay
 
-| Key                                               | Action                                                                                 |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `Alt+R`                                           | Toggle the overlay (`hotkey` option)                                                   |
-| `S` / `D` / `M` / `T`                             | Select / Draw / Move / Tweak mode                                                      |
-| `[` / `]` or `⌥` + scroll                         | Walk the selection up / down the ancestor chain                                        |
-| `⇧` + click                                       | Add another element to the open note (one note, several anchors)                       |
-| `L`                                               | Annotation list                                                                        |
-| Tweak: handles, `⌥` drag, arrows, `⌘Z`, `⌥` hover | Resize, spacing, nudge, undo, measure; the export lists every change as before → after |
-| `⌘⇧C`                                             | Copy the prompt to the clipboard                                                       |
-| `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)       |
-| `Esc`                                             | Close popover → panel → overlay                                                        |
+| Key                                               | Action                                                                                          |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `Alt+R`                                           | Toggle the overlay (`hotkey` option)                                                            |
+| `S` / `D` / `M` / `T`                             | Select / Draw / Move / Tweak mode                                                               |
+| `[` / `]` or `⌥` + scroll                         | Walk the selection up / down the ancestor chain                                                 |
+| `⇧` + click                                       | Add another element to the open note (one note, several anchors)                                |
+| `L`                                               | Annotation list                                                                                 |
+| Tweak: handles, `⌥` drag, arrows, `⌘Z`, `⌥` hover | Resize, spacing, nudge, undo, measure; the export lists every change as before → after          |
+| Width select (375 / 768 / 1280)                   | Open the page in a real narrow viewport (an iframe); annotations made inside carry `Applies at` |
+| Move button                                       | Cycle the toolbar through the four corners (remembered)                                         |
+| `⌘⇧C`                                             | Copy the prompt to the clipboard                                                                |
+| `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)                |
+| `Esc`                                             | Close popover → panel → overlay                                                                 |
 
 ## Options
 

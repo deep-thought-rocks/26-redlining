@@ -4,6 +4,7 @@ import {
   Copy,
   Images,
   ListChecks,
+  Move,
   MousePointerClick,
   PenLine,
   Send,
@@ -35,6 +36,8 @@ export interface ToolbarProps {
   onScreenshot(): void
   onBeforeAfter(): void
   onViewport(width: number | null): void
+  /** Move the toolbar (and the pen button) to the next corner. */
+  onCorner(): void
   onCopy(): void
   onSend(): void
   onClear(): void
@@ -129,6 +132,9 @@ export function Toolbar(p: ToolbarProps) {
         <Trash2 size={18} />
       </IconButton>
       <span className="rl-sep" />
+      <IconButton label="Move toolbar to another corner" onClick={p.onCorner}>
+        <Move size={18} />
+      </IconButton>
       <IconButton label="Close (Esc)" onClick={p.onToggle}>
         <X size={18} />
       </IconButton>
