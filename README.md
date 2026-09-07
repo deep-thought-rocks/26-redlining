@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-![The Redlining overlay: a numbered pin on a nav element and a note popover anchored to a table cell, showing app/spike/page.tsx:21](docs/images/overlay.png)
+![Redlining in use: open the overlay, click the nav and write a note, drag a box and write a note, open the list, save to the project](docs/images/overlay.gif)
 
 Press **Alt+R** in the running app. Click an element or drag a box, write a note, and press **Save**. Then, in Claude Code:
 
