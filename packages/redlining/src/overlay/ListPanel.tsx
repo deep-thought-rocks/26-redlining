@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import { useState } from 'react'
+import { describe } from '../export/changes'
 import type { Anchor } from '../types'
 import type { Entry } from './session'
 
@@ -53,7 +54,8 @@ export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps
                 >
                   {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   <span className="rl-row-meta">
-                    <b>{e.action}</b> · {short(e.anchor)}
+                    <b>{e.action}</b>
+                    {e.changes?.length ? ` · ≈ ${e.changes.length}` : ''} · {short(e.anchor)}
                   </span>
                 </button>
                 {open ? (
@@ -69,6 +71,18 @@ export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps
                     ))}
                     {e.target ? (
                       <Detail label={`To (${e.target.position})`} anchor={e.target} />
+                    ) : null}
+                    {e.changes?.length ? (
+                      <>
+                        <dt>Changes</dt>
+                        <dd>
+                          <ul className="rl-changes">
+                            {e.changes.map((c, i) => (
+                              <li key={i}>{describe(c)}</li>
+                            ))}
+                          </ul>
+                        </dd>
+                      </>
                     ) : null}
                     {e.box ? (
                       <>

@@ -228,3 +228,77 @@ test('dashboard: the owner chain names client components and the anchor points i
   expect(clipboard).toContain('## 1 · REMOVE — "Export CSV" button')
   expect(clipboard).toMatch(/- Anchor: `<button>` · components\/toolbar\.tsx:\d+ · owners: Toolbar/)
 })
+
+test('tweak mode: steppers and text edit preview live, export deltas with classes, and survive a reload', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('t')
+  // A structural locator: the accessible name changes once the text is edited.
+  const button = page.locator('.toolbar button').first()
+  await expect(button).toHaveText('Export CSV')
+  const before = await button.evaluate((el) => ({
+    size: getComputedStyle(el).fontSize,
+    width: getComputedStyle(el).width,
+  }))
+  await button.click()
+  const inspector = page.getByTestId('rl-inspector')
+  await expect(inspector).toContainText('Tweak Toolbar')
+
+  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await page.getByRole('button', { name: 'Width +4' }).click()
+  await page.getByTestId('rl-tweak-text').fill('Download CSV')
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    `font-size: ${before.size} → ${parseFloat(before.size) + 2}px`,
+  )
+  await expect(button).toHaveText('Download CSV')
+  await expect(button).toHaveCSS('font-size', `${parseFloat(before.size) + 2}px`)
+
+  // Undo removes only the last change (the text edit).
+  await page.keyboard.press('Meta+z')
+  await expect(button).toHaveText('Export CSV')
+  await page.getByTestId('rl-tweak-text').fill('Download CSV')
+  await page.keyboard.press('Enter')
+
+  await page.getByTestId('rl-tweak-done').click()
+  const popover = page.getByTestId('rl-popover')
+  await expect(popover.getByTestId('rl-note-changes')).toContainText(
+    'text: "Export CSV" → "Download CSV"',
+  )
+  await page.keyboard.press('Enter') // empty note is fine for a tweak
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  await expect(page.locator('.rl-pin--tweak')).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('## 1 · CHANGE — Toolbar')
+  expect(clipboard).toContain('- Classes: `btn`')
+  expect(clipboard).toContain(`  - font-size: ${before.size} → ${parseFloat(before.size) + 2}px`)
+  // Steppers snap to their grid (width: 4px).
+  const snapped = Math.round((parseFloat(before.width) + 4) / 4) * 4
+  expect(clipboard).toContain(`  - width: ${before.width} → ${snapped}px`)
+  expect(clipboard).toContain('  - text: "Export CSV" → "Download CSV"')
+  expect(clipboard).not.toContain('- Note:')
+  expect(clipboard).toContain('not as inline styles.')
+
+  // Reload: the preview is re-applied to the re-found element.
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Download CSV' })).toHaveCSS(
+    'font-size',
+    `${parseFloat(before.size) + 2}px`,
+  )
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('l')
+  await page.getByRole('button', { name: 'Expand annotation 1' }).click()
+  await expect(page.getByTestId('rl-row-details')).toContainText(
+    'text: "Export CSV" → "Download CSV"',
+  )
+  // Deleting the annotation resets the element.
+  await page.getByRole('button', { name: 'Delete annotation 1' }).click()
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toHaveCSS('font-size', before.size)
+})

@@ -1,17 +1,28 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { toMarkdown } from '../export'
-import type { Action } from '../types'
-import { pageRect } from './dom'
+import type { Action, Change } from '../types'
+import { findByAnchor, pageRect } from './dom'
 import { DrawLayer } from './DrawLayer'
+import { Inspector } from './Inspector'
 import { ListPanel } from './ListPanel'
 import { NotePopover } from './NotePopover'
 import { Pins } from './Pins'
 import { SelectLayer } from './SelectLayer'
 import { Toolbar, type Position as Corner, type Tool } from './Toolbar'
 import { isEditable, matchesHotkey } from './hotkey'
-import { reduce, toSession, type Draft, type Position } from './session'
+import { adoptSnapshot, apply, reset, snapshot, type Snapshot } from './preview'
 import { captureScreenshot } from './screenshot'
+import { reduce, toSession, type Draft, type Entry, type Position } from './session'
 import { loadEntries, saveEntries } from './storage'
+
+/** Restores an entry's element when it carried a tweak preview; the handle may be gone after a reload. */
+function resetEntry(e: Entry): void {
+  if (!e.changes?.length) return
+  const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
+  if (!el) return
+  if (e.preview) adoptSnapshot(el, e.preview)
+  reset(el)
+}
 
 /** PRD §7.6: larger batches degrade agent output. */
 const WARN_AT = 10
@@ -23,6 +34,14 @@ export interface AppProps {
   position: Corner
   maxAnnotations: number
   screenshot: boolean
+}
+
+/** An element being tweaked: live changes previewed on the page, not yet an entry. */
+interface Tweak {
+  element: Element
+  anchor: Draft['anchor']
+  changes: Change[]
+  snapshot: Snapshot
 }
 
 export function App({
@@ -45,6 +64,7 @@ export function App({
   const [draft, setDraft] = useState<Draft | null>(null)
   /** Move mode, step one: the element to move; the next pick is its destination. */
   const [moveSource, setMoveSource] = useState<Draft | null>(null)
+  const [tweak, setTweak] = useState<Tweak | null>(null)
   const [panel, setPanel] = useState(false)
   const [screenshot, setScreenshot] = useState(screenshotDefault)
   const [toast, setToast] = useState<string | null>(null)
@@ -59,6 +79,23 @@ export function App({
     const t = setTimeout(() => setToast(null), 3000)
     return () => clearTimeout(t)
   }, [toast])
+
+  // Tweak previews are re-applied to their elements on load and after HMR replaces them.
+  useEffect(() => {
+    const reapply = () => {
+      for (const e of entries) {
+        if (!e.changes?.length) continue
+        const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
+        if (!el) continue
+        if (e.preview) adoptSnapshot(el, e.preview)
+        if (!el.hasAttribute('data-rl-preview')) apply(el, e.changes)
+      }
+    }
+    reapply()
+    const mo = new MutationObserver(reapply)
+    mo.observe(document.body, { childList: true, subtree: true })
+    return () => mo.disconnect()
+  }, [entries])
 
   const session = useCallback(
     () => toSession(entries, window.location, { w: window.innerWidth, h: window.innerHeight }),
@@ -94,28 +131,46 @@ export function App({
   }, [endpoint, session, notify, screenshot, entries, host])
 
   const clear = useCallback(() => {
-    if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`))
+    if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`)) {
+      for (const e of entries) resetEntry(e)
       dispatch({ type: 'clear' })
-  }, [entries.length])
+    }
+  }, [entries])
 
-  const reset = useCallback(() => {
+  const cancelTweak = useCallback(() => {
+    setTweak((t) => {
+      if (t) reset(t.element)
+      return null
+    })
+  }, [])
+
+  const reset_ = useCallback(() => {
     setDraft(null)
     setMoveSource(null)
-  }, [])
+    cancelTweak()
+  }, [cancelTweak])
 
   const toggle = useCallback(() => {
     setActive((a) => !a)
-    reset()
+    reset_()
     setPanel(false)
-  }, [reset])
+  }, [reset_])
 
   const switchTool = useCallback(
     (t: Tool) => {
       setTool(t)
-      reset()
+      reset_()
     },
-    [reset],
+    [reset_],
   )
+
+  const setTweakChanges = useCallback((changes: Change[]) => {
+    setTweak((t) => {
+      if (!t) return t
+      apply(t.element, changes)
+      return { ...t, changes }
+    })
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -125,15 +180,21 @@ export function App({
         return
       }
       if (!active) return
+      const mod = e.metaKey || e.ctrlKey
       if (e.key === 'Escape') {
         if (draft) setDraft(null)
+        else if (tweak) cancelTweak()
         else if (moveSource) setMoveSource(null)
         else if (panel) setPanel(false)
         else toggle()
         return
       }
+      if (tweak && mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        setTweakChanges(tweak.changes.slice(0, -1))
+        return
+      }
       if (isEditable(e.target) || draft) return
-      const mod = e.metaKey || e.ctrlKey
       const key = e.key.toLowerCase()
       if (mod && e.shiftKey && key === 'c') {
         e.preventDefault()
@@ -144,11 +205,25 @@ export function App({
       } else if (!mod && key === 's') switchTool('select')
       else if (!mod && key === 'd') switchTool('draw')
       else if (!mod && key === 'm') switchTool('move')
+      else if (!mod && key === 't') switchTool('tweak')
       else if (!mod && key === 'l') setPanel((p) => !p)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [active, draft, moveSource, panel, hotkey, toggle, switchTool, copy, send])
+  }, [
+    active,
+    draft,
+    tweak,
+    moveSource,
+    panel,
+    hotkey,
+    toggle,
+    switchTool,
+    copy,
+    send,
+    cancelTweak,
+    setTweakChanges,
+  ])
 
   const full = entries.length >= maxAnnotations
   const fullMessage = `Session is full (${maxAnnotations}). Save it and start a new one.`
@@ -168,7 +243,9 @@ export function App({
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     })
-    reset()
+    setDraft(null)
+    setMoveSource(null)
+    setTweak(null) // the entry now owns the preview
     if (entries.length + 1 === WARN_AT)
       notify(`${WARN_AT} annotations — smaller batches land better. Consider saving.`)
   }
@@ -177,6 +254,15 @@ export function App({
     (d: Draft) => {
       if (full) {
         notify(fullMessage)
+        return
+      }
+      if (tool === 'tweak') {
+        setTweak({
+          element: d.element,
+          anchor: d.anchor,
+          changes: [],
+          snapshot: snapshot(d.element),
+        })
         return
       }
       if (tool !== 'move') {
@@ -201,8 +287,20 @@ export function App({
     })
   }, [])
 
+  const finishTweak = () => {
+    if (!tweak || tweak.changes.length === 0) return
+    setDraft({
+      kind: 'tweak',
+      element: tweak.element,
+      anchor: tweak.anchor,
+      changes: tweak.changes,
+      snapshot: tweak.snapshot,
+    })
+  }
+
   const sourceRect = moveSource ? pageRect(moveSource.element) : null
-  const picking = active && !draft
+  const tweakRect = tweak ? pageRect(tweak.element) : null
+  const picking = active && !draft && !tweak
 
   return (
     <>
@@ -219,7 +317,15 @@ export function App({
             }}
           />
         ) : null}
-        {picking && tool === 'select' ? <SelectLayer host={host} onPick={pick} /> : null}
+        {tweakRect ? (
+          <div
+            className="rl-outline"
+            style={{ left: tweakRect.x, top: tweakRect.y, width: tweakRect.w, height: tweakRect.h }}
+          />
+        ) : null}
+        {picking && (tool === 'select' || tool === 'tweak') ? (
+          <SelectLayer host={host} onPick={pick} prefix={tool === 'tweak' ? 'Tweak' : undefined} />
+        ) : null}
         {active && draft?.kind === 'select' && tool === 'select' ? (
           <SelectLayer host={host} onPick={pick} onExtend={extend} />
         ) : null}
@@ -227,7 +333,25 @@ export function App({
           <SelectLayer host={host} onPick={pick} prefix={moveSource ? 'Move to' : 'Move'} />
         ) : null}
         {picking && tool === 'draw' ? <DrawLayer host={host} onDraw={pick} /> : null}
-        {draft ? <NotePopover draft={draft} onSave={saveDraft} onCancel={reset} /> : null}
+        {tweak && !draft ? (
+          <Inspector
+            element={tweak.element}
+            anchor={tweak.anchor}
+            changes={tweak.changes}
+            onChange={setTweakChanges}
+            onUndo={() => setTweakChanges(tweak.changes.slice(0, -1))}
+            onReset={() => setTweakChanges([])}
+            onDone={finishTweak}
+            onCancel={cancelTweak}
+          />
+        ) : null}
+        {draft ? (
+          <NotePopover
+            draft={draft}
+            onSave={saveDraft}
+            onCancel={draft.kind === 'tweak' ? () => setDraft(null) : reset_}
+          />
+        ) : null}
       </div>
       <Toolbar
         active={active}
@@ -249,7 +373,11 @@ export function App({
         <ListPanel
           entries={entries}
           onNote={(id, note) => dispatch({ type: 'note', id, note })}
-          onRemove={(id) => dispatch({ type: 'remove', id })}
+          onRemove={(id) => {
+            const e = entries.find((x) => x.id === id)
+            if (e) resetEntry(e)
+            dispatch({ type: 'remove', id })
+          }}
           onClose={() => setPanel(false)}
         />
       ) : null}
@@ -261,3 +389,5 @@ export function App({
     </>
   )
 }
+
+export type { Entry }

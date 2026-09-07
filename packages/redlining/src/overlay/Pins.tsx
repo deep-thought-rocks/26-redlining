@@ -48,7 +48,7 @@ export function Pins({ entries }: { entries: Entry[] }) {
               />
             ) : null}
             <div
-              className="rl-pin"
+              className={`rl-pin${entry.changes?.length ? ' rl-pin--tweak' : ''}`}
               data-testid="rl-pin"
               style={{ left: rect.x + offset.x, top: rect.y + offset.y }}
             >

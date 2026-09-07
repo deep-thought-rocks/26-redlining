@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { describe } from '../export/changes'
 import type { Action, Anchor } from '../types'
 import type { Draft, Position } from './session'
 
@@ -24,7 +25,7 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
 
   const save = () => {
     const text = note.trim()
-    if (!text) return
+    if (!text && !draft.changes?.length) return
     onSave(action, hint ? `${hint}: ${text}` : text, draft.kind === 'move' ? position : undefined)
   }
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -70,7 +71,13 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
               {draft.extra?.length ? ` +${draft.extra.length}` : ''}
             </b>
             {where(draft.anchor)}
-            {draft.kind === 'select' && !draft.extra?.length ? (
+            {draft.kind === 'tweak' ? (
+              <ul className="rl-changes" data-testid="rl-note-changes">
+                {(draft.changes ?? []).map((c, i) => (
+                  <li key={i}>{describe(c)}</li>
+                ))}
+              </ul>
+            ) : draft.kind === 'select' && !draft.extra?.length ? (
               <span> · ⇧click adds more</span>
             ) : null}
           </>
@@ -118,11 +125,13 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
         className="rl-textarea"
         data-testid="rl-note"
         placeholder={
-          draft.kind === 'draw'
-            ? 'What goes here?'
-            : draft.kind === 'move'
-              ? 'Why move it?'
-              : 'What should change?'
+          draft.kind === 'tweak'
+            ? 'Optional: why, or anything the numbers do not say'
+            : draft.kind === 'draw'
+              ? 'What goes here?'
+              : draft.kind === 'move'
+                ? 'Why move it?'
+                : 'What should change?'
         }
         value={note}
         onChange={(e) => setNote(e.target.value)}

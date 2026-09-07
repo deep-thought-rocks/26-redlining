@@ -6,6 +6,7 @@ import {
   MousePointerClick,
   PenLine,
   Send,
+  SlidersHorizontal,
   SquareDashedMousePointer,
   Trash2,
   X,
@@ -13,7 +14,7 @@ import {
 import type { ReactNode } from 'react'
 
 export type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
-export type Tool = 'select' | 'draw' | 'move'
+export type Tool = 'select' | 'draw' | 'move' | 'tweak'
 
 export interface ToolbarProps {
   active: boolean
@@ -67,6 +68,9 @@ export function Toolbar(p: ToolbarProps) {
       </IconButton>
       <IconButton label="Move (M)" pressed={p.tool === 'move'} onClick={() => p.onTool('move')}>
         <ArrowRightLeft size={18} />
+      </IconButton>
+      <IconButton label="Tweak (T)" pressed={p.tool === 'tweak'} onClick={() => p.onTool('tweak')}>
+        <SlidersHorizontal size={18} />
       </IconButton>
       <IconButton label="Annotations (L)" pressed={p.panelOpen} onClick={p.onPanel}>
         <ListChecks size={18} />
