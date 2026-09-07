@@ -7,6 +7,9 @@ export interface MarkdownOptions {
   screenshotPath?: string
 }
 
+/** Longer text makes an unreadable title; the Text line still carries it. */
+const TITLE_TEXT_MAX = 40
+
 const FOOTER =
   'Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.'
 
@@ -65,9 +68,10 @@ function title(a: Annotation): string {
   const owner = anchor.owners[anchor.owners.length - 1]
   const more = a.anchors && a.anchors.length > 1 ? ` (+${a.anchors.length - 1})` : ''
   if (a.action === 'add') return owner ? `inside ${owner}` : `inside <${anchor.tag}>`
-  if (a.action === 'remove' && anchor.text && anchor.text.length <= 40)
-    return `"${anchor.text}" ${anchor.tag}${more}`
-  return (owner ?? (anchor.text ? `"${anchor.text}" ${anchor.tag}` : `<${anchor.tag}>`)) + more
+  const short =
+    anchor.text && anchor.text.length <= TITLE_TEXT_MAX ? `"${anchor.text}" ${anchor.tag}` : null
+  if (a.action === 'remove' && short) return short + more
+  return (owner ?? short ?? `<${anchor.tag}>`) + more
 }
 
 function location(anchor: Anchor): string {

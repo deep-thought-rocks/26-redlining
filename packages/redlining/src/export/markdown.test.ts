@@ -145,6 +145,27 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     expect(md.indexOf('## 1 · CHANGE — "Hello" h1')).toBeLessThan(md.indexOf('## 2 · CHANGE — <p>'))
   })
 
+  test('titles fall back to the tag when the text is long and there is no owner', () => {
+    const long = 'x'.repeat(41)
+    const md = toMarkdown(
+      {
+        ...session,
+        screenshot: undefined,
+        annotations: [
+          ann({
+            index: 1,
+            action: 'change',
+            anchor: anchor({ tag: 'aside', text: long }),
+            note: 'n',
+          }),
+        ],
+      },
+      { now: NOW },
+    )
+    expect(md).toContain('## 1 · CHANGE — <aside>')
+    expect(md).toContain(`- Text: "${long}"`)
+  })
+
   test('explains the fallback rungs', () => {
     const s: Session = {
       ...session,
