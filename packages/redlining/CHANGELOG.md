@@ -1,5 +1,11 @@
 # redlining
 
+## 0.3.0
+
+### Minor Changes
+
+- **Tweak mode** (`T`): change values directly in the running page and export the numbers. An Inspector with steppers for type, box, padding and margin, weight chips, a text field, colour pickers with your `:root` tokens, and gap/justify/align chips on flex and grid containers; resize handles, Alt-drag spacing, drag and arrow-key nudging (exported as an honest _visual nudge_), Alt-hover rulers, Undo and Reset. Every change is recorded as computed _before → after_ beside the element's class list (`Classes:`), previews survive reload and hot reload, and a footer tells the agent to implement values in the project's idiom, never inline styles. Viewport presets (375 / 768 / 1280) stamp `Applies at` on annotations; the camera can also save a `screenshot-before.png`. Anchors gain `classes` and `display`; annotations gain `changes` and `appliesAt`.
+
 ## 0.2.0
 
 ### Minor Changes
