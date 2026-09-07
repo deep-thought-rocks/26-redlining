@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Annotation format · Redlining</title>
+    <meta
+      name="description"
+      content="Reference for .redlining/annotations.md and annotations.json: the spec Redlining hands to Claude Code."
+    />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">red<b>lining</b></a>
+        <nav>
+          <a href="getting-started.html">Getting started</a>
+          <a href="guide.html">Guide</a>
+          <a href="format.html" aria-current="page">Annotation format</a>
+          <a href="help.html">Help</a>
+          <a href="https://github.com/frankgoeltl/26-redlining">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap layout">
+      <aside class="toc">
+        <h4>On this page</h4>
+        <a href="#markdown">annotations.md</a><a href="#blocks">Block shapes</a
+        ><a href="#json">annotations.json</a><a href="#stability">Stability</a>
+      </aside>
+      <main>
+        <h1>Annotation format</h1>
+        <p>
+          Save writes up to three files into <code>.redlining/</code>. The Markdown is the primary,
+          human- and agent-readable spec; the JSON is the same session for tools and tests; the PNG
+          is optional.
+        </p>
+
+        <h2 id="markdown">annotations.md</h2>
+        <pre><code># Redlining — /dashboard  (2026-09-06 14:12 · viewport 1440×900)
+
+Screenshot: .redlining/screenshot.png (pins numbered as below)
+
+## 1 · CHANGE — MainNav
+- Anchor: `&lt;nav&gt;` · app/(app)/layout.tsx:42 · owners: RootLayout › Header › MainNav
+- Text: "Dashboard · Reports · Settings"
+- Note: Replace the dropdown with a horizontal top nav. Same items, same order.
+  Active item underlined.
+
+## 2 · ADD — inside FilterPanel
+- Container: `&lt;section&gt;` · app/(app)/dashboard/page.tsx:87 · owners: DashboardPage › FilterPanel
+- Position: after child 2 · full width · ≈ 220 px tall
+- Note: Sortable table. Columns: Name, Status, Updated. Status filter chips above it.
+  Reuse our existing DataTable if present.
+
+## 3 · REMOVE — "Export CSV" button
+- Anchor: `&lt;button&gt;` · components/toolbar.tsx:31 · owners: DashboardPage › Toolbar
+- Text: "Export CSV"
+- Note: Remove; the action moves into the new table's row menu.
+
+## 4 · MOVE — QuickStats
+- From: `&lt;aside&gt;` · components/sidebar.tsx:12 · owners: DashboardPage › Sidebar › QuickStats
+- To: before `&lt;section&gt;` · app/(app)/dashboard/page.tsx:60 · owners: DashboardPage › Main
+- Note: Show quick stats above the main content on this page only.
+
+---
+Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.</code></pre>
+        <p>
+          The header names the route, the local time of the save and the viewport. The screenshot
+          line appears only when a screenshot was included. Blocks are numbered in the order of the
+          list panel; the footer is fixed.
+        </p>
+
+        <h2 id="blocks">Block shapes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Lines</th>
+              <th>Title</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>CHANGE</code></td>
+              <td><code>Anchor</code>, <code>Text</code> (if any), <code>Note</code></td>
+              <td>innermost owner, else <code>"text" tag</code>, else <code>&lt;tag&gt;</code></td>
+            </tr>
+            <tr>
+              <td><code>REMOVE</code></td>
+              <td>as CHANGE</td>
+              <td>prefers <code>"text" tag</code> when the text is short</td>
+            </tr>
+            <tr>
+              <td><code>ADD</code></td>
+              <td><code>Container</code>, <code>Position</code>, <code>Note</code></td>
+              <td><code>inside Owner</code></td>
+            </tr>
+            <tr>
+              <td><code>MOVE</code></td>
+              <td>
+                <code>From</code>, <code>To</code> (with before / after / inside), <code>Note</code>
+              </td>
+              <td>innermost owner of the source</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Every location is <code>`&lt;tag&gt;` · file:line · owners: A › B › C</code>; the owners
+          part is omitted for server-only subtrees. A multi-select annotation replaces
+          <code>Anchor</code> with a numbered <code>Anchors:</code> list and suffixes the title with
+          <code>(+N)</code>. Fallback rungs add a <code>Resolved:</code> line, for example
+          <em>nearest decorated ancestor; locate the child by selector `main &gt; div &gt; span`</em
+          >, or the location itself reads <em>unresolved</em>.
+        </p>
+        <p>
+          <code>Position</code> for ADD is <em>at start</em>, <em>after child N</em> or
+          <em>at end</em>, followed by <em>full width</em> or an approximate width, and an
+          approximate height, all taken from the box you drew relative to the container.
+        </p>
+
+        <h2 id="json">annotations.json</h2>
+        <pre><code>interface Session {
+  route: string            // "/dashboard"
+  url: string
+  viewport: { w: number; h: number }
+  annotations: Annotation[]
+  screenshot?: string      // data URL, only in the request; the file is written separately
+}
+
+interface Annotation {
+  id: string
+  index: number            // 1-based, the pin number
+  action: 'change' | 'add' | 'remove' | 'move'
+  anchor: Anchor
+  anchors?: Anchor[]       // multi-select: every anchor, `anchor` first
+  target?: Anchor &amp; { position: 'before' | 'after' | 'inside' }   // move
+  box?: { x: number; y: number; w: number; h: number; childIndex?: number } // add, relative to anchor.rect
+  note: string
+  createdAt: string        // ISO
+}
+
+interface Anchor {
+  file?: string            // project-relative; absent when selector-only
+  line?: number
+  column?: number
+  tag: string              // 'nav' | 'form' | 'button' …
+  owners: string[]         // outermost first; [] for server-only subtrees
+  selector: string         // fallback CSS path
+  text?: string            // trimmed textContent ≤ 80 chars
+  rect: { x: number; y: number; w: number; h: number }   // viewport px at capture
+  resolved: 'exact' | 'ancestor' | 'selector-only'
+}</code></pre>
+        <p>
+          <code>childIndex</code> means "insert before child N"; a value equal to the number of
+          children means "at end".
+        </p>
+
+        <h2 id="stability">Stability</h2>
+        <div class="note warn">
+          The file format is <strong>unstable before 1.0</strong>. Field additions such as
+          <code>anchors</code> land in minor releases and are listed in the changelog. Tools that
+          parse the JSON should ignore unknown fields.
+        </div>
+      </main>
+    </div>
+    <footer>
+      <div class="wrap">
+        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
+        that changes your codebase.
+      </div>
+    </footer>
+  </body>
+</html>

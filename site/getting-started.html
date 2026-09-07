@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Getting started · Redlining</title>
+    <meta
+      name="description"
+      content="Install Redlining, wire it into a Next.js or Vite project, and run your first annotation session."
+    />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">red<b>lining</b></a>
+        <nav>
+          <a href="getting-started.html" aria-current="page">Getting started</a>
+          <a href="guide.html">Guide</a>
+          <a href="format.html">Annotation format</a>
+          <a href="help.html">Help</a>
+          <a href="https://github.com/frankgoeltl/26-redlining">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap layout">
+      <aside class="toc">
+        <h4>On this page</h4>
+        <a href="#install">Install</a><a href="#next">Next.js setup</a><a href="#vite">Vite setup</a
+        ><a href="#first">Your first session</a><a href="#claude">Applying with Claude Code</a
+        ><a href="#options">Options</a>
+      </aside>
+      <main>
+        <h1>Getting started</h1>
+        <p>
+          Two minutes from a fresh project to the first applied annotation. Everything here is
+          development-only; nothing changes in your production build.
+        </p>
+
+        <h2 id="install">Install</h2>
+        <pre><code>pnpm add -D redlining
+npx redlining init</code></pre>
+        <p>
+          <code>redlining init</code> is idempotent. It writes three things and skips whatever
+          already exists:
+        </p>
+        <ul>
+          <li>
+            <code>app/api/redlining/route.ts</code> (or <code>src/app/…</code>) — the endpoint that
+            saves a session into <code>.redlining/</code>.
+          </li>
+          <li>a <code>.redlining/</code> line in <code>.gitignore</code>.</li>
+          <li>
+            <code>.claude/commands/redline.md</code> — the <code>/redline</code> slash command for
+            Claude Code.
+          </li>
+        </ul>
+        <p>
+          If there is no <code>app/</code> directory it prints what to create instead of guessing.
+        </p>
+
+        <h2 id="next">Next.js setup</h2>
+        <p>
+          Requires Next.js 16 or newer and React 19. Both the default Turbopack dev server and
+          <code>next dev --webpack</code> are supported.
+        </p>
+        <pre><code>// next.config.ts
+import { withRedlining } from 'redlining/next'
+
+export default withRedlining({
+  // your config
+})</code></pre>
+        <pre><code>// app/layout.tsx
+import { Redlining } from 'redlining'
+
+export default function RootLayout({ children }) {
+  return (
+    &lt;html&gt;
+      &lt;body&gt;
+        {children}
+        &lt;Redlining /&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  )
+}</code></pre>
+        <p>
+          <code>withRedlining()</code> returns a config function so it can see the phase: the loader
+          is registered only while the dev server runs. Pass a function config of your own and it is
+          composed, sync or async. By default files under <code>app/</code>,
+          <code>components/</code> and <code>src/</code> get anchors; change that with the
+          <code>include</code> option (see <a href="#options">Options</a>).
+        </p>
+        <div class="note">
+          Monorepo? Turbopack's root follows the lockfile, which may be above your app. Redlining
+          matches files by a path pattern rather than a root-relative glob, so
+          <code>app/**</code> inside <code>apps/web/</code> still works.
+        </div>
+
+        <h2 id="vite">Vite setup</h2>
+        <pre><code>// vite.config.ts
+import react from '@vitejs/plugin-react'
+import { redlining } from 'redlining/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({ plugins: [redlining(), react()] })</code></pre>
+        <p>
+          Mount <code>&lt;Redlining /&gt;</code> in your root component. The plugin runs only under
+          <code>vite dev</code> and stamps files under <code>src/</code> by default. There is no
+          save endpoint outside Next.js yet, so use <strong>Copy prompt</strong> and paste the
+          Markdown into Claude Code.
+        </p>
+
+        <h2 id="first">Your first session</h2>
+        <ol class="steps">
+          <li>
+            <strong>Start the dev server</strong> and open a page. A small pen button sits
+            bottom-right (Next DevTools keeps bottom-left).
+          </li>
+          <li>
+            <strong>Press <kbd>Alt</kbd>+<kbd>R</kbd></strong
+            >, or click the pen. The toolbar appears and the cursor becomes a crosshair.
+          </li>
+          <li>
+            <strong>Hover</strong> anything. The smallest host element under the cursor is outlined,
+            with a badge such as <code>MainNav · app/(app)/layout.tsx:42 · &lt;nav&gt;</code>. Press
+            <kbd>[</kbd> to select the parent instead, <kbd>]</kbd> to come back down;
+            <kbd>⌥</kbd>+scroll does the same.
+          </li>
+          <li>
+            <strong>Click</strong>. A numbered pin drops and a note popover opens with the textarea
+            focused. Choose <em>Change</em> or <em>Remove</em>, type the note, press <kbd>⏎</kbd> to
+            save (<kbd>⇧</kbd>+<kbd>⏎</kbd> for a newline, <kbd>Esc</kbd> to cancel).
+          </li>
+          <li>
+            <strong>Add more</strong>. Draw mode (<kbd>D</kbd>) for something that does not exist
+            yet, Move mode (<kbd>M</kbd>) for something that should live elsewhere. The
+            <a href="guide.html">guide</a> covers each.
+          </li>
+          <li>
+            <strong>Review</strong> with <kbd>L</kbd>: the list panel shows every annotation; click
+            a note to edit it, the × to delete.
+          </li>
+          <li>
+            <strong>Save</strong> with <kbd>⌘</kbd>+<kbd>⏎</kbd> (or the green send button). A toast
+            confirms: <em>Saved — run /redline in Claude Code.</em>
+          </li>
+        </ol>
+
+        <h2 id="claude">Applying with Claude Code</h2>
+        <p>In Claude Code, in the same project:</p>
+        <pre><code>/redline</code></pre>
+        <p>
+          The command tells Claude Code to read <code>.redlining/annotations.md</code>, look at the
+          screenshot if there is one, apply every annotation in order at the exact anchor, reuse
+          existing components and design tokens, change nothing that is not listed, verify in the
+          running app, report done / partial / skipped per annotation, and finally delete the three
+          files.
+        </p>
+        <p>
+          Your session in the browser is not deleted by that. Hot reload shows the result; if
+          something needs a second pass, adjust the notes and save again.
+        </p>
+
+        <h2 id="options">Options</h2>
+        <pre><code>&lt;Redlining
+  endpoint="/api/redlining"   // where Save posts
+  hotkey="Alt+R"              // e.g. "Ctrl+Shift+K"
+  position="bottom-right"     // bottom-left | top-right | top-left
+  theme="light"               // or "dark"
+  maxAnnotations={15}         // a warning shows at 10
+  screenshot                  // include screenshot.png with burned-in pins
+/&gt;</code></pre>
+        <pre><code>withRedlining(config, {
+  include: ['app', 'components', 'src'],
+})</code></pre>
+        <pre><code>// app/api/redlining/route.ts — instead of the default re-export
+import { createHandler } from 'redlining/next/route'
+export const POST = createHandler({ outDir: '.redlining', maxBytes: 8 * 1024 * 1024 })</code></pre>
+        <p>
+          The route refuses requests outside development, caps the body at 8 MB, and only ever
+          writes inside <code>outDir</code>, which must be inside the project.
+        </p>
+      </main>
+    </div>
+    <footer>
+      <div class="wrap">
+        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
+        that changes your codebase.
+      </div>
+    </footer>
+  </body>
+</html>

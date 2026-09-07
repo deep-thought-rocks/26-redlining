@@ -71,6 +71,10 @@ These are settled in the PRD; do not reopen them without asking.
 
 Package `redlining`; `withRedlining` from `redlining/next`; component `<Redlining />`; output dir `.redlining/`; command `/redline` (short form, deliberately). Config options and their defaults are listed in PRD §17.2 — add new knobs there first.
 
+## Docs site
+
+`site/` is a static site with no build step: five hand-written pages (`index`, `getting-started`, `guide`, `format`, `help`) sharing `site.css`, which hand-copies the light-theme silverballmania values. `.github/workflows/pages.yml` deploys it to GitHub Pages on pushes that touch `site/`; the repository's Pages source must be set to "GitHub Actions" once, by the user. Keep the key table, options and format reference in sync with the README and the overlay; the link/anchor check is a shell loop over `href`/`src`/`id` (see the commit that added the site).
+
 ## Design system
 
 The overlay adopts **silverballmania** v2.0.0 from `~/Repositories/design-systems/silverballmania/`. `.claude/design-system.json` is the single source of truth for the assignment, theme policy (light default), divergences and open gaps; read it before styling anything in `src/overlay/`. The canon's `SKILL.md` and `README.md § Design tokens` carry the rules. Components use only `--color-*` semantic tokens, never `--sbm-*` raw values.

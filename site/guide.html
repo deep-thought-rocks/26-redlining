@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guide · Redlining</title>
+    <meta
+      name="description"
+      content="Every mode and key of the Redlining overlay: select, draw, move, multi-select, the list panel, saving and copying."
+    />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">red<b>lining</b></a>
+        <nav>
+          <a href="getting-started.html">Getting started</a>
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="format.html">Annotation format</a>
+          <a href="help.html">Help</a>
+          <a href="https://github.com/frankgoeltl/26-redlining">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap layout">
+      <aside class="toc">
+        <h4>On this page</h4>
+        <a href="#toolbar">Toolbar and keys</a><a href="#select">Select</a><a href="#draw">Draw</a
+        ><a href="#move">Move</a><a href="#multi">Multi-select</a><a href="#list">List panel</a
+        ><a href="#export">Copy and Save</a><a href="#session">Sessions</a
+        ><a href="#anchors">How anchors resolve</a>
+      </aside>
+      <main>
+        <h1>Guide</h1>
+        <p>
+          The overlay lives in a shadow root on top of your page. While it is inactive it registers
+          only the hotkey and captures no pointer events; your app behaves exactly as before.
+        </p>
+
+        <h2 id="toolbar">Toolbar and keys</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><kbd>Alt</kbd>+<kbd>R</kbd></td>
+              <td>
+                Toggle the overlay (<code>hotkey</code> option). Matched on the physical key, so it
+                works on macOS where Option+R types ®.
+              </td>
+            </tr>
+            <tr>
+              <td><kbd>S</kbd> / <kbd>D</kbd> / <kbd>M</kbd></td>
+              <td>Select / Draw / Move mode</td>
+            </tr>
+            <tr>
+              <td><kbd>[</kbd> / <kbd>]</kbd>, <kbd>⌥</kbd>+scroll</td>
+              <td>Walk the hovered selection up / down the ancestor chain</td>
+            </tr>
+            <tr>
+              <td><kbd>⇧</kbd>+click</td>
+              <td>Add another element to the open note</td>
+            </tr>
+            <tr>
+              <td><kbd>L</kbd></td>
+              <td>Annotation list panel</td>
+            </tr>
+            <tr>
+              <td>Camera button</td>
+              <td>Include a screenshot with pins when saving (on by default)</td>
+            </tr>
+            <tr>
+              <td><kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>C</kbd></td>
+              <td>Copy the Markdown prompt to the clipboard</td>
+            </tr>
+            <tr>
+              <td><kbd>⌘</kbd>+<kbd>⏎</kbd></td>
+              <td>Save to <code>.redlining/</code></td>
+            </tr>
+            <tr>
+              <td>Trash button</td>
+              <td>Clear the session (asks first)</td>
+            </tr>
+            <tr>
+              <td><kbd>Esc</kbd></td>
+              <td>Close the popover, then the panel, then the overlay</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>On Windows and Linux <kbd>Ctrl</kbd> stands in for <kbd>⌘</kbd>.</p>
+
+        <h2 id="select">Select — change or remove something that exists</h2>
+        <p>
+          Hover to outline the smallest host element under the cursor. The badge shows the innermost
+          component that rendered it, the file and line, and the tag. Often you mean the whole card
+          rather than the <code>&lt;span&gt;</code> inside it: press <kbd>[</kbd> until the outline
+          covers what you mean. Click to drop a pin and open the note.
+        </p>
+        <p>
+          The note popover offers <em>Change</em> and <em>Remove</em>. Write what should be
+          different; the anchor already says where. <kbd>⏎</kbd> saves, <kbd>⇧</kbd>+<kbd>⏎</kbd>
+          inserts a newline, <kbd>Esc</kbd> cancels.
+        </p>
+
+        <h2 id="draw">Draw — add something new in a region</h2>
+        <p>
+          Press <kbd>D</kbd>, then drag a rectangle where the new thing belongs. On release
+          Redlining resolves the container: the deepest decorated element whose box covers at least
+          60 % of what you drew, otherwise the nearest decorated ancestor of the centre point. The
+          popover says <em>Add inside FilterPanel</em> and the export records a position such as
+          <em>after child 2 · full width · ≈ 220 px tall</em>.
+        </p>
+        <p>
+          The component-hint chips (Table, Form, Button, Card, Modal, Nav, List, Chart) prepend a
+          keyword to your note; free text remains the primary instruction. The box is stored
+          relative to the container, so it survives scrolling and resizing.
+        </p>
+
+        <h2 id="move">Move — put something somewhere else</h2>
+        <p>
+          Press <kbd>M</kbd>. Click the element to move; it gets a dashed outline. Click the
+          destination; the popover asks <em>before</em>, <em>after</em> or <em>inside</em> and takes
+          a note. The pin sits on the source and a <code>→N</code> marker on the target. The export
+          writes a <em>From</em> and a <em>To</em> line, so nobody has to describe DOM positions in
+          prose.
+        </p>
+
+        <h2 id="multi">Multi-select — one note, several elements</h2>
+        <p>
+          With a select note open, <kbd>⇧</kbd>+click other elements to add them to the same
+          annotation ("make all of these the same height"). The popover shows <em>+N</em>, every
+          element gets a pin with the same number, and the export lists the anchors under one note.
+        </p>
+
+        <h2 id="list">List panel</h2>
+        <p>
+          <kbd>L</kbd> opens a panel on the right with every annotation: number, action, owner
+          chain, file and note. Click a note to edit it inline (<kbd>⏎</kbd> saves,
+          <kbd>Esc</kbd> cancels); the × deletes and renumbers the rest. The toolbar moves aside
+          while the panel is open.
+        </p>
+
+        <h2 id="export">Copy and Save</h2>
+        <p>
+          <strong>Copy prompt</strong> puts the Markdown spec on the clipboard, for pasting into any
+          agent. <strong>Save</strong> posts the session to the endpoint, which writes
+          <code>annotations.md</code>, <code>annotations.json</code> and, with the camera on,
+          <code>screenshot.png</code> with the pins burned in. Pins in the screenshot carry the same
+          numbers as the Markdown headings, so <em>"pin 3"</em> is unambiguous.
+        </p>
+        <p>
+          The screenshot is rendered in the browser and skipped with a toast if it would exceed 7
+          MB.
+        </p>
+
+        <h2 id="session">Sessions</h2>
+        <p>
+          A session is all annotations for one route. It is stored in <code>localStorage</code> per
+          route, so a reload or a <code>/redline</code> run does not lose it; pins re-attach to
+          their elements after hot reload by the stamped file and line, then by CSS selector. Clear
+          it with the trash button when the batch has landed.
+        </p>
+        <p>
+          Sessions are capped at 15 annotations, with a warning at 10. Larger batches produce worse
+          results from the agent than two smaller ones.
+        </p>
+
+        <h2 id="anchors">How anchors resolve</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Situation</th>
+              <th>Anchor</th>
+              <th>What the export says</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The element carries <code>data-rl</code></td>
+              <td><em>exact</em></td>
+              <td>file:line of the opening tag</td>
+            </tr>
+            <tr>
+              <td>Only an ancestor carries it</td>
+              <td><em>ancestor</em></td>
+              <td>the ancestor's file:line plus <em>locate the child by selector</em></td>
+            </tr>
+            <tr>
+              <td>Nothing decorated (third-party UI, portals)</td>
+              <td><em>selector-only</em></td>
+              <td><em>unresolved — locate by selector and text</em></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Components are never decorated, only host elements like <code>&lt;nav&gt;</code> and
+          <code>&lt;button&gt;</code>: an unknown prop on your components would leak into prop
+          spreads and warnings. Component names come from React's owner chain at runtime instead,
+          which is why server-only subtrees show an empty owner list but still resolve exactly.
+        </p>
+      </main>
+    </div>
+    <footer>
+      <div class="wrap">
+        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
+        that changes your codebase.
+      </div>
+    </footer>
+  </body>
+</html>

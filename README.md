@@ -135,6 +135,10 @@ export const POST = createHandler({ outDir: '.redlining', maxBytes: 8 * 1024 * 1
 
 `stripRedlining(html)` removes `data-rl` attributes from dev-rendered HTML for snapshot tests.
 
+## Docs
+
+Getting started, the guide, the annotation-format reference and help: [`site/`](site/), published at https://frankgoeltl.github.io/26-redlining/ once GitHub Pages is enabled for the repository (Settings → Pages → Source: GitHub Actions).
+
 ## Status
 
 Pre-release, `0.0.x`. The annotation file format is unstable until the next minor; the design is in [docs/redlining-prd.md](docs/redlining-prd.md).

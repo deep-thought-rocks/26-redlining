@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redlining</title>
+    <meta
+      name="description"
+      content="Figma-style comments on your running Next.js app, exported as a file-anchored spec Claude Code can execute without asking questions."
+    />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">red<b>lining</b></a>
+        <nav>
+          <a href="getting-started.html">Getting started</a>
+          <a href="guide.html">Guide</a>
+          <a href="format.html">Annotation format</a>
+          <a href="help.html">Help</a>
+          <a href="https://github.com/frankgoeltl/26-redlining">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <section class="hero">
+      <div class="wrap">
+        <h1>Mark up the running app. Hand Claude Code the exact file and line.</h1>
+        <p class="lead">
+          Redlining, in the proofreader's sense: click an element or draw a box in your running
+          Next.js app, write a note, and every annotation resolves to the file, line, host element
+          and React owner chain. Claude Code applies the batch in one pass.
+        </p>
+        <p>
+          <a class="btn" href="getting-started.html">Get started</a>
+          <a class="btn secondary" href="guide.html">Read the guide</a>
+        </p>
+      </div>
+    </section>
+    <div class="wrap">
+      <img
+        src="images/overlay.gif"
+        alt="Redlining in use: the overlay opens, a nav element is clicked and annotated, a box is drawn for a new table, the list opens, and the session is saved to the project."
+        width="1000"
+      />
+      <div class="cards">
+        <div class="card">
+          <h3>Three lines of setup</h3>
+          <p>
+            Wrap <code>next.config</code> with <code>withRedlining()</code>, mount
+            <code>&lt;Redlining /&gt;</code> in the root layout, run
+            <code>npx redlining init</code>. Identical in every project.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Zero production footprint</h3>
+          <p>
+            The loader only runs for the dev server, and the package's production build is a
+            component that returns <code>null</code>. No bytes, no attributes, no routes in
+            <code>next build</code>.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Server and Client Components</h3>
+          <p>
+            The anchor is a static attribute stamped at compile time, so it reaches the HTML
+            regardless of where the component rendered. The owner chain comes from React's dev fiber
+            tree.
+          </p>
+        </div>
+        <div class="card">
+          <h3>One command to apply</h3>
+          <p>
+            <code>/redline</code> in Claude Code reads <code>.redlining/annotations.md</code>, edits
+            exactly the anchors listed, verifies in the running app, and reports per annotation.
+          </p>
+        </div>
+      </div>
+      <h2>The loop</h2>
+      <ol class="steps">
+        <li>
+          <strong>Annotate.</strong> Press <kbd>Alt</kbd>+<kbd>R</kbd>. Select an element, draw a
+          region, or move something; write a note.
+        </li>
+        <li>
+          <strong>Save.</strong> <kbd>⌘</kbd>+<kbd>⏎</kbd> writes <code>annotations.md</code>,
+          <code>annotations.json</code> and a screenshot with numbered pins into
+          <code>.redlining/</code>.
+        </li>
+        <li>
+          <strong>Apply.</strong> Run <code>/redline</code>. Claude Code edits the named files in
+          order, verifies, and deletes the files.
+        </li>
+        <li>
+          <strong>Repeat.</strong> Hot reload shows the result; the session stays until you clear
+          it, so you can re-send with tweaks.
+        </li>
+      </ol>
+      <h2>Supported setups</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Setup</th>
+            <th>Status</th>
+            <th>Precision</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Next.js 16+, Turbopack or webpack, App Router</td>
+            <td>Supported</td>
+            <td>file:line + owner chain</td>
+          </tr>
+          <tr>
+            <td>Vite + React (<code>redlining/vite</code>)</td>
+            <td>Supported</td>
+            <td>file:line + owner chain</td>
+          </tr>
+          <tr>
+            <td>Any React app, overlay only</td>
+            <td>Reduced</td>
+            <td>owner chain + CSS selector</td>
+          </tr>
+          <tr>
+            <td>Non-React frameworks</td>
+            <td>Not supported</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <footer>
+      <div class="wrap">
+        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
+        that changes your codebase.
+      </div>
+    </footer>
+  </body>
+</html>

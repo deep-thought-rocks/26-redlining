@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help · Redlining</title>
+    <meta
+      name="description"
+      content="Troubleshooting and frequently asked questions for Redlining: the overlay does not open, anchors are unresolved, monorepos, hotkeys, screenshots, production."
+    />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">red<b>lining</b></a>
+        <nav>
+          <a href="getting-started.html">Getting started</a>
+          <a href="guide.html">Guide</a>
+          <a href="format.html">Annotation format</a>
+          <a href="help.html" aria-current="page">Help</a>
+          <a href="https://github.com/frankgoeltl/26-redlining">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap layout">
+      <aside class="toc">
+        <h4>On this page</h4>
+        <a href="#not-opening">Overlay does not open</a><a href="#no-anchor">No file:line</a
+        ><a href="#monorepo">Monorepos</a><a href="#save">Save fails</a
+        ><a href="#screenshot">Screenshots</a><a href="#production">Production</a
+        ><a href="#faq">FAQ</a>
+      </aside>
+      <main>
+        <h1>Help</h1>
+
+        <h2 id="not-opening">The overlay does not open</h2>
+        <details open>
+          <summary>No pen button bottom-right</summary>
+          <p>
+            <code>&lt;Redlining /&gt;</code> renders nothing unless <code>NODE_ENV</code> is
+            <code>development</code>. Check that it is mounted in the <em>root</em> layout, that you
+            are running <code>next dev</code>, and that nothing sets
+            <code>NODE_ENV=production</code> in your dev environment. To force it on in a staging
+            build, pass <code>enabled</code>.
+          </p>
+        </details>
+        <details>
+          <summary>The button is there but Alt+R does nothing</summary>
+          <p>
+            Another extension or your window manager may own the combination. Choose a different one
+            with the <code>hotkey</code> prop, for example <code>"Ctrl+Shift+K"</code>. The hotkey
+            is matched on the physical key, so macOS Option combinations work even though they type
+            symbols.
+          </p>
+        </details>
+        <details>
+          <summary>Clicking selects nothing</summary>
+          <p>
+            The overlay ignores <code>&lt;html&gt;</code> and <code>&lt;body&gt;</code>, its own
+            toolbar and panel, and anything under the mouse that belongs to another overlay in a
+            shadow root with a higher stacking order. Move the cursor onto page content; the outline
+            follows the smallest host element.
+          </p>
+        </details>
+
+        <h2 id="no-anchor">The badge says "unresolved" or the export says "ancestor"</h2>
+        <details open>
+          <summary>The element has no <code>data-rl</code></summary>
+          <p>
+            Anchors come from a loader that only runs on files matched by
+            <code>include</code> (default <code>app</code>, <code>components</code>,
+            <code>src</code>) with <code>.tsx</code> or <code>.jsx</code> extensions. Files
+            elsewhere, <code>.js</code> files, and everything in <code>node_modules</code> are not
+            stamped. Check the served HTML: decorated elements carry
+            <code>data-rl="path:line:col"</code>.
+          </p>
+          <pre><code>withRedlining(config, { include: ['app', 'features', 'packages/ui/src'] })</code></pre>
+        </details>
+        <details>
+          <summary>Third-party components and portals</summary>
+          <p>
+            A design-system button that renders its own <code>&lt;button&gt;</code> inside
+            <code>node_modules</code> cannot be stamped. The export then names the nearest decorated
+            ancestor and adds <em>locate the child by selector</em>, which is enough for the agent
+            in most cases. Prefer selecting the wrapping element you own with <kbd>[</kbd>.
+          </p>
+        </details>
+        <details>
+          <summary>The owner chain is empty</summary>
+          <p>
+            Server Components have no client-side fiber, so <code>owners</code> is <code>[]</code>;
+            the file and line are still exact. That is expected and documented in the export.
+          </p>
+        </details>
+        <details>
+          <summary>Snapshot tests fail because of <code>data-rl</code></summary>
+          <p>The attribute exists only in development. Tests that render dev HTML can strip it:</p>
+          <pre><code>import { stripRedlining } from 'redlining'
+expect(stripRedlining(html)).toMatchSnapshot()</code></pre>
+        </details>
+
+        <h2 id="monorepo">Monorepos</h2>
+        <details open>
+          <summary>Nothing is stamped in a pnpm / yarn workspace</summary>
+          <p>
+            Turbopack takes the directory of the lockfile as its root, which is the workspace, not
+            the app. Redlining matches files with a path pattern for that reason, and stamps paths
+            relative to the app directory (<code>process.cwd()</code> when
+            <code>next.config</code> is evaluated). If you run Next from the workspace root with a
+            filter, paths are still relative to the app. Sibling packages that match
+            <code>include</code>, such as <code>packages/ui/src</code>, are stamped with a
+            <code>../</code> path, which is correct: the file really is there.
+          </p>
+        </details>
+
+        <h2 id="save">Save fails</h2>
+        <details open>
+          <summary>Toast says <em>Save failed: 404</em></summary>
+          <p>
+            The route is missing. Run <code>npx redlining init</code>, or create
+            <code>app/api/redlining/route.ts</code> with
+            <code>export { POST } from 'redlining/next/route'</code>. If you changed the path, pass
+            the same value as <code>endpoint</code> to <code>&lt;Redlining /&gt;</code>.
+          </p>
+        </details>
+        <details>
+          <summary><em>403 Redlining is disabled outside development</em></summary>
+          <p>
+            The handler refuses unless <code>NODE_ENV</code> is <code>development</code>. Use
+            <code>createHandler({ enabled: true })</code> only if you really want saving in another
+            environment.
+          </p>
+        </details>
+        <details>
+          <summary><em>413 Body exceeds 8388608 bytes</em></summary>
+          <p>
+            The screenshot is too large for the default cap. Turn the camera off for this save, or
+            raise <code>maxBytes</code> in <code>createHandler</code>. The overlay itself refuses
+            captures over 7 MB and tells you.
+          </p>
+        </details>
+        <details>
+          <summary>Vite: there is no Save</summary>
+          <p>
+            The save endpoint is a Next.js route handler. In Vite projects use
+            <strong>Copy prompt</strong> and paste the Markdown into Claude Code, or write your own
+            endpoint that accepts <code>{ session }</code> and calls the serializers.
+          </p>
+        </details>
+
+        <h2 id="screenshot">Screenshots</h2>
+        <details open>
+          <summary>The screenshot is blank or missing fonts</summary>
+          <p>
+            The page is rendered in the browser with <code>html-to-image</code>, which cannot read
+            cross-origin stylesheets or images without CORS headers. Self-hosted assets render fine;
+            a CDN font without <code>Access-Control-Allow-Origin</code> falls back. The pins and the
+            Markdown are unaffected, so the spec is still complete.
+          </p>
+        </details>
+        <details>
+          <summary>Pins are in the wrong place</summary>
+          <p>
+            Pins are drawn at each element's position at save time, in page coordinates. If the
+            layout changes between annotating and saving (a collapsed menu, a resized window), the
+            Markdown still points at the right file and line; re-save to refresh the picture.
+          </p>
+        </details>
+
+        <h2 id="production">Production</h2>
+        <details open>
+          <summary>Does any of this ship?</summary>
+          <p>
+            No. <code>withRedlining()</code> adds the loader only under the development-server
+            phase, so <code>next build</code> emits no <code>data-rl</code>. The package's
+            <code>production</code> export is a component that returns <code>null</code>; the
+            roughly thirty bytes of that stub are the only trace, and only because your layout
+            imports it. The route handler answers 403 outside development. CI in the Redlining
+            repository asserts all three on every commit.
+          </p>
+        </details>
+
+        <h2 id="faq">FAQ</h2>
+        <details>
+          <summary>Why not a visual editor that writes the code itself?</summary>
+          <p>
+            Because the agent already reads the codebase and can make the change consistent with it.
+            Redlining's job is to make your visual intent precise enough that the first attempt
+            lands. It never edits code.
+          </p>
+        </details>
+        <details>
+          <summary>Why annotate in the app instead of a screenshot?</summary>
+          <p>
+            A screenshot says <em>what</em> but not <em>where in the code</em>. The DOM already
+            knows which file and component every pixel came from; Redlining captures that together
+            with your note.
+          </p>
+        </details>
+        <details>
+          <summary>Can I use this without Claude Code?</summary>
+          <p>
+            Yes. Copy prompt gives you the Markdown for any agent, and
+            <code>annotations.json</code> is the same session for your own tooling. The
+            <code>/redline</code> command is just a Markdown file in <code>.claude/commands/</code>.
+          </p>
+        </details>
+        <details>
+          <summary>Where does the name come from?</summary>
+          <p>
+            Redlining is the proofreader's term for marking a proof with corrections and additions
+            in red, which is exactly what the tool does to a running page. The American housing term
+            shares the word, not the meaning.
+          </p>
+        </details>
+        <details>
+          <summary>Is anything sent anywhere?</summary>
+          <p>
+            No. Everything stays on localhost: the overlay talks only to your own dev server, there
+            are no accounts and no telemetry.
+          </p>
+        </details>
+      </main>
+    </div>
+    <footer>
+      <div class="wrap">
+        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
+        that changes your codebase.
+      </div>
+    </footer>
+  </body>
+</html>
