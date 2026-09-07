@@ -44,6 +44,17 @@
         "default": "./dist/loader.cjs"
       },
       "default": "./dist/loader.mjs"
+    },
+    "./vite": {
+      "import": {
+        "types": "./dist/vite.d.mts",
+        "default": "./dist/vite.mjs"
+      },
+      "require": {
+        "types": "./dist/vite.d.cts",
+        "default": "./dist/vite.cjs"
+      },
+      "default": "./dist/vite.mjs"
     }
   },
   "scripts": {
@@ -74,5 +85,13 @@
     "@babel/parser": "^8.0.4",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.41.0"
-  }
+  },
+  "keywords": [
+    "nextjs",
+    "vite",
+    "react",
+    "claude-code",
+    "annotations",
+    "dev-tools"
+  ]
 }

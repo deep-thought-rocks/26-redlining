@@ -21,7 +21,7 @@ export default defineConfig([
     dts: true,
   },
   {
-    entry: { next: 'src/next/index.ts', loader: 'src/loader/index.ts' },
+    entry: { next: 'src/next/index.ts', loader: 'src/loader/index.ts', vite: 'src/vite.ts' },
     format: ['esm', 'cjs'],
     platform: 'node',
     dts: true,
