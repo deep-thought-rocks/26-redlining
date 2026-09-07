@@ -1,5 +1,11 @@
 # redlining
 
+## 0.4.0
+
+### Minor Changes
+
+- The viewport preset is now a **device frame**: the width select (375 / 768 / 1280) opens the same page in an iframe of that width, so media queries, fixed bars and mobile layouts behave as on a device. The overlay inside the frame opens by itself, its annotations sync into the same session, and each carries `Applies at: ≤ 375px (made in a 375px device frame)`. The earlier max-width approximation is gone.
+
 ## 0.3.1
 
 ### Patch Changes
