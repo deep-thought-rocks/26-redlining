@@ -61,6 +61,7 @@ button { font: inherit; color: inherit; }
 .rl-action { height: 32px; padding: 0 var(--sbm-space-3); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-lg); background: var(--color-background-elevated); color: var(--color-text-primary); font-family: var(--sbm-font-heading); font-size: var(--sbm-text-sm); font-weight: var(--sbm-weight-semibold); cursor: pointer; }
 .rl-action--primary { background: var(--color-accent-fill); border-color: transparent; color: var(--color-on-accent); }
 .rl-action--primary:hover { background: var(--color-accent-fill-hover); }
+.rl-kbd--warn { color: var(--color-text-warning); font-weight: var(--sbm-weight-semibold); }
 .rl-kbd { color: var(--color-text-muted); font-size: var(--sbm-text-xs); align-self: center; margin-right: auto; }
 
 .rl-panel { top: 0; right: 0; bottom: 0; width: 320px; display: flex; flex-direction: column; background: var(--color-background-elevated); border-left: var(--sbm-border-w) solid var(--color-border-default); box-shadow: var(--shadow-3); animation: sbmFadeIn var(--sbm-duration-normal) var(--sbm-ease-out) both; }

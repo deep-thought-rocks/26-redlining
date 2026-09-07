@@ -23,9 +23,16 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => ref.current?.focus(), [])
 
+  // A move's From/To and a tweak's changes already carry the intent; everything else needs a note.
+  const noteRequired = draft.kind !== 'move' && !draft.changes?.length
+  const [nudged, setNudged] = useState(false)
   const save = () => {
     const text = note.trim()
-    if (!text && !draft.changes?.length) return
+    if (!text && noteRequired) {
+      setNudged(true)
+      ref.current?.focus()
+      return
+    }
     onSave(action, hint ? `${hint}: ${text}` : text, draft.kind === 'move' ? position : undefined)
   }
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -91,7 +98,10 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
                 type="button"
                 className="rl-chip"
                 aria-pressed={action === a}
-                onClick={() => setAction(a)}
+                onClick={() => {
+                  setAction(a)
+                  ref.current?.focus()
+                }}
               >
                 {a === 'change' ? 'Change' : 'Remove'}
               </button>
@@ -103,7 +113,10 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
                   type="button"
                   className="rl-chip"
                   aria-pressed={position === p}
-                  onClick={() => setPosition(p)}
+                  onClick={() => {
+                    setPosition(p)
+                    ref.current?.focus()
+                  }}
                 >
                   {p}
                 </button>
@@ -114,7 +127,10 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
                   type="button"
                   className="rl-chip"
                   aria-pressed={hint === h}
-                  onClick={() => setHint(hint === h ? null : h)}
+                  onClick={() => {
+                    setHint(hint === h ? null : h)
+                    ref.current?.focus()
+                  }}
                 >
                   {h}
                 </button>
@@ -125,12 +141,12 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
         className="rl-textarea"
         data-testid="rl-note"
         placeholder={
-          draft.kind === 'tweak'
-            ? 'Optional: why, or anything the numbers do not say'
-            : draft.kind === 'draw'
-              ? 'What goes here?'
-              : draft.kind === 'move'
-                ? 'Why move it?'
+          draft.kind === 'move'
+            ? 'Optional: why move it?'
+            : draft.kind === 'tweak'
+              ? 'Optional: why, or anything the numbers do not say'
+              : draft.kind === 'draw'
+                ? 'What goes here?'
                 : 'What should change?'
         }
         value={note}
@@ -138,11 +154,21 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
         onKeyDown={onKey}
       />
       <div className="rl-actions">
-        <span className="rl-kbd">⏎ save · ⇧⏎ newline · esc cancel</span>
+        <span className={`rl-kbd${nudged && noteRequired && !note.trim() ? ' rl-kbd--warn' : ''}`}>
+          {nudged && noteRequired && !note.trim()
+            ? 'Write what should change first'
+            : '⏎ save · ⇧⏎ newline · esc cancel'}
+        </span>
         <button type="button" className="rl-action" onClick={onCancel}>
           Cancel
         </button>
-        <button type="button" className="rl-action rl-action--primary" onClick={save}>
+        <button
+          type="button"
+          className="rl-action rl-action--primary"
+          data-testid="rl-note-save"
+          disabled={noteRequired && !note.trim()}
+          onClick={save}
+        >
           Save
         </button>
       </div>
