@@ -100,4 +100,6 @@ export interface Session {
   screenshot?: string
   /** Data URL of the page with previews reset, optional. */
   screenshotBefore?: string
+  /** Viewport preset width (px) active at save time, when one was. */
+  preset?: number
 }

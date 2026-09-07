@@ -25,6 +25,15 @@ function resetEntry(e: Entry): void {
   reset(el)
 }
 
+/** Re-applies an entry's tweak preview to its (re-found) element. */
+function reapplyEntry(e: Entry): void {
+  if (!e.changes?.length) return
+  const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
+  if (!el) return
+  if (e.preview) adoptSnapshot(el, e.preview)
+  apply(el, e.changes)
+}
+
 /** PRD §7.6: larger batches degrade agent output. */
 const WARN_AT = 10
 
@@ -68,6 +77,9 @@ export function App({
   const [tweak, setTweak] = useState<Tweak | null>(null)
   const [panel, setPanel] = useState(false)
   const [screenshot, setScreenshot] = useState(screenshotDefault)
+  const [beforeAfter, setBeforeAfter] = useState(false)
+  /** Viewport preset (px) applied to <html> as a max-width; approximate, not a media query. */
+  const [viewport, setViewport] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   const notify = useCallback((message: string) => setToast(message), [])
@@ -87,9 +99,7 @@ export function App({
       for (const e of entries) {
         if (!e.changes?.length) continue
         const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
-        if (!el) continue
-        if (e.preview) adoptSnapshot(el, e.preview)
-        if (!el.hasAttribute('data-rl-preview')) apply(el, e.changes)
+        if (el && !el.hasAttribute('data-rl-preview')) reapplyEntry(e)
       }
     }
     reapply()
@@ -98,10 +108,24 @@ export function App({
     return () => mo.disconnect()
   }, [entries])
 
-  const session = useCallback(
-    () => toSession(entries, window.location, { w: window.innerWidth, h: window.innerHeight }),
-    [entries],
-  )
+  useEffect(() => {
+    const root = document.documentElement
+    const set = (w: number | null) => {
+      root.style.maxWidth = w ? `${w}px` : ''
+      root.style.marginLeft = w ? 'auto' : ''
+      root.style.marginRight = w ? 'auto' : ''
+      if (w) root.setAttribute('data-rl-viewport', String(w))
+      else root.removeAttribute('data-rl-viewport')
+    }
+    set(viewport)
+    return () => set(null)
+  }, [viewport])
+
+  const session = useCallback(() => {
+    const out = toSession(entries, window.location, { w: window.innerWidth, h: window.innerHeight })
+    if (viewport) out.preset = viewport
+    return out
+  }, [entries, viewport])
 
   const copy = useCallback(async () => {
     await navigator.clipboard.writeText(toMarkdown(session()))
@@ -112,6 +136,12 @@ export function App({
     try {
       const payload = session()
       if (screenshot) {
+        if (beforeAfter && entries.some((e) => e.changes?.length)) {
+          for (const e of entries) resetEntry(e)
+          const before = await captureScreenshot(entries, host)
+          for (const e of entries) reapplyEntry(e)
+          if ('dataUrl' in before) payload.screenshotBefore = before.dataUrl
+        }
         const shot = await captureScreenshot(entries, host)
         if ('dataUrl' in shot) payload.screenshot = shot.dataUrl
         else notify(`Saving without screenshot: ${shot.error}`)
@@ -129,7 +159,7 @@ export function App({
     } catch (err) {
       notify(`Save failed: ${String(err)}`)
     }
-  }, [endpoint, session, notify, screenshot, entries, host])
+  }, [endpoint, session, notify, screenshot, beforeAfter, entries, host])
 
   const clear = useCallback(() => {
     if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`)) {
@@ -241,6 +271,7 @@ export function App({
       action,
       note,
       position,
+      appliesAt: viewport ?? undefined,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     })
@@ -361,12 +392,16 @@ export function App({
         count={entries.length}
         panelOpen={panel}
         screenshot={screenshot}
+        beforeAfter={beforeAfter}
+        viewport={viewport}
         position={position}
         hotkey={hotkey}
         onToggle={toggle}
         onTool={switchTool}
         onPanel={() => setPanel((p) => !p)}
         onScreenshot={() => setScreenshot((v) => !v)}
+        onBeforeAfter={() => setBeforeAfter((v) => !v)}
+        onViewport={setViewport}
         onCopy={() => void copy()}
         onSend={() => void send()}
         onClear={clear}

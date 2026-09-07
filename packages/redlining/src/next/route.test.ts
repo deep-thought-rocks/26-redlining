@@ -62,6 +62,31 @@ describe('route handler', () => {
     expect(existsSync(path.join(root, 'out/screenshot.png'))).toBe(false)
   })
 
+  test('writes a before screenshot when the session carries one', async () => {
+    const POST = createHandler({ projectRoot: root, enabled: true })
+    const png = Buffer.from([1, 2, 3]).toString('base64')
+    const res = await POST(
+      post({
+        session: {
+          ...session,
+          screenshot: `data:image/png;base64,${png}`,
+          screenshotBefore: `data:image/png;base64,${png}`,
+        },
+      }),
+    )
+    expect(await res.json()).toEqual({
+      files: [
+        '.redlining/annotations.md',
+        '.redlining/annotations.json',
+        '.redlining/screenshot.png',
+        '.redlining/screenshot-before.png',
+      ],
+    })
+    expect(existsSync(path.join(root, '.redlining/screenshot-before.png'))).toBe(true)
+    await POST(post({ session }))
+    expect(existsSync(path.join(root, '.redlining/screenshot-before.png'))).toBe(false)
+  })
+
   test('refuses outside development', async () => {
     const POST = createHandler({ projectRoot: root, enabled: false })
     expect((await POST(post({ session }))).status).toBe(403)

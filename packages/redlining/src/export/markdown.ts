@@ -20,14 +20,17 @@ const FOOTER_CHANGES =
 export function toMarkdown(session: Session, options: MarkdownOptions = {}): string {
   const now = options.now ?? new Date()
   const lines: string[] = []
+  const preset = session.preset ? ` · preset ≤ ${session.preset}px` : ''
   lines.push(
-    `# Redlining — ${session.route}  (${stamp(now)} · viewport ${session.viewport.w}×${session.viewport.h})`,
+    `# Redlining — ${session.route}  (${stamp(now)} · viewport ${session.viewport.w}×${session.viewport.h}${preset})`,
   )
   lines.push('')
   if (session.screenshot) {
-    lines.push(
-      `Screenshot: ${options.screenshotPath ?? '.redlining/screenshot.png'} (pins numbered as below)`,
-    )
+    const shotPath = options.screenshotPath ?? '.redlining/screenshot.png'
+    const before = session.screenshotBefore
+      ? ` · before the tweaks: ${shotPath.replace(/\.png$/, '-before.png')}`
+      : ''
+    lines.push(`Screenshot: ${shotPath} (pins numbered as below)${before}`)
     lines.push('')
   }
   const ordered = [...session.annotations].sort((a, b) => a.index - b.index)

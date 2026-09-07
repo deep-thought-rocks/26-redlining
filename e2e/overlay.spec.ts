@@ -383,3 +383,36 @@ test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page
   await expect(page.getByTestId('rl-ruler')).toHaveCount(0)
   await expect(page.getByTestId('rl-tweak-changes')).not.toContainText('nudge')
 })
+
+test('viewport preset marks annotations and the before/after screenshot writes two files', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.getByTestId('rl-viewport').selectOption('768')
+  await expect(page.locator('html')).toHaveAttribute('data-rl-viewport', '768')
+  await expect(page.locator('html')).toHaveCSS('max-width', '768px')
+
+  await page.keyboard.press('t')
+  const button = page.locator('.toolbar button').first()
+  await button.click()
+  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await page.getByTestId('rl-tweak-done').click()
+  await page.keyboard.press('Enter')
+
+  await page
+    .getByRole('button', { name: 'Also capture a before screenshot (previews reset)' })
+    .click()
+  await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
+  await expect(page.getByTestId('rl-toast')).toContainText('Saved')
+  const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
+  expect(md).toContain('· preset ≤ 768px)')
+  expect(md).toContain('- Applies at: ≤ 768px (approximate; viewport preset, not a media query)')
+  expect(md).toContain('· before the tweaks: .redlining/screenshot-before.png')
+  expect(existsSync(path.join(OUT, 'screenshot-before.png'))).toBe(true)
+  expect(existsSync(path.join(OUT, 'screenshot.png'))).toBe(true)
+
+  await page.getByTestId('rl-viewport').selectOption('')
+  await expect(page.locator('html')).not.toHaveAttribute('data-rl-viewport', '768')
+})

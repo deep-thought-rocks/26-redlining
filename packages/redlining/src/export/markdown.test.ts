@@ -305,6 +305,17 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     ).toBe(true)
   })
 
+  test('header names the viewport preset and the screenshot line the before image', () => {
+    const md = toMarkdown(
+      { ...session, preset: 768, screenshotBefore: 'data:image/png;base64,AA' },
+      { now: NOW },
+    )
+    expect(md).toContain('viewport 1440×900 · preset ≤ 768px)')
+    expect(md).toContain(
+      'Screenshot: .redlining/screenshot.png (pins numbered as below) · before the tweaks: .redlining/screenshot-before.png',
+    )
+  })
+
   test('lists every anchor of a multi-select annotation', () => {
     const a1 = anchor({ tag: 'article', file: 'app/a.tsx', line: 3, owners: ['Grid', 'Card'] })
     const a2 = anchor({ tag: 'article', file: 'app/a.tsx', line: 9, owners: ['Grid', 'Card'] })

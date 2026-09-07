@@ -64,6 +64,13 @@ export function createHandler(options: RouteOptions = {}) {
     } else {
       await rm(path.join(outDir, 'screenshot.png'), { force: true })
     }
+    const before = session.screenshotBefore ? decodePng(session.screenshotBefore) : null
+    if (before) {
+      await writeFile(path.join(outDir, 'screenshot-before.png'), before)
+      files.push(`${relPosix}/screenshot-before.png`)
+    } else {
+      await rm(path.join(outDir, 'screenshot-before.png'), { force: true })
+    }
     return Response.json({ files })
   }
 }

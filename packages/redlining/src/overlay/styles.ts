@@ -23,6 +23,7 @@ button { font: inherit; color: inherit; }
 .rl-btn--toggle { width: 44px; height: 44px; border-radius: var(--sbm-radius-full); background: var(--color-accent-fill); color: var(--color-on-accent); box-shadow: var(--shadow-3); }
 .rl-btn--toggle:hover { background: var(--color-accent-fill-hover); color: var(--color-on-accent); }
 .rl-count { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--sbm-radius-full); background: var(--color-accent-fill); color: var(--color-on-accent); font-size: 11px; font-weight: var(--sbm-weight-semibold); line-height: 18px; text-align: center; }
+.rl-select { height: 28px; align-self: center; padding: 0 4px; font: 600 12px var(--sbm-font-heading); color: var(--color-text-secondary); background: var(--color-background-elevated); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-md); }
 .rl-sep { width: 1px; margin: 6px 2px; background: var(--color-border-default); }
 
 .rl-outline { position: absolute; pointer-events: none; outline: var(--sbm-border-w-thick) solid var(--color-border-focus); outline-offset: 1px; border-radius: var(--sbm-radius-sm); }

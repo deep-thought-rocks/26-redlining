@@ -2,6 +2,7 @@ import {
   ArrowRightLeft,
   Camera,
   Copy,
+  Images,
   ListChecks,
   MousePointerClick,
   PenLine,
@@ -22,12 +23,16 @@ export interface ToolbarProps {
   count: number
   panelOpen: boolean
   screenshot: boolean
+  beforeAfter: boolean
+  viewport: number | null
   position: Position
   hotkey: string
   onToggle(): void
   onTool(tool: Tool): void
   onPanel(): void
   onScreenshot(): void
+  onBeforeAfter(): void
+  onViewport(width: number | null): void
   onCopy(): void
   onSend(): void
   onClear(): void
@@ -77,6 +82,19 @@ export function Toolbar(p: ToolbarProps) {
         {p.count > 0 ? <span className="rl-count">{p.count}</span> : null}
       </IconButton>
       <span className="rl-sep" />
+      <select
+        className="rl-select"
+        aria-label="Viewport preset"
+        data-testid="rl-viewport"
+        title="Viewport preset: annotate at a narrower width (approximate; not a media query)"
+        value={p.viewport ?? ''}
+        onChange={(e) => p.onViewport(e.target.value ? Number(e.target.value) : null)}
+      >
+        <option value="">Full</option>
+        <option value="375">375</option>
+        <option value="768">768</option>
+        <option value="1280">1280</option>
+      </select>
       <IconButton
         label="Include screenshot in export"
         pressed={p.screenshot}
@@ -84,6 +102,15 @@ export function Toolbar(p: ToolbarProps) {
       >
         <Camera size={18} />
       </IconButton>
+      {p.screenshot ? (
+        <IconButton
+          label="Also capture a before screenshot (previews reset)"
+          pressed={p.beforeAfter}
+          onClick={p.onBeforeAfter}
+        >
+          <Images size={18} />
+        </IconButton>
+      ) : null}
       <IconButton label="Copy prompt (⌘⇧C)" onClick={p.onCopy}>
         <Copy size={18} />
       </IconButton>
