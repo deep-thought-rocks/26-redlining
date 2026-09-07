@@ -25,7 +25,7 @@ export function ReportList({ reports }: { reports: Report[] }) {
         {reports.map((r) => (
           <li key={r.name} className="report">
             <div>
-              <h3>{r.name}</h3>
+              <h3 className="text-base">{r.name}</h3>
               <p>{r.owner}</p>
             </div>
             <span className="status" data-status={r.status}>

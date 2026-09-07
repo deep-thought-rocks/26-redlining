@@ -286,7 +286,6 @@ button {
 }
 .report h3 {
   margin: 0;
-  font-size: 15px;
   font-weight: 600;
 }
 .report p {
@@ -322,6 +321,29 @@ button {
   font-size: 13px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Type scale and widths, so tweaks can be mapped back to a class */
+.text-sm {
+  font-size: 13px;
+}
+.text-base {
+  font-size: 15px;
+}
+.text-lg {
+  font-size: 17px;
+}
+.text-xl {
+  font-size: 20px;
+}
+.w-40 {
+  width: 160px;
+}
+.w-48 {
+  width: 192px;
+}
+.w-56 {
+  width: 224px;
 }
 
 /* Sidebar */

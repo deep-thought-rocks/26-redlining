@@ -68,6 +68,25 @@ export interface Change {
   token?: string
   /** Relative form for sizes, e.g. "≈ 33 % of parent". */
   relative?: string
+  /** Where the `from` value came from in the cascade. */
+  source?: ChangeSource
+  /** A class in the project's own stylesheet whose value equals `to`, e.g. "text-xl". */
+  suggestion?: string
+}
+
+/** Provenance of a computed value: the winning declaration, an inherited rule, or the layout. */
+export interface ChangeSource {
+  kind: 'inline' | 'rule' | 'inherited' | 'layout' | 'default'
+  /** Winning selector, e.g. ".text-lg" or ".report h3". */
+  selector?: string
+  /** The declaration as written: "1.125rem", "var(--text-lg)". */
+  value?: string
+  /** Single-class selector → the class name. */
+  className?: string
+  /** var() reference in the declaration. */
+  token?: string
+  /** inherited: the ancestor tag that carries the rule; layout: 'grid' | 'flex' | 'block'. */
+  from?: string
 }
 
 export interface Annotation {

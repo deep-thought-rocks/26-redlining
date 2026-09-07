@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Change, Rect } from '../types'
+import { provenance, suggestClass } from './cascade'
 import { isOverlay, pageRect } from './dom'
 import { upsert } from './Inspector'
 import { computed, isInline, relativeTo } from './preview'
@@ -91,11 +92,16 @@ export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps
     const base =
       changesRef.current.find((c) => c.kind === 'style' && c.property === property)?.from ??
       computed(element, property)
-    const change: Change = { kind: 'style', property, from: base, to: value, input }
+    const source =
+      changesRef.current.find((c) => c.kind === 'style' && c.property === property)?.source ??
+      provenance(element, property)
+    const change: Change = { kind: 'style', property, from: base, to: value, input, source }
     if (property === 'width' || property === 'height') {
       const rel = relativeTo(element, property, parseFloat(value))
       if (rel) change.relative = rel
     }
+    const suggestion = suggestClass(element, property, value, source)
+    if (suggestion) change.suggestion = suggestion
     return upsert(list, change)
   }
 

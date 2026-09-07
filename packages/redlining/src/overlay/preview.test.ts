@@ -140,6 +140,63 @@ describe('summarise / describe', () => {
     ])
   })
 
+  test('describe names the source, a class suggestion, and warns for layout-derived sizes', () => {
+    expect(
+      describeChange({
+        ...style('font-size', '18px', '20px'),
+        source: { kind: 'rule', selector: '.text-lg', className: 'text-lg', value: '18px' },
+        suggestion: 'text-xl',
+      }),
+    ).toBe('font-size: 18px → 20px (class text-lg → text-xl)')
+    expect(
+      describeChange({
+        ...style('font-size', '18px', '19px'),
+        source: { kind: 'rule', selector: '.text-lg', className: 'text-lg', value: '18px' },
+      }),
+    ).toBe('font-size: 18px → 19px (from class text-lg)')
+    expect(
+      describeChange({
+        ...style('font-size', '15px', '17px'),
+        source: { kind: 'rule', selector: 'button', value: 'inherit' },
+        suggestion: 'text-lg',
+      }),
+    ).toBe('font-size: 15px → 17px (from `button`; add class text-lg)')
+    expect(
+      describeChange({
+        ...style('line-height', '24px', '28px'),
+        source: { kind: 'rule', selector: '.p', className: 'p', value: 'var(--lh)', token: '--lh' },
+      }),
+    ).toBe('line-height: 24px → 28px (from var(--lh) via class p)')
+    expect(
+      describeChange({
+        ...style('font-size', '15px', '16px'),
+        source: {
+          kind: 'inherited',
+          from: 'section',
+          selector: '.prose',
+          className: 'prose',
+          value: '15px',
+        },
+      }),
+    ).toBe('font-size: 15px → 16px (inherited from <section> via class prose)')
+    expect(
+      describeChange({
+        ...style('width', '179.69px', '220px'),
+        relative: '≈ 23 % of parent',
+        source: { kind: 'layout', from: 'grid' },
+      }),
+    ).toBe(
+      "width: auto (179.69px, laid out by the parent grid) → 220px (≈ 23 % of parent) — set by the parent's columns/gap, not by this element; prefer changing the layout",
+    )
+    expect(
+      describeChange({
+        ...style('color', 'rgb(0, 0, 0)', 'rgb(37, 99, 235)'),
+        token: '--accent',
+        source: { kind: 'rule', selector: '.btn', className: 'btn', value: '#000' },
+      }),
+    ).toBe('color: rgb(0, 0, 0) → rgb(37, 99, 235) (from class btn; token --accent)')
+  })
+
   test('describe renders each kind for the export', () => {
     expect(
       describeChange({ ...style('width', '96px', '128px'), relative: '≈ 33 % of parent' }),

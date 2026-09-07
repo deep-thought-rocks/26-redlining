@@ -1,7 +1,7 @@
 // Pure helpers over tweak-mode changes, shared by the export and the overlay panel.
-import type { Change } from '../types'
+import type { Change, ChangeSource } from '../types'
 
-/** Human line for a change, e.g. "font-size: 14px → 16px (token --text-lg)". */
+/** Human line for a change, e.g. "font-size: 14px → 16px (class text-sm → text-base)". */
 export function describe(c: Change): string {
   if (c.kind === 'text') return `text: "${c.from}" → "${c.to}"`
   if (c.kind === 'nudge') {
@@ -9,8 +9,54 @@ export function describe(c: Change): string {
   }
   if (c.kind === 'visibility')
     return c.to === 'none' ? 'hide (display: none)' : `display: ${c.from} → ${c.to}`
-  const extras = [c.relative, c.token ? `token ${c.token}` : undefined].filter(Boolean)
-  return `${c.property}: ${c.from} → ${c.to}${extras.length ? ` (${extras.join(', ')})` : ''}`
+  const s = c.source
+  if (s?.kind === 'layout') {
+    const px = c.from.replace(/px$/, '')
+    return `${c.property}: auto (${px}px, laid out by the parent ${s.from}) → ${c.to}${c.relative ? ` (${c.relative})` : ''} — set by ${s.from === 'grid' ? "the parent's columns/gap" : s.from === 'flex' ? "its content and the parent's flex sizing" : "the parent's width"}, not by this element; prefer changing the layout`
+  }
+  const extras: string[] = []
+  if (c.suggestion && s?.className) extras.push(`class ${s.className} → ${c.suggestion}`)
+  else {
+    const origin = s ? describeSource(s) : ''
+    if (origin) extras.push(origin)
+    if (c.suggestion) extras.push(`add class ${c.suggestion}`)
+  }
+  if (c.relative) extras.push(c.relative)
+  if (c.token && !extras.some((e) => e.includes(c.token!))) extras.push(`token ${c.token}`)
+  return `${c.property}: ${c.from} → ${c.to}${extras.length ? ` (${extras.join('; ')})` : ''}`
+}
+
+/** "from class text-lg", "from var(--lh) via .p", "inherited from <section> via .prose", "inline style". */
+export function describeSource(s: ChangeSource): string {
+  const via = s.className ? `class ${s.className}` : s.selector ? `\`${s.selector}\`` : ''
+  switch (s.kind) {
+    case 'inline':
+      return s.token ? `inline style, var(${s.token})` : 'inline style'
+    case 'rule':
+      return s.token ? `from var(${s.token})${via ? ` via ${via}` : ''}` : via ? `from ${via}` : ''
+    case 'inherited':
+      return `inherited from <${s.from}>${via ? ` via ${via}` : ''}${s.token ? `, var(${s.token})` : ''}`
+    case 'layout':
+      return `laid out by the parent ${s.from}`
+    default:
+      return ''
+  }
+}
+
+/** Short caption for the Inspector: "from .text-lg", "auto · from grid", "inherited from <section>". */
+export function captionFor(s: ChangeSource): string {
+  switch (s.kind) {
+    case 'inline':
+      return s.token ? `inline · var(${s.token})` : 'inline style'
+    case 'rule':
+      return s.token ? `var(${s.token}) · ${s.selector}` : `from ${s.selector}`
+    case 'inherited':
+      return `inherited from <${s.from}>${s.selector ? ` ${s.selector}` : ''}`
+    case 'layout':
+      return `auto · from ${s.from}`
+    default:
+      return ''
+  }
 }
 
 /**

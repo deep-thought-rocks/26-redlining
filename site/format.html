@@ -140,17 +140,23 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
 - Classes: `btn btn-primary`
 - Changes:
   - text: "Export CSV" → "Download CSV"
-  - font-size: 14px → 16px
-  - width: 96px → 128px (≈ 33 % of parent)
-  - padding-left, padding-right: 12px → 16px
-  - background-color: rgb(243, 244, 246) → rgb(37, 99, 235) (token --accent)
+  - font-size: 14px → 16px (class text-sm → text-base)
+  - line-height: 20px → 24px (from var(--leading) via class btn)
+  - width: auto (96px, laid out by the parent flex) → 128px (≈ 33 % of parent) — set by its content and the parent's flex sizing, not by this element; prefer changing the layout
+  - padding-left, padding-right: 12px → 16px (from class btn)
+  - background-color: rgb(243, 244, 246) → rgb(37, 99, 235) (from class btn; token --accent)
   - visual nudge: +8px right, −4px up — previewed with a transform; implement as spacing or alignment, never ship a transform
 - Applies at: ≤ 768px (made in a 768px device frame)</code></pre>
         <p>
           <code>Classes</code> is the element's class list, so a value can be mapped to a utility
           class. Each change is <em>computed before → after</em>; sizes add their share of the
           parent, colours the matching <code>:root</code> token when one exists, and equal paired
-          sides collapse into one line. A nudge is always labelled as visual. When any block has
+          sides collapse into one line. Each change also says where the old value came from: the
+          winning class or selector, the <code>var()</code> it reads, or the ancestor it inherits
+          from; when the new value equals a single-class rule in the project's stylesheets the line
+          reads <em>class A → B</em>. A size nobody sets prints as
+          <em>auto (Npx, laid out by the parent grid|flex|block)</em> and ends with a warning to
+          change the layout instead. A nudge is always labelled as visual. When any block has
           changes, the footer adds:
           <em
             >values are computed px at the stated viewport; implement them in this project's own

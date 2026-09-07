@@ -180,7 +180,20 @@
             height, radius, opacity, padding and margin per side; weight chips; a text field when
             the element has a single text node and is not a controlled input; text, background and
             border colours with a picker and a list of your own <code>:root</code> tokens; gap,
-            justify and align chips on flex and grid containers; Hide; Undo; Reset.
+            justify and align chips on flex and grid containers; Hide; Undo; Reset. Sections start
+            collapsed and show their values in one line (<em>margin 10 0 20 0</em>,
+            <em>15 · 600 · 22 · normal</em>); click a heading to open it.
+          </li>
+          <li>
+            <strong>Where a value comes from.</strong> Every field carries a caption with the
+            winning rule: <em>from .text-lg</em>, <em>var(--leading) · .prose</em>,
+            <em>inherited from &lt;section&gt; .prose</em>, <em>inline style</em>. A width or height
+            nobody sets is labelled <em>auto · from grid</em> (or flex, block) in the warning
+            colour: you can still change it, but the export says the size is set by the parent's
+            layout and that changing the layout is the better fix. When the new value matches a
+            single-class rule in your own stylesheet, the export names it (<em
+              >class text-base → text-lg</em
+            >) so the agent swaps a class instead of inventing a number.
           </li>
           <li>
             <strong>Handles.</strong> Drag a corner or edge to resize (<kbd>⇧</kbd> keeps the

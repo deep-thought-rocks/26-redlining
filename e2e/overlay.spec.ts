@@ -263,8 +263,18 @@ test('tweak mode: steppers and text edit preview live, export deltas with classe
   const inspector = page.getByTestId('rl-inspector')
   await expect(inspector).toContainText('Tweak Toolbar')
 
+  // Sections start collapsed and summarise their values: `.btn { padding: 7px 12px }`.
+  await expect(page.getByTestId('rl-section-padding')).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByTestId('rl-section-padding')).toContainText('7 12 7 12')
+  await expect(page.getByRole('button', { name: 'Font size +1' })).toHaveCount(0)
+  await page.getByTestId('rl-section-type').click()
+  await expect(page.getByTestId('rl-section-type')).toHaveAttribute('aria-expanded', 'true')
+  // Every value says where it comes from: `button { font: inherit }` wins for font-size.
+  await expect(inspector).toContainText('from button')
   await page.getByRole('button', { name: 'Font size +1' }).click()
   await page.getByRole('button', { name: 'Font size +1' }).click()
+  await page.getByTestId('rl-section-box').click()
+  await expect(inspector).toContainText('auto · from flex')
   await page.getByRole('button', { name: 'Width +4' }).click()
   await page.getByTestId('rl-tweak-text').fill('Download CSV')
   await page.keyboard.press('Enter')
@@ -293,10 +303,15 @@ test('tweak mode: steppers and text edit preview live, export deltas with classe
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · CHANGE — Toolbar')
   expect(clipboard).toContain('- Classes: `btn`')
-  expect(clipboard).toContain(`  - font-size: ${before.size} → ${parseFloat(before.size) + 2}px`)
-  // Steppers snap to their grid (width: 4px).
+  expect(clipboard).toContain(
+    `  - font-size: ${before.size} → ${parseFloat(before.size) + 2}px (from \`button\`; add class text-lg)`,
+  )
+  // Steppers snap to their grid (width: 4px). Nobody sets the width, so the export says so.
   const snapped = Math.round((parseFloat(before.width) + 4) / 4) * 4
-  expect(clipboard).toContain(`  - width: ${before.width} → ${snapped}px`)
+  expect(clipboard).toContain(
+    `  - width: auto (${parseFloat(before.width)}px, laid out by the parent flex) → ${snapped}px`,
+  )
+  expect(clipboard).toContain('prefer changing the layout')
   expect(clipboard).toContain('  - text: "Export CSV" → "Download CSV"')
   expect(clipboard).not.toContain('- Note:')
   expect(clipboard).toContain('not as inline styles.')
@@ -360,7 +375,9 @@ test('tweak gestures: a handle drag resizes, arrow keys nudge, and both export',
   await page.keyboard.press('Enter')
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
-  expect(clipboard).toContain(`  - width: ${before} → ${expected}`)
+  expect(clipboard).toContain(
+    `  - width: auto (${parseFloat(before)}px, laid out by the parent flex) → ${expected}`,
+  )
   expect(clipboard).toContain(
     '  - visual nudge: +2px right, +10px down — previewed with a transform; implement as spacing or alignment, never ship a transform',
   )
@@ -377,10 +394,14 @@ test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page
   await page.mouse.click(chipsBox.x + chipsBox.width - 4, chipsBox.y + chipsBox.height / 2)
   const inspector = page.getByTestId('rl-inspector')
   await expect(inspector).toContainText('Layout (flex)')
+  await expect(page.getByTestId('rl-section-layout')).toContainText('gap 8')
+  await page.getByTestId('rl-section-layout').click()
   await page.getByRole('button', { name: 'Gap +2' }).click()
   await expect(chips).toHaveCSS('gap', '10px')
   await page.getByRole('button', { name: 'space-between', exact: true }).click()
   await expect(chips).toHaveCSS('justify-content', 'space-between')
+  await expect(page.getByTestId('rl-section-colour')).toContainText('none')
+  await page.getByTestId('rl-section-colour').click()
   await page.getByTestId('rl-token-background-color').selectOption('--accent')
   await expect(chips).toHaveCSS('background-color', 'rgb(37, 99, 235)')
   await expect(page.getByTestId('rl-tweak-changes')).toContainText(
@@ -398,6 +419,35 @@ test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page
   await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2 + 1)
   await expect(page.getByTestId('rl-ruler')).toHaveCount(0)
   await expect(page.getByTestId('rl-tweak-changes')).not.toContainText('nudge')
+})
+
+test('tweak: a value from a class suggests the sibling class that matches the new value', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('t')
+  const title = page.locator('.report h3').first()
+  await expect(title).toHaveCSS('font-size', '15px')
+  await title.click()
+  await page.getByTestId('rl-section-type').click()
+  const inspector = page.getByTestId('rl-inspector')
+  await expect(inspector).toContainText('from .text-base')
+  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    'font-size: 15px → 16px (from class text-base)',
+  )
+  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    'font-size: 15px → 17px (class text-base → text-lg)',
+  )
+  await page.getByTestId('rl-tweak-done').click()
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('- Classes: `text-base`')
+  expect(clipboard).toContain('  - font-size: 15px → 17px (class text-base → text-lg)')
 })
 
 test('device frame: a real narrow viewport in an iframe; its annotations sync into the session', async ({
@@ -439,6 +489,7 @@ test('before/after screenshot writes two files', async ({ page }) => {
   await page.keyboard.press('t')
   const button = page.locator('.toolbar button').first()
   await button.click()
+  await page.getByTestId('rl-section-type').click()
   await page.getByRole('button', { name: 'Font size +1' }).click()
   await page.getByTestId('rl-tweak-done').click()
   await page.keyboard.press('Enter')

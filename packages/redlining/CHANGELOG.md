@@ -5,6 +5,9 @@
 ### Minor Changes
 
 - The viewport preset is now a **device frame**: the width select (375 / 768 / 1280) opens the same page in an iframe of that width, so media queries, fixed bars and mobile layouts behave as on a device. The overlay inside the frame opens by itself, its annotations sync into the same session, and each carries `Applies at: ≤ 375px (made in a 375px device frame)`. The earlier max-width approximation is gone.
+- **Value provenance** in tweak mode: every Inspector field says where its value comes from (`from .text-lg`, `var(--leading) · .prose`, `inherited from <section>`, `inline style`), and sizes nobody sets are labelled `auto · from grid|flex|block`. The export carries it: `font-size: 15px → 17px (class text-base → text-lg)` when a single-class rule in your stylesheet matches the new value, `(from class btn)` otherwise, and `width: auto (180px, laid out by the parent grid) → 220px — … prefer changing the layout` for layout-derived sizes. `Change` gains `source` and `suggestion`.
+- Inspector sections (Type, Box, Padding, Margin, Colour, Layout) are collapsed by default and show their values in one line, e.g. `margin 10 0 20 0`; click the heading to open one. Displayed values round to one decimal.
+- The toolbar and pen button can be moved between corners (button in the toolbar); the position is remembered.
 
 ## 0.3.1
 

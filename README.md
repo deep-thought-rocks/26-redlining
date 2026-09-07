@@ -65,7 +65,7 @@ Claude Code reads `.redlining/annotations.md`, which looks like this:
 Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.
 ```
 
-Redlining never edits code. Claude Code stays the only thing that changes your codebase. Tweak mode previews changes in the browser and exports the numbers (`font-size: 14px → 16px`) beside the element's classes, never inline styles. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
+Redlining never edits code. Claude Code stays the only thing that changes your codebase. Tweak mode previews changes in the browser and exports the numbers with their provenance (`font-size: 14px → 16px (class text-sm → text-base)`, `width: auto (96px, laid out by the parent grid) → 128px — … prefer changing the layout`) beside the element's classes, never inline styles. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
 
 ## Set up with an agent
 
