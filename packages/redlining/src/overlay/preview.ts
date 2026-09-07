@@ -126,6 +126,33 @@ export function resetTokenCache(): void {
   tokenCache = null
 }
 
+/** Every :root token whose value is a colour, as [name, normalised rgb()] pairs, once per page. */
+export function colorTokens(doc: Document = document): { name: string; value: string }[] {
+  if (!tokenCache) tokenCache = scanTokens(doc)
+  // Both the raw text and the probe-normalised form are keyed; prefer the canonical rgb(r, g, b).
+  const byName = new Map<string, string>()
+  for (const [value, name] of tokenCache) {
+    if (!value.startsWith('rgb')) continue
+    const canonical = /^rgb\(\d+, \d+, \d+\)$/.test(value)
+    if (!byName.has(name) || canonical) byName.set(name, value)
+  }
+  return Array.from(byName, ([name, value]) => ({ name, value }))
+}
+
+/** "rgb(37, 99, 235)" → "#2563eb", for <input type=color>; other forms pass through as #000000. */
+export function toHex(color: string): string {
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color)
+  if (!m) return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : '#000000'
+  return '#' + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('')
+}
+
+/** "#2563eb" → "rgb(37, 99, 235)", the form computed styles use. */
+export function toRgb(hex: string): string {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
+  if (!m) return hex
+  return `rgb(${parseInt(m[1]!, 16)}, ${parseInt(m[2]!, 16)}, ${parseInt(m[3]!, 16)})`
+}
+
 function scanTokens(doc: Document): Map<string, string> {
   const map = new Map<string, string>()
   const view = doc.defaultView

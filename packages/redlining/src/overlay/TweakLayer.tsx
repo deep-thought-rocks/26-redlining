@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Change } from '../types'
+import type { Change, Rect } from '../types'
 import { isOverlay, pageRect } from './dom'
 import { upsert } from './Inspector'
 import { computed, isInline, relativeTo } from './preview'
@@ -64,6 +64,8 @@ export function nudgeChange(changes: Change[], dx: number, dy: number, from: str
 /** Resize handles, Alt-drag spacing, body-drag nudge and arrow-key nudging around the tweaked element. */
 export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps) {
   const [, tick] = useState(0)
+  /** Alt+hover: the element measured against; a ruler, records nothing. */
+  const [measure, setMeasure] = useState<Element | null>(null)
   const dragRef = useRef<Drag | null>(null)
   const changesRef = useRef(changes)
   useEffect(() => {
@@ -124,7 +126,22 @@ export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps
   useEffect(() => {
     const move = (e: MouseEvent) => {
       const d = dragRef.current
-      if (!d) return
+      if (!d) {
+        if (!e.altKey) {
+          setMeasure((m) => (m ? null : m))
+          return
+        }
+        const el = document.elementFromPoint(e.clientX, e.clientY)
+        const ok =
+          el &&
+          !isOverlay(host, el) &&
+          el !== element &&
+          !element.contains(el) &&
+          el !== document.body &&
+          el !== document.documentElement
+        setMeasure((m) => (ok ? (m === el ? m : el) : null))
+        return
+      }
       e.preventDefault()
       const dx = e.clientX - d.startX
       const dy = e.clientY - d.startY
@@ -231,9 +248,36 @@ export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps
     top: rect.y + (h.includes('s') ? rect.h : h.includes('n') ? 0 : rect.h / 2),
   })
   const nudge = parseNudge(changes.find((c) => c.kind === 'nudge')?.to)
+  const gaps = measure ? gapsBetween(rect, pageRect(measure)) : []
 
   return (
     <>
+      {measure ? (
+        <div
+          className="rl-outline rl-outline--measure"
+          style={{
+            left: pageRect(measure).x,
+            top: pageRect(measure).y,
+            width: pageRect(measure).w,
+            height: pageRect(measure).h,
+          }}
+        />
+      ) : null}
+      {gaps.map((g, i) => (
+        <div
+          key={i}
+          className={`rl-ruler rl-ruler--${g.axis}`}
+          data-testid="rl-ruler"
+          style={{
+            left: g.x,
+            top: g.y,
+            width: g.axis === 'x' ? g.length : 0,
+            height: g.axis === 'y' ? g.length : 0,
+          }}
+        >
+          <span>{Math.round(g.length)}px</span>
+        </div>
+      ))}
       <div
         className="rl-outline rl-outline--tweak"
         style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
@@ -266,4 +310,27 @@ export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps
       ) : null}
     </>
   )
+}
+
+interface Gap {
+  axis: 'x' | 'y'
+  x: number
+  y: number
+  length: number
+}
+
+/** The horizontal and vertical distances between two rects (edge to nearest edge). */
+export function gapsBetween(a: Rect, b: Rect): Gap[] {
+  const gaps: Gap[] = []
+  const ax2 = a.x + a.w
+  const bx2 = b.x + b.w
+  const ay2 = a.y + a.h
+  const by2 = b.y + b.h
+  const midY = (Math.max(a.y, b.y) + Math.min(ay2, by2)) / 2
+  const midX = (Math.max(a.x, b.x) + Math.min(ax2, bx2)) / 2
+  if (bx2 <= a.x) gaps.push({ axis: 'x', x: bx2, y: midY, length: a.x - bx2 })
+  else if (b.x >= ax2) gaps.push({ axis: 'x', x: ax2, y: midY, length: b.x - ax2 })
+  if (by2 <= a.y) gaps.push({ axis: 'y', x: midX, y: by2, length: a.y - by2 })
+  else if (b.y >= ay2) gaps.push({ axis: 'y', x: midX, y: ay2, length: b.y - ay2 })
+  return gaps
 }

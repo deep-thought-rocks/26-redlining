@@ -5,12 +5,15 @@ import { describe as describeChange, summarise } from '../export/changes'
 import {
   apply,
   canEditText,
+  colorTokens,
   computed,
   isInline,
   relativeTo,
   reset,
   resetTokenCache,
   snapshot,
+  toHex,
+  toRgb,
   tokenFor,
 } from './preview'
 
@@ -105,6 +108,19 @@ describe('tokens', () => {
     expect(tokenFor('rgb(37, 99, 235)')).toBe('--accent')
     expect(tokenFor('99px')).toBeUndefined()
     expect(tokenFor('1px')).toBeUndefined() // not on :root
+  })
+
+  test('colorTokens lists only colour-valued tokens, and hex/rgb convert both ways', () => {
+    document.head.innerHTML =
+      '<style>:root { --accent: #2563eb; --gap-4: 16px; --ink: rgb(15, 23, 42) }</style>'
+    expect(colorTokens()).toEqual([
+      { name: '--accent', value: 'rgb(37, 99, 235)' },
+      { name: '--ink', value: 'rgb(15, 23, 42)' },
+    ])
+    expect(toHex('rgb(37, 99, 235)')).toBe('#2563eb')
+    expect(toHex('rgba(0, 0, 0, 0)')).toBe('#000000')
+    expect(toHex('#ABCDEF')).toBe('#abcdef')
+    expect(toRgb('#2563eb')).toBe('rgb(37, 99, 235)')
   })
 })
 

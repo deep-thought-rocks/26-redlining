@@ -349,3 +349,37 @@ test('tweak gestures: a handle drag resizes, arrow keys nudge, and both export',
     '  - visual nudge: +2px right, +10px down — previewed with a transform; implement as spacing or alignment, never ship a transform',
   )
 })
+
+test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page }) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('t')
+  const chips = page.locator('.chips').first()
+  const chipsBox = (await chips.boundingBox())!
+  // The chips row is a flex container: click its trailing gap so the row itself is picked.
+  await page.mouse.click(chipsBox.x + chipsBox.width - 4, chipsBox.y + chipsBox.height / 2)
+  const inspector = page.getByTestId('rl-inspector')
+  await expect(inspector).toContainText('Layout (flex)')
+  await page.getByRole('button', { name: 'Gap +2' }).click()
+  await expect(chips).toHaveCSS('gap', '10px')
+  await page.getByRole('button', { name: 'space-between', exact: true }).click()
+  await expect(chips).toHaveCSS('justify-content', 'space-between')
+  await page.getByTestId('rl-token-background-color').selectOption('--accent')
+  await expect(chips).toHaveCSS('background-color', 'rgb(37, 99, 235)')
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    'background-color: rgba(0, 0, 0, 0) → rgb(37, 99, 235) (token --accent)',
+  )
+
+  // Alt+hover another element shows the ruler; nothing is recorded.
+  const search = page.locator('.filters .search').first()
+  const sb = (await search.boundingBox())!
+  await page.keyboard.down('Alt')
+  await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2)
+  await expect(page.getByTestId('rl-ruler')).toHaveCount(1)
+  await expect(page.getByTestId('rl-ruler')).toContainText('px')
+  await page.keyboard.up('Alt')
+  await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2 + 1)
+  await expect(page.getByTestId('rl-ruler')).toHaveCount(0)
+  await expect(page.getByTestId('rl-tweak-changes')).not.toContainText('nudge')
+})

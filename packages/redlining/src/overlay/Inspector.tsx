@@ -2,7 +2,17 @@ import { Check, EyeOff, RotateCcw, Undo2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { describe } from '../export/changes'
 import type { Anchor, Change } from '../types'
-import { canEditText, computed, isInline, relativeTo, soleTextNode, tokenFor } from './preview'
+import {
+  canEditText,
+  colorTokens,
+  computed,
+  isInline,
+  relativeTo,
+  soleTextNode,
+  toHex,
+  toRgb,
+  tokenFor,
+} from './preview'
 
 export interface InspectorProps {
   element: Element
@@ -43,6 +53,13 @@ const FIELDS: {
   { property: 'opacity', label: 'Opacity', unit: '', step: 0.1, min: 0, max: 1 },
 ]
 const WEIGHTS = ['400', '500', '600', '700']
+const COLORS: { property: string; label: string }[] = [
+  { property: 'color', label: 'Text' },
+  { property: 'background-color', label: 'Background' },
+  { property: 'border-color', label: 'Border' },
+]
+const JUSTIFY = ['flex-start', 'center', 'space-between', 'flex-end']
+const ALIGN = ['stretch', 'flex-start', 'center', 'flex-end']
 const SECTIONS: { title: string; properties: string[] }[] = [
   { title: 'Type', properties: ['font-size', 'font-weight', 'line-height', 'letter-spacing'] },
   { title: 'Box', properties: ['width', 'height', 'border-radius', 'opacity'] },
@@ -78,6 +95,9 @@ export function Inspector(p: InspectorProps) {
     changes.find((c) => c.kind === 'style' && c.property === property)?.to ?? base(property)
   const [text, setText] = useState(() => soleTextNode(element)?.data ?? '')
   const textEditable = useMemo(() => canEditText(element), [element])
+  const tokens = useMemo(() => colorTokens(), [])
+  const display = computed(element, 'display')
+  const isFlexOrGrid = /flex|grid/.test(display)
   const hidden = changes.some((c) => c.kind === 'visibility' && c.to === 'none')
 
   const setStyle = (property: string, value: string, input?: string) => {
@@ -242,6 +262,110 @@ export function Inspector(p: InspectorProps) {
           })}
         </fieldset>
       ))}
+
+      <fieldset className="rl-section">
+        <legend>Colour</legend>
+        {COLORS.map(({ property, label }) => {
+          const value = current(property)
+          const changed = changes.some((c) => c.kind === 'style' && c.property === property)
+          const tokenNow =
+            changes.find((c) => c.kind === 'style' && c.property === property)?.token ?? ''
+          return (
+            <div key={property} className="rl-field" data-changed={changed || undefined}>
+              <span>{label}</span>
+              <div className="rl-color">
+                <input
+                  type="color"
+                  aria-label={`${label} colour`}
+                  data-testid={`rl-tweak-${property}`}
+                  value={toHex(value)}
+                  onChange={(e) => setStyle(property, toRgb(e.target.value), e.target.value)}
+                />
+                <select
+                  aria-label={`${label} token`}
+                  data-testid={`rl-token-${property}`}
+                  value={tokenNow}
+                  onChange={(e) => {
+                    const t = tokens.find((x) => x.name === e.target.value)
+                    if (t) setStyle(property, t.value, t.name)
+                  }}
+                >
+                  <option value="">token…</option>
+                  {tokens.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )
+        })}
+      </fieldset>
+
+      {isFlexOrGrid ? (
+        <fieldset className="rl-section">
+          <legend>Layout ({display})</legend>
+          {(() => {
+            const f = { property: 'gap', label: 'Gap', unit: 'px' as const, step: 2, min: 0 }
+            const value = current('gap')
+            return (
+              <div
+                className="rl-field"
+                data-changed={changes.some((c) => c.property === 'gap') || undefined}
+              >
+                <span>Gap</span>
+                <div className="rl-stepper">
+                  <button type="button" aria-label="Gap −2" onClick={() => stepField(f, -2)}>
+                    −
+                  </button>
+                  <input
+                    className="rl-input"
+                    data-testid="rl-tweak-gap"
+                    value={value.replace(/px$/, '')}
+                    readOnly
+                  />
+                  <button type="button" aria-label="Gap +2" onClick={() => stepField(f, 2)}>
+                    +
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
+          <div className="rl-field">
+            <span>Justify</span>
+            <div className="rl-chips">
+              {JUSTIFY.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className="rl-chip"
+                  aria-pressed={current('justify-content') === v}
+                  onClick={() => setStyle('justify-content', v, v)}
+                >
+                  {v.replace('flex-', '')}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="rl-field">
+            <span>Align</span>
+            <div className="rl-chips">
+              {ALIGN.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className="rl-chip"
+                  aria-pressed={current('align-items') === v}
+                  onClick={() => setStyle('align-items', v, v)}
+                >
+                  {v.replace('flex-', '')}
+                </button>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+      ) : null}
 
       <div className="rl-chips" style={{ marginTop: 8 }}>
         <button
