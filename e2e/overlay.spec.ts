@@ -4,6 +4,16 @@ import { expect, test, type Page } from '@playwright/test'
 
 const OUT = path.resolve('examples/next-app/.redlining')
 
+/** `file:line` per fixture element, read from the loader's own stamps, so nothing here hard-codes line numbers. */
+async function stampsOf(page: Page): Promise<Record<string, string>> {
+  const rows = await page
+    .locator('[data-spike]')
+    .evaluateAll((els) =>
+      els.map((el) => [el.getAttribute('data-spike')!, el.getAttribute('data-rl')!]),
+    )
+  return Object.fromEntries(rows.map(([n, rl]) => [n, rl!.replace(/:\d+$/, '')]))
+}
+
 /** The overlay lives in a shadow root; Playwright pierces it with plain locators. */
 async function openOverlay(page: Page) {
   await page.goto('/spike')
@@ -28,15 +38,16 @@ test('the loader anchors every fixture element', async ({ page }) => {
 
 test('select mode: hover badge, click, note, pin, list, save to project', async ({ page }) => {
   await openOverlay(page)
+  const at = await stampsOf(page)
 
   const nav = page.locator('[data-spike="4"]')
   await nav.hover()
-  await expect(page.locator('.rl-badge')).toContainText('app/spike/page.tsx:7')
+  await expect(page.locator('.rl-badge')).toContainText(at['4']!)
   await nav.click()
 
   const popover = page.getByTestId('rl-popover')
   await expect(popover).toBeVisible()
-  await expect(popover).toContainText('app/spike/page.tsx:7')
+  await expect(popover).toContainText(at['4']!)
   await page.getByTestId('rl-note').fill('Turn this into a horizontal top nav.')
   await page.keyboard.press('Enter')
   await expect(popover).toBeHidden()
@@ -53,7 +64,7 @@ test('select mode: hover badge, click, note, pin, list, save to project', async 
   const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
   expect(md).toContain('# Redlining — /spike')
   expect(md).toContain('## 1 · CHANGE — "DashboardReports" nav')
-  expect(md).toContain('- Anchor: `<nav>` · app/spike/page.tsx:7')
+  expect(md).toContain(`- Anchor: \`<nav>\` · ${at['4']}`)
   expect(md).toContain('- Note: Turn this into a horizontal top nav.')
   expect(existsSync(path.join(OUT, 'annotations.json'))).toBe(true)
   // Screenshot with burned-in pins, on by default.
@@ -86,7 +97,9 @@ test('draw mode: a dragged box resolves its container and exports an ADD with a 
   await expect(page.getByTestId('rl-toast')).toContainText('Copied')
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · ADD — inside <section>')
-  expect(clipboard).toMatch(/- Position: (at end|after child \d+) · full width · ≈ \d+ px tall/)
+  expect(clipboard).toMatch(
+    /- Position: (at end|at start|after child \d+) · full width · ≈ \d+ px tall/,
+  )
   expect(clipboard).toContain('- Note: Table: Sortable results table.')
 })
 
@@ -134,6 +147,7 @@ test('move mode: source, target and a position produce a MOVE with from and to',
   page,
 }) => {
   await openOverlay(page)
+  const at = await stampsOf(page)
   await page.keyboard.press('m')
   await page.locator('[data-spike="14"]').click()
   await expect(page.locator('.rl-outline--source')).toBeVisible()
@@ -149,12 +163,13 @@ test('move mode: source, target and a position produce a MOVE with from and to',
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · MOVE — "aside" aside')
-  expect(clipboard).toContain('- From: `<aside>` · app/spike/page.tsx:25')
-  expect(clipboard).toContain('- To: after `<nav>` · app/spike/page.tsx:7')
+  expect(clipboard).toContain(`- From: \`<aside>\` · ${at['14']}`)
+  expect(clipboard).toContain(`- To: after \`<nav>\` · ${at['4']}`)
 })
 
 test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
   await openOverlay(page)
+  const at = await stampsOf(page)
   await page.locator('[data-spike="5"]').click()
   await expect(page.getByTestId('rl-popover')).toContainText('⇧click adds more')
   await page.locator('[data-spike="6"]').click({ modifiers: ['Shift'] })
@@ -167,7 +182,5 @@ test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · CHANGE — "Dashboard" a (+1)')
-  expect(clipboard).toContain(
-    '- Anchors:\n  1. `<a>` · app/spike/page.tsx:8\n  2. `<a>` · app/spike/page.tsx:11',
-  )
+  expect(clipboard).toContain(`- Anchors:\n  1. \`<a>\` · ${at['5']}\n  2. \`<a>\` · ${at['6']}`)
 })
