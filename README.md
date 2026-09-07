@@ -65,7 +65,7 @@ Claude Code reads `.redlining/annotations.md`, which looks like this:
 Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.
 ```
 
-Redlining never edits code. Claude Code stays the only thing that changes your codebase. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
+Redlining never edits code. Claude Code stays the only thing that changes your codebase. Tweak mode previews changes in the browser and exports the numbers (`font-size: 14px → 16px`) beside the element's classes, never inline styles. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
 
 ## Set up with an agent
 
@@ -80,16 +80,17 @@ Prefer to have Claude Code do the setup? Paste the prompt from the docs' [Set up
 
 ## Overlay
 
-| Key                       | Action                                                                           |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `Alt+R`                   | Toggle the overlay (`hotkey` option)                                             |
-| `S` / `D` / `M`           | Select / Draw / Move mode                                                        |
-| `[` / `]` or `⌥` + scroll | Walk the selection up / down the ancestor chain                                  |
-| `⇧` + click               | Add another element to the open note (one note, several anchors)                 |
-| `L`                       | Annotation list                                                                  |
-| `⌘⇧C`                     | Copy the prompt to the clipboard                                                 |
-| `⌘⏎`                      | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off) |
-| `Esc`                     | Close popover → panel → overlay                                                  |
+| Key                                               | Action                                                                                 |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `Alt+R`                                           | Toggle the overlay (`hotkey` option)                                                   |
+| `S` / `D` / `M` / `T`                             | Select / Draw / Move / Tweak mode                                                      |
+| `[` / `]` or `⌥` + scroll                         | Walk the selection up / down the ancestor chain                                        |
+| `⇧` + click                                       | Add another element to the open note (one note, several anchors)                       |
+| `L`                                               | Annotation list                                                                        |
+| Tweak: handles, `⌥` drag, arrows, `⌘Z`, `⌥` hover | Resize, spacing, nudge, undo, measure; the export lists every change as before → after |
+| `⌘⇧C`                                             | Copy the prompt to the clipboard                                                       |
+| `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)       |
+| `Esc`                                             | Close popover → panel → overlay                                                        |
 
 ## Options
 

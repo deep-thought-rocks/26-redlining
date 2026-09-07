@@ -27,7 +27,8 @@
       <aside class="toc">
         <h4>On this page</h4>
         <a href="#markdown">annotations.md</a><a href="#blocks">Block shapes</a
-        ><a href="#json">annotations.json</a><a href="#stability">Stability</a>
+        ><a href="#changes">Tweaks</a><a href="#json">annotations.json</a
+        ><a href="#stability">Stability</a>
       </aside>
       <main>
         <h1>Annotation format</h1>
@@ -132,6 +133,32 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
           approximate height, all taken from the box you drew relative to the container.
         </p>
 
+        <h3 id="changes">Tweaks: Classes, Changes, Applies at</h3>
+        <pre><code>## 3 · CHANGE — Toolbar
+- Anchor: `&lt;button&gt;` · components/toolbar.tsx:31 · owners: Toolbar
+- Text: "Export CSV"
+- Classes: `btn btn-primary`
+- Changes:
+  - text: "Export CSV" → "Download CSV"
+  - font-size: 14px → 16px
+  - width: 96px → 128px (≈ 33 % of parent)
+  - padding-left, padding-right: 12px → 16px
+  - background-color: rgb(243, 244, 246) → rgb(37, 99, 235) (token --accent)
+  - visual nudge: +8px right, −4px up — previewed with a transform; implement as spacing or alignment, never ship a transform
+- Applies at: ≤ 768px (approximate; viewport preset, not a media query)</code></pre>
+        <p>
+          <code>Classes</code> is the element's class list, so a value can be mapped to a utility
+          class. Each change is <em>computed before → after</em>; sizes add their share of the
+          parent, colours the matching <code>:root</code> token when one exists, and equal paired
+          sides collapse into one line. A nudge is always labelled as visual. When any block has
+          changes, the footer adds:
+          <em
+            >values are computed px at the stated viewport; implement them in this project's own
+            idiom (utility classes, tokens), not as inline styles.</em
+          >
+          A tweak may have no <code>Note</code> line.
+        </p>
+
         <h2 id="json">annotations.json</h2>
         <pre><code>interface Session {
   route: string            // "/dashboard"
@@ -149,8 +176,20 @@ interface Annotation {
   anchors?: Anchor[]       // multi-select: every anchor, `anchor` first
   target?: Anchor &amp; { position: 'before' | 'after' | 'inside' }   // move
   box?: { x: number; y: number; w: number; h: number; childIndex?: number } // add, relative to anchor.rect
+  changes?: Change[]       // tweak deltas, see below
+  appliesAt?: number       // viewport preset width the annotation was made at
   note: string
   createdAt: string        // ISO
+}
+
+interface Change {
+  kind: 'style' | 'text' | 'nudge' | 'visibility'
+  property: string         // CSS longhand, 'text', 'transform' or 'display'
+  from: string             // computed before
+  to: string               // computed after
+  input?: string           // what was typed or dragged
+  token?: string           // :root custom property equal to `to`
+  relative?: string        // e.g. "≈ 33 % of parent"
 }
 
 interface Anchor {
@@ -163,6 +202,8 @@ interface Anchor {
   text?: string            // trimmed textContent ≤ 80 chars
   rect: { x: number; y: number; w: number; h: number }   // viewport px at capture
   resolved: 'exact' | 'ancestor' | 'selector-only'
+  classes?: string[]       // the element's class list (≤ 20)
+  display?: string         // computed display at capture
 }</code></pre>
         <p>
           <code>childIndex</code> means "insert before child N"; a value equal to the number of

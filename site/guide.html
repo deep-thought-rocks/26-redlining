@@ -27,9 +27,9 @@
       <aside class="toc">
         <h4>On this page</h4>
         <a href="#toolbar">Toolbar and keys</a><a href="#select">Select</a><a href="#draw">Draw</a
-        ><a href="#move">Move</a><a href="#multi">Multi-select</a><a href="#list">List panel</a
-        ><a href="#export">Copy and Save</a><a href="#session">Sessions</a
-        ><a href="#anchors">How anchors resolve</a>
+        ><a href="#move">Move</a><a href="#multi">Multi-select</a><a href="#tweak">Tweak</a
+        ><a href="#list">List panel</a><a href="#export">Copy and Save</a
+        ><a href="#session">Sessions</a><a href="#anchors">How anchors resolve</a>
       </aside>
       <main>
         <h1>Guide</h1>
@@ -55,8 +55,8 @@
               </td>
             </tr>
             <tr>
-              <td><kbd>S</kbd> / <kbd>D</kbd> / <kbd>M</kbd></td>
-              <td>Select / Draw / Move mode</td>
+              <td><kbd>S</kbd> / <kbd>D</kbd> / <kbd>M</kbd> / <kbd>T</kbd></td>
+              <td>Select / Draw / Move / Tweak mode</td>
             </tr>
             <tr>
               <td><kbd>[</kbd> / <kbd>]</kbd>, <kbd>⌥</kbd>+scroll</td>
@@ -65,6 +65,22 @@
             <tr>
               <td><kbd>⇧</kbd>+click</td>
               <td>Add another element to the open note</td>
+            </tr>
+            <tr>
+              <td>Handles, <kbd>⌥</kbd> drag, <kbd>⌥⇧</kbd> drag</td>
+              <td>Tweak: resize, set padding, set margin on that edge</td>
+            </tr>
+            <tr>
+              <td>Arrows, <kbd>⇧</kbd> arrows, drag</td>
+              <td>Tweak: nudge by 1px / 10px / freely (exported as a visual nudge)</td>
+            </tr>
+            <tr>
+              <td><kbd>⌘</kbd>+<kbd>Z</kbd></td>
+              <td>Tweak: undo the last change</td>
+            </tr>
+            <tr>
+              <td><kbd>⌥</kbd> hover</td>
+              <td>Tweak: measure the distance to another element</td>
             </tr>
             <tr>
               <td><kbd>L</kbd></td>
@@ -135,6 +151,54 @@
           With a select note open, <kbd>⇧</kbd>+click other elements to add them to the same
           annotation ("make all of these the same height"). The popover shows <em>+N</em>, every
           element gets a pin with the same number, and the export lists the anchors under one note.
+        </p>
+
+        <h2 id="tweak">Tweak — change values directly, export the numbers</h2>
+        <p>
+          Press <kbd>T</kbd> and click an element. The page updates live while you work; nothing is
+          written to your code. When you press <em>Done</em>, the annotation records every change as
+          <em>before → after</em> in computed pixels, next to the element's class list, so the agent
+          can translate "16px" into <code>text-base</code> or a token rather than an inline style.
+        </p>
+        <ul>
+          <li>
+            <strong>Inspector.</strong> Steppers for font size, line height, tracking, width,
+            height, radius, opacity, padding and margin per side; weight chips; a text field when
+            the element has a single text node and is not a controlled input; text, background and
+            border colours with a picker and a list of your own <code>:root</code> tokens; gap,
+            justify and align chips on flex and grid containers; Hide; Undo; Reset.
+          </li>
+          <li>
+            <strong>Handles.</strong> Drag a corner or edge to resize (<kbd>⇧</kbd> keeps the
+            ratio). <kbd>⌥</kbd>-drag an edge to set that side's padding, <kbd>⌥⇧</kbd>-drag for
+            margin.
+          </li>
+          <li>
+            <strong>Nudge.</strong> Drag the element or use the arrow keys (<kbd>⇧</kbd> for 10px).
+            This is previewed with a transform, and the export says so explicitly:
+            <em
+              >"visual nudge: +12px right — implement as spacing or alignment, never ship a
+              transform"</em
+            >.
+          </li>
+          <li>
+            <strong>Measure.</strong> Hold <kbd>⌥</kbd> and hover another element to see the
+            distance between the two; it is a ruler and records nothing.
+          </li>
+          <li>
+            <strong>Viewport presets.</strong> The toolbar's width select constrains the page to
+            375, 768 or 1280 px. Annotations made at a preset carry <em>Applies at: ≤ 768px</em>; it
+            is a max-width on <code>&lt;html&gt;</code>, not a media query, so treat it as
+            approximate.
+          </li>
+          <li>
+            <strong>Before/after.</strong> With the camera on, the second toggle also saves
+            <code>screenshot-before.png</code> with every preview reset.
+          </li>
+        </ul>
+        <p>
+          Previews survive a reload and hot reload; deleting the annotation or clearing the session
+          restores the element. The note is optional for a tweak, the numbers usually say enough.
         </p>
 
         <h2 id="list">List panel</h2>
