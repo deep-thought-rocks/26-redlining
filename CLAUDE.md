@@ -32,7 +32,7 @@ The example app consumes `redlining` through `workspace:*` and resolves the buil
 
 ## Layout and stack (PRD §11–12)
 
-pnpm monorepo: `packages/redlining/` (published as unscoped npm `redlining`) with `src/overlay/` (React + Shadow DOM + Tailwind 4), `src/resolve/` (fiber walk, container resolution), `src/export/` (Markdown/JSON serializers), `src/next/` (`withRedlining()`, route handler), `src/loader/` (`transform`), `src/vite.ts` (the Vite plugin on the same transform), `src/cli/` (`redlining init`); plus `examples/next-app/` as the Playwright target.
+pnpm monorepo: `packages/redlining/` (published as unscoped npm `redlining`) with `src/overlay/` (React + Shadow DOM + Tailwind 4), `src/resolve/` (fiber walk, container resolution), `src/export/` (Markdown/JSON serializers), `src/next/` (`withRedlining()`, route handler), `src/loader/` (`transform`), `src/vite.ts` (the Vite plugin on the same transform), `src/cli/` (`redlining init`); plus `examples/next-app/` as the Playwright target: `/spike` is the 20-element anchor fixture (keep it bare and stable), `/dashboard` is the realistic showcase mirroring the PRD §9.1 scenario (`components/`: MainNav dropdown, FilterPanel, ReportList + Toolbar with Export CSV, Sidebar/QuickStats) that `scripts/record-demo.mjs` records for the README GIF.
 
 Build shape in `tsdown.config.ts`: `.` and `./next/route` are ESM-only with `platform: neutral`; `./next`, `./loader` and `./vite` are ESM + CJS (`.mjs`/`.cjs`) so `next.config` can load them either way; the CLI is ESM with no d.ts. The bundler strips `'use client'`, so the overlay entry re-adds it via `banner` — keep the overlay in its own config block for that reason. React is never bundled.
 

@@ -184,3 +184,26 @@ test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
   expect(clipboard).toContain('## 1 · CHANGE — "Dashboard" a (+1)')
   expect(clipboard).toContain(`- Anchors:\n  1. \`<a>\` · ${at['5']}\n  2. \`<a>\` · ${at['6']}`)
 })
+
+test('dashboard: the owner chain names client components and the anchor points into components/', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  const exportButton = page.getByRole('button', { name: 'Export CSV' })
+  await exportButton.hover()
+  const badge = page.locator('.rl-badge')
+  await expect(badge).toContainText('Toolbar')
+  await expect(badge).toContainText('components/toolbar.tsx:')
+  await exportButton.click()
+  await expect(page.getByTestId('rl-popover')).toContainText('Toolbar')
+  await page.getByRole('button', { name: 'Remove' }).click()
+  await page.getByTestId('rl-note').fill('Move into the row menu.')
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('## 1 · REMOVE — "Export CSV" button')
+  expect(clipboard).toMatch(/- Anchor: `<button>` · components\/toolbar\.tsx:\d+ · owners: Toolbar/)
+})

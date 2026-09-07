@@ -1,0 +1,373 @@
+/* Example app styling: a plain, credible product UI, deliberately not the overlay's design system. */
+:root {
+  --ink: #0f172a;
+  --ink-2: #475569;
+  --ink-3: #94a3b8;
+  --line: #e2e8f0;
+  --paper: #ffffff;
+  --paper-2: #f8fafc;
+  --accent: #2563eb;
+  --accent-2: #1d4ed8;
+  --ok: #16a34a;
+  --warn: #d97706;
+  --bad: #dc2626;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font:
+    15px/1.5 Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  color: var(--ink);
+  background: var(--paper-2);
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+button {
+  font: inherit;
+}
+.home {
+  max-width: 640px;
+  margin: 80px auto;
+  padding: 0 24px;
+}
+.home h1 {
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+.home p {
+  color: var(--ink-2);
+}
+.home ul {
+  padding-left: 20px;
+}
+
+/* Shell */
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 60px;
+  padding: 0 32px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+}
+.main-nav {
+  position: relative;
+}
+.main-nav summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.main-nav summary::-webkit-details-marker {
+  display: none;
+}
+.main-nav summary::after {
+  content: '▾';
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.main-nav ul {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.main-nav li a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+}
+.main-nav li a:hover,
+.main-nav li a[aria-current='page'] {
+  background: var(--paper-2);
+  color: var(--accent);
+}
+.header-spacer {
+  flex: 1;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #c7d2fe;
+  color: #3730a3;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  width: 260px;
+  color: var(--ink-3);
+}
+.search input {
+  border: 0;
+  outline: 0;
+  font: inherit;
+  width: 100%;
+  color: var(--ink);
+  background: transparent;
+}
+
+/* Page grid */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  padding: 28px 32px 48px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+.page-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-head h1 {
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.page-head p {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+}
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card + .card {
+  margin-top: 20px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.card-head h2 {
+  font-size: 15px;
+  margin: 0;
+}
+.card-body {
+  padding: 18px;
+}
+
+/* Filter panel */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.chip[aria-pressed='true'] {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: var(--accent-2);
+}
+.filters-meta {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* Toolbar + list */
+.toolbar {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--paper-2);
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--accent-2);
+}
+.reports {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 120px;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.report:last-child {
+  border-bottom: 0;
+}
+.report h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.report p {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.status[data-status='published']::before {
+  background: var(--ok);
+}
+.status[data-status='review']::before {
+  background: var(--warn);
+}
+.status[data-status='failed']::before {
+  background: var(--bad);
+}
+.updated {
+  color: var(--ink-3);
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.stat {
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+}
+.stat b {
+  display: block;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.stat span {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.activity li {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.activity li:last-child {
+  border-bottom: 0;
+}
+.activity time {
+  color: var(--ink-3);
+  margin-left: auto;
+  white-space: nowrap;
+}
