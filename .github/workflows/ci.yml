@@ -24,6 +24,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm format:check
       - run: pnpm test
+      - name: Packed tarball resolves in plain Node
+        run: node scripts/smoke-pack.mjs
       - name: Production footprint (PRD §13)
         working-directory: examples/next-app
         run: |

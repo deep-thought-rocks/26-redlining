@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next'
-import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from 'next/constants'
+import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from 'next/constants.js'
 import { describe, expect, test } from 'vitest'
 import { withRedlining } from './index'
 

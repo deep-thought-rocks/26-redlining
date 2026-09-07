@@ -13,7 +13,8 @@
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "smoke": "node scripts/smoke-pack.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.2",

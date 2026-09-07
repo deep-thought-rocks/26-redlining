@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import type { NextConfig } from 'next'
-import { PHASE_DEVELOPMENT_SERVER } from 'next/constants'
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js'
 
 export interface RedliningOptions {
   /** Project-relative directories whose `.tsx`/`.jsx` files get anchors. */
