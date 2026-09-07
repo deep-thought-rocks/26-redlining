@@ -68,6 +68,17 @@ describe('session reducer', () => {
     expect(s[0]!.target).toEqual({ ...target, position: 'after' })
   })
 
+  test('a tweak draft stores changes and the snapshot; changes can be replaced; toSession strips the snapshot', () => {
+    const changes = [{ kind: 'style' as const, property: 'font-size', from: '14px', to: '16px' }]
+    let s = add([], 'tw', { changes, snapshot: { cssText: '', text: 'x' } })
+    expect(s[0]!.changes).toEqual(changes)
+    expect(s[0]!.preview).toEqual({ cssText: '', text: 'x' })
+    s = reduce(s, { type: 'changes', id: 'tw', changes: [] })
+    expect(s[0]!.changes).toEqual([])
+    const session = toSession(s, { pathname: '/', href: 'h' }, { w: 1, h: 1 })
+    expect(session.annotations[0]).not.toHaveProperty('preview')
+  })
+
   test('load replaces the session and normalises indexes', () => {
     const loaded = reduce(add([], 'old'), {
       type: 'load',

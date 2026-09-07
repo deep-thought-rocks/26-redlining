@@ -235,6 +235,76 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     expect(md).toContain('- Text: "Kettlebell Ganzkörper"')
   })
 
+  test('renders a tweak: classes, collapsed changes, applies-at, optional note, and the values footer', () => {
+    const a = anchor({
+      tag: 'button',
+      file: 'components/toolbar.tsx',
+      line: 31,
+      owners: ['Toolbar'],
+      text: 'Export CSV',
+      classes: ['btn', 'btn-primary'],
+    })
+    const md = toMarkdown(
+      {
+        ...session,
+        screenshot: undefined,
+        annotations: [
+          ann({
+            index: 1,
+            action: 'change',
+            anchor: a,
+            note: '',
+            appliesAt: 768,
+            changes: [
+              { kind: 'text', property: 'text', from: 'Export CSV', to: 'Download CSV' },
+              { kind: 'style', property: 'font-size', from: '14px', to: '16px' },
+              {
+                kind: 'style',
+                property: 'width',
+                from: '96px',
+                to: '128px',
+                relative: '≈ 33 % of parent',
+              },
+              { kind: 'style', property: 'padding-left', from: '12px', to: '16px' },
+              { kind: 'style', property: 'padding-right', from: '12px', to: '16px' },
+              { kind: 'style', property: 'opacity', from: '1', to: '1' },
+              {
+                kind: 'nudge',
+                property: 'transform',
+                from: 'none',
+                to: 'translate(8px, -4px)',
+                input: '+8px right, −4px up',
+              },
+            ],
+          }),
+        ],
+      },
+      { now: NOW },
+    )
+    expect(md).toContain(`## 1 · CHANGE — Toolbar
+- Anchor: \`<button>\` · components/toolbar.tsx:31 · owners: Toolbar
+- Text: "Export CSV"
+- Classes: \`btn btn-primary\`
+- Changes:
+  - text: "Export CSV" → "Download CSV"
+  - font-size: 14px → 16px
+  - width: 96px → 128px (≈ 33 % of parent)
+  - padding-left, padding-right: 12px → 16px
+  - visual nudge: +8px right, −4px up — previewed with a transform; implement as spacing or alignment, never ship a transform
+- Applies at: ≤ 768px (approximate; viewport preset, not a media query)
+
+---`)
+    expect(md).not.toContain('- Note:')
+    expect(md).not.toContain('opacity')
+    expect(
+      md
+        .trim()
+        .endsWith(
+          "implement them in this project's own idiom (utility classes, tokens), not as inline styles.",
+        ),
+    ).toBe(true)
+  })
+
   test('lists every anchor of a multi-select annotation', () => {
     const a1 = anchor({ tag: 'article', file: 'app/a.tsx', line: 3, owners: ['Grid', 'Card'] })
     const a2 = anchor({ tag: 'article', file: 'app/a.tsx', line: 9, owners: ['Grid', 'Card'] })

@@ -1,10 +1,11 @@
-import type { Action, Anchor, Annotation, Rect, Session } from '../types'
+import type { Action, Anchor, Annotation, Change, Rect, Session } from '../types'
+import type { Snapshot } from './preview'
 
 export type Position = 'before' | 'after' | 'inside'
 
 /** Overlay-side annotation with a live handle to the element it was created on. */
 export interface Draft {
-  kind: 'select' | 'draw' | 'move'
+  kind: 'select' | 'draw' | 'move' | 'tweak'
   element: Element
   anchor: Anchor
   /** draw only: box in viewport px and the insert index */
@@ -13,6 +14,9 @@ export interface Draft {
   target?: { element: Element; anchor: Anchor }
   /** select only: further anchors added with Shift+click */
   extra?: { element: Element; anchor: Anchor }[]
+  /** tweak: the previewed deltas and the element's pre-change state */
+  changes?: Change[]
+  snapshot?: Snapshot
 }
 
 export interface Entry extends Annotation {
@@ -20,6 +24,8 @@ export interface Entry extends Annotation {
   element: Element | null
   /** Live elements for `anchors[1..]`, parallel to that slice. */
   extraElements?: (Element | null)[]
+  /** The element's state before its tweak changes, for reset. */
+  preview?: Snapshot
 }
 
 export type SessionAction =
@@ -32,8 +38,10 @@ export type SessionAction =
       id: string
       createdAt: string
       position?: Position
+      appliesAt?: number
     }
   | { type: 'note'; id: string; note: string }
+  | { type: 'changes'; id: string; changes: Change[] }
   | { type: 'remove'; id: string }
   | { type: 'clear' }
 
@@ -63,6 +71,11 @@ export function reduce(entries: Entry[], a: SessionAction): Entry[] {
         }
       }
       if (draft.target) entry.target = { ...draft.target.anchor, position: a.position ?? 'before' }
+      if (draft.changes?.length) {
+        entry.changes = draft.changes
+        entry.preview = draft.snapshot
+      }
+      if (a.appliesAt) entry.appliesAt = a.appliesAt
       if (draft.extra?.length) {
         entry.anchors = [draft.anchor, ...draft.extra.map((x) => x.anchor)]
         entry.extraElements = draft.extra.map((x) => x.element)
@@ -71,6 +84,8 @@ export function reduce(entries: Entry[], a: SessionAction): Entry[] {
     }
     case 'note':
       return entries.map((e) => (e.id === a.id ? { ...e, note: a.note } : e))
+    case 'changes':
+      return entries.map((e) => (e.id === a.id ? { ...e, changes: a.changes } : e))
     case 'remove':
       return reindex(entries.filter((e) => e.id !== a.id))
     case 'clear':
@@ -93,7 +108,8 @@ export function toSession(
     url: location.href,
     viewport,
     annotations: entries.map(
-      ({ element: _element, extraElements: _extra, ...annotation }) => annotation,
+      ({ element: _element, extraElements: _extra, preview: _preview, ...annotation }) =>
+        annotation,
     ),
   }
 }

@@ -27,6 +27,9 @@ describe('anchorFor', () => {
   test('exact: the element carries data-rl', () => {
     document.body.innerHTML = '<nav data-rl="app/layout.tsx:42:5">  Dashboard   Reports </nav>'
     const a = anchorFor(document.querySelector('nav')!, layout)
+    expect(a.display).toBe('block')
+    expect(a.classes).toBeUndefined()
+    delete a.display
     expect(a).toEqual({
       file: 'app/layout.tsx',
       line: 42,
@@ -38,6 +41,13 @@ describe('anchorFor', () => {
       rect,
       resolved: 'exact',
     })
+  })
+
+  test('classes are recorded, capped at 20', () => {
+    document.body.innerHTML = `<div class="${Array.from({ length: 25 }, (_, i) => 'c' + i).join(' ')}" data-rl="a.tsx:1"></div>`
+    const a = anchorFor(document.querySelector('div')!, layout)
+    expect(a.classes).toHaveLength(20)
+    expect(a.classes![0]).toBe('c0')
   })
 
   test('ancestor: only a parent carries data-rl', () => {

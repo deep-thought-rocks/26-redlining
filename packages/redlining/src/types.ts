@@ -1,4 +1,5 @@
-// The annotation model from PRD §6. Shared by resolve, export and the overlay.
+// The annotation model from PRD §6, extended by usage-site context and tweak changes.
+// Shared by resolve, export and the overlay.
 
 export type Action = 'change' | 'add' | 'remove' | 'move'
 
@@ -34,6 +35,10 @@ export interface Anchor {
    * reusable component apart (three cards from card.tsx:33 on one page).
    */
   context?: AnchorContext
+  /** The element's class list (≤ 20 entries): lets an agent map values to utility classes. */
+  classes?: string[]
+  /** Computed `display` at capture ('flex', 'grid', 'inline' …). */
+  display?: string
 }
 
 export interface AnchorContext {
@@ -44,6 +49,25 @@ export interface AnchorContext {
   /** 1-based position among the ancestor's element children. */
   index: number
   count: number
+}
+
+/** One direct-manipulation delta, previewed in the browser and exported as a value change. */
+export type ChangeKind = 'style' | 'text' | 'nudge' | 'visibility'
+
+export interface Change {
+  kind: ChangeKind
+  /** CSS longhand in kebab-case for `style`; `text`, `transform` or `display` otherwise. */
+  property: string
+  /** Computed value before the change, e.g. "14px" or "rgb(37, 99, 235)". */
+  from: string
+  /** Computed value after the change. */
+  to: string
+  /** What was typed or dragged, e.g. "16" or "+12,-4". */
+  input?: string
+  /** A `:root` custom property whose value equals `to`. */
+  token?: string
+  /** Relative form for sizes, e.g. "≈ 33 % of parent". */
+  relative?: string
 }
 
 export interface Annotation {
@@ -58,6 +82,10 @@ export interface Annotation {
   target?: Anchor & { position: 'before' | 'after' | 'inside' }
   /** `add` only. Relative to `anchor.rect`; `childIndex` = insert before that child (children.length = at end). */
   box?: Rect & { childIndex?: number }
+  /** Tweak mode: direct-manipulation deltas on `anchor`'s element. */
+  changes?: Change[]
+  /** Viewport preset width (px) the annotation was made at, when one was active. */
+  appliesAt?: number
   note: string
   /** ISO timestamp. */
   createdAt: string
@@ -70,4 +98,6 @@ export interface Session {
   annotations: Annotation[]
   /** Data URL, optional. */
   screenshot?: string
+  /** Data URL of the page with previews reset, optional. */
+  screenshotBefore?: string
 }

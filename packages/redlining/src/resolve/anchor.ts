@@ -20,12 +20,17 @@ export function parseRl(value: string): RlLocation | null {
 
 /** Resolves `el` to an anchor along the PRD §8.5 ladder: exact → ancestor → selector-only. */
 export function anchorFor(el: Element, layout: Layout): Anchor {
+  const classes = Array.from(el.classList).slice(0, 20)
+  const view = el.ownerDocument.defaultView
+  const display = view ? view.getComputedStyle(el).display || undefined : undefined
   const base = {
     tag: el.tagName.toLowerCase(),
     owners: ownerChain(el),
     selector: cssPath(el),
     text: textOf(el),
     rect: layout.rectOf(el),
+    ...(classes.length ? { classes } : {}),
+    ...(display ? { display } : {}),
   }
   const own = el.getAttribute('data-rl')
   const ownLoc = own ? parseRl(own) : null

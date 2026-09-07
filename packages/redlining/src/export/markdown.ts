@@ -1,4 +1,5 @@
 import type { Anchor, Annotation, Session } from '../types'
+import { describe, summarise } from './changes'
 
 export interface MarkdownOptions {
   /** Timestamp for the header; defaults to now. */
@@ -12,6 +13,8 @@ const TITLE_TEXT_MAX = 40
 
 const FOOTER =
   'Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.'
+const FOOTER_CHANGES =
+  'Values under "Changes" are computed px at the stated viewport; implement them in this project\'s own idiom (utility classes, tokens), not as inline styles.'
 
 /** Renders a session as the agent-readable spec from PRD §9.1. */
 export function toMarkdown(session: Session, options: MarkdownOptions = {}): string {
@@ -34,6 +37,7 @@ export function toMarkdown(session: Session, options: MarkdownOptions = {}): str
   }
   lines.push('---')
   lines.push(FOOTER)
+  if (ordered.some((a) => a.changes?.length)) lines.push(FOOTER_CHANGES)
   return lines.join('\n') + '\n'
 }
 
@@ -57,9 +61,18 @@ function annotationBlock(a: Annotation): string[] {
       }
   }
   if (a.anchor.text && a.action !== 'add') out.push(`- Text: "${a.anchor.text}"`)
+  if (a.anchor.classes?.length) out.push(`- Classes: \`${a.anchor.classes.join(' ')}\``)
+  const changes = a.changes ? summarise(a.changes) : []
+  if (changes.length) {
+    out.push('- Changes:')
+    for (const c of changes) out.push(`  - ${describe(c)}`)
+  }
+  if (a.appliesAt) {
+    out.push(`- Applies at: ≤ ${a.appliesAt}px (approximate; viewport preset, not a media query)`)
+  }
   const fallback = fallbackNote(a.anchor)
   if (fallback) out.push(`- Resolved: ${fallback}`)
-  out.push(`- Note: ${indent(a.note)}`)
+  if (a.note.trim()) out.push(`- Note: ${indent(a.note)}`)
   return out
 }
 
