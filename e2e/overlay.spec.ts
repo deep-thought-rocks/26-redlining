@@ -302,3 +302,50 @@ test('tweak mode: steppers and text edit preview live, export deltas with classe
   await page.getByRole('button', { name: 'Delete annotation 1' }).click()
   await expect(page.getByRole('button', { name: 'Export CSV' })).toHaveCSS('font-size', before.size)
 })
+
+test('tweak gestures: a handle drag resizes, arrow keys nudge, and both export', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('t')
+  const card = page.locator('.sidebar aside').first()
+  const before = await card.evaluate((el) => getComputedStyle(el).width)
+  // Hover the heading, walk up to the <aside> with [ twice, then click where the mouse is.
+  const heading = card.locator('h2').first()
+  await heading.hover()
+  await expect(page.locator('.rl-badge')).toContainText('<h2>')
+  await page.keyboard.press('[')
+  await page.keyboard.press('[')
+  await expect(page.locator('.rl-badge')).toContainText('<aside>')
+  const hb = (await heading.boundingBox())!
+  await page.mouse.click(hb.x + hb.width / 2, hb.y + hb.height / 2)
+  await expect(page.getByTestId('rl-inspector')).toContainText('Tweak QuickStats')
+
+  const handle = page.getByTestId('rl-handle-e')
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2, { steps: 10 })
+  await page.mouse.up()
+  const expected = `${Math.round(parseFloat(before) - 40)}px`
+  await expect(card).toHaveCSS('width', expected)
+
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Shift+ArrowDown')
+  await expect(card).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 2, 10)')
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    'visual nudge: +2px right, +10px down',
+  )
+
+  await page.getByTestId('rl-tweak-done').click()
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain(`  - width: ${before} → ${expected}`)
+  expect(clipboard).toContain(
+    '  - visual nudge: +2px right, +10px down — previewed with a transform; implement as spacing or alignment, never ship a transform',
+  )
+})

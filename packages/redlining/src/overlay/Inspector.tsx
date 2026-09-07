@@ -119,18 +119,31 @@ export function Inspector(p: InspectorProps) {
   }
 
   const r = anchor.rect
-  const left = Math.max(
-    8,
-    Math.min(r.x + window.scrollX, window.innerWidth - WIDTH - 8 + window.scrollX),
-  )
-  // Keep the inspector inside the viewport and clear of the toolbar corner (bottom 80px):
-  // below the element when it fits, else above it, else clamped to the bottom.
+  // Never cover the element: below it, else above, else beside (left, then right),
+  // else clamped; always clear of the toolbar corner (bottom 80px) and the edges.
   const height = Math.min(window.innerHeight * 0.7, 640)
-  const below = r.y + r.h + 8
-  const limit = window.innerHeight - 80 - height
-  const above = r.y - 8 - height
-  const topInView = below <= limit ? below : above >= 8 ? above : Math.max(8, limit)
-  const top = topInView + window.scrollY
+  const clampX = (x: number) => Math.max(8, Math.min(x, window.innerWidth - WIDTH - 8))
+  const clampY = (y: number) => Math.max(8, Math.min(y, window.innerHeight - 80 - height))
+  let left: number
+  let top: number
+  if (r.y + r.h + 8 + height <= window.innerHeight - 80) {
+    left = clampX(r.x)
+    top = r.y + r.h + 8
+  } else if (r.y - 8 - height >= 8) {
+    left = clampX(r.x)
+    top = r.y - 8 - height
+  } else if (r.x - WIDTH - 8 >= 8) {
+    left = r.x - WIDTH - 8
+    top = clampY(r.y)
+  } else if (r.x + r.w + 8 + WIDTH <= window.innerWidth - 8) {
+    left = r.x + r.w + 8
+    top = clampY(r.y)
+  } else {
+    left = clampX(r.x)
+    top = clampY(r.y + r.h + 8)
+  }
+  left += window.scrollX
+  top += window.scrollY
   const owner = anchor.owners[anchor.owners.length - 1]
 
   return (

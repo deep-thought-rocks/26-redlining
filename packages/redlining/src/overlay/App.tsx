@@ -9,6 +9,7 @@ import { NotePopover } from './NotePopover'
 import { Pins } from './Pins'
 import { SelectLayer } from './SelectLayer'
 import { Toolbar, type Position as Corner, type Tool } from './Toolbar'
+import { TweakLayer } from './TweakLayer'
 import { isEditable, matchesHotkey } from './hotkey'
 import { adoptSnapshot, apply, reset, snapshot, type Snapshot } from './preview'
 import { captureScreenshot } from './screenshot'
@@ -299,7 +300,6 @@ export function App({
   }
 
   const sourceRect = moveSource ? pageRect(moveSource.element) : null
-  const tweakRect = tweak ? pageRect(tweak.element) : null
   const picking = active && !draft && !tweak
 
   return (
@@ -317,10 +317,12 @@ export function App({
             }}
           />
         ) : null}
-        {tweakRect ? (
-          <div
-            className="rl-outline"
-            style={{ left: tweakRect.x, top: tweakRect.y, width: tweakRect.w, height: tweakRect.h }}
+        {tweak && !draft ? (
+          <TweakLayer
+            host={host}
+            element={tweak.element}
+            changes={tweak.changes}
+            onChange={setTweakChanges}
           />
         ) : null}
         {picking && (tool === 'select' || tool === 'tweak') ? (
