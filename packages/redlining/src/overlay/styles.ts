@@ -55,6 +55,8 @@ button { font: inherit; color: inherit; }
 .rl-chip { padding: 2px 10px; border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-full); background: transparent; color: var(--color-text-secondary); font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); font-weight: var(--sbm-weight-medium); cursor: pointer; transition: background var(--sbm-duration-quick) var(--sbm-ease-standard); }
 .rl-chip:hover { background: var(--color-background-elevated); }
 .rl-chip[aria-pressed="true"] { background: var(--color-accent-soft); border-color: var(--color-accent-primary); color: var(--color-on-accent-soft); }
+.rl-note-label { display: flex; justify-content: space-between; margin: 0 0 4px; font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); font-weight: var(--sbm-weight-semibold); color: var(--color-text-muted); }
+.rl-note-label span { font-weight: var(--sbm-weight-medium); color: var(--color-text-warning); }
 .rl-textarea { display: block; width: 100%; min-height: 72px; padding: var(--sbm-space-2) var(--sbm-space-3); resize: vertical; font: inherit; color: var(--color-text-primary); background: var(--color-background-sunken); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-lg); }
 .rl-textarea:focus { outline: none; border-color: var(--color-border-focus); }
 .rl-actions { display: flex; justify-content: flex-end; gap: var(--sbm-space-2); margin-top: var(--sbm-space-2); }

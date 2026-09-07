@@ -136,6 +136,9 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
                 </button>
               ))}
       </div>
+      <div className="rl-note-label" data-testid="rl-note-label">
+        Note <span>{noteRequired ? 'required' : 'optional'}</span>
+      </div>
       <textarea
         ref={ref}
         className="rl-textarea"

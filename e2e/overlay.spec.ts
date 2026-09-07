@@ -49,6 +49,7 @@ test('select mode: hover badge, click, note, pin, list, save to project', async 
   await expect(popover).toBeVisible()
   await expect(popover).toContainText(at['4']!)
   // A change needs a note: Enter on an empty one says so instead of silently doing nothing.
+  await expect(page.getByTestId('rl-note-label')).toContainText('required')
   await expect(page.getByTestId('rl-note-save')).toBeDisabled()
   await page.keyboard.press('Enter')
   await expect(popover).toContainText('Write what should change first')
@@ -164,6 +165,7 @@ test('move mode: source, target and a position produce a MOVE with from and to',
   await expect(popover).toContainText('Move <aside>')
   await page.getByRole('button', { name: 'after', exact: true }).click()
   // A move needs no note: From/To carry the intent.
+  await expect(page.getByTestId('rl-note-label')).toContainText('optional')
   await page.keyboard.press('Enter')
   await expect(page.getByTestId('rl-pin')).toHaveText('1')
   await expect(page.locator('.rl-pin--target')).toHaveText('→1')
