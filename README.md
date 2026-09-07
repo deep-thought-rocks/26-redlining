@@ -106,6 +106,16 @@ withRedlining(config, {
 })
 ```
 
+### Vite
+
+```ts
+// vite.config.ts
+import { redlining } from 'redlining/vite'
+export default defineConfig({ plugins: [redlining(), react()] })
+```
+
+Mount `<Redlining />` in your root component. The plugin runs only under `vite dev`; `include` defaults to `['src']`. There is no route handler outside Next.js yet, so use **Copy prompt** rather than Save.
+
 The route handler can be configured too:
 
 ```ts
@@ -116,12 +126,12 @@ export const POST = createHandler({ outDir: '.redlining', maxBytes: 8 * 1024 * 1
 
 ## Support
 
-| Setup                                         | Status                               | Precision                                      |
-| --------------------------------------------- | ------------------------------------ | ---------------------------------------------- |
-| Next.js 16+, Turbopack or webpack, App Router | Supported                            | file:line + owner chain                        |
-| Vite + React                                  | Planned                              | file:line + owner chain once the adapter ships |
-| Any React app without the loader              | Reduced: mount `<Redlining />` alone | owner chain + selector, no file:line           |
-| Non-React frameworks                          | Not supported                        | —                                              |
+| Setup                                         | Status                               | Precision                            |
+| --------------------------------------------- | ------------------------------------ | ------------------------------------ |
+| Next.js 16+, Turbopack or webpack, App Router | Supported                            | file:line + owner chain              |
+| Vite + React (`redlining/vite`)               | Supported                            | file:line + owner chain              |
+| Any React app without the loader              | Reduced: mount `<Redlining />` alone | owner chain + selector, no file:line |
+| Non-React frameworks                          | Not supported                        | —                                    |
 
 `stripRedlining(html)` removes `data-rl` attributes from dev-rendered HTML for snapshot tests.
 
