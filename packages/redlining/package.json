@@ -1,7 +1,7 @@
 {
   "name": "redlining",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Figma-style comments on your running Next.js app, exported as a file-anchored spec for Claude Code.",
   "license": "MIT",
   "sideEffects": false,
