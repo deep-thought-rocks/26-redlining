@@ -73,7 +73,7 @@ Package `redlining`; `withRedlining` from `redlining/next`; component `<Redlinin
 
 ## Docs site
 
-`site/` is a static site with no build step: five hand-written pages (`index`, `getting-started`, `guide`, `format`, `help`) sharing `site.css`, which hand-copies the light-theme silverballmania values. `.github/workflows/pages.yml` deploys it to GitHub Pages on pushes that touch `site/`; the repository's Pages source must be set to "GitHub Actions" once, by the user. The getting-started page carries the agent setup prompt (`#agent`, copy button with a select-text fallback); if the setup steps change, update that prompt, the README section that points at it, and `redlining init` together. Keep the key table, options and format reference in sync with the README and the overlay; the link/anchor check is a shell loop over `href`/`src`/`id` (see the commit that added the site).
+`site/` is a static site with no build step: five hand-written pages (`index`, `getting-started`, `guide`, `format`, `help`) sharing `site.css`, which hand-copies the light-theme silverballmania values. It is deployed by Vercel from `vercel.json` at the repo root (no install, no build, `outputDirectory: site`, clean URLs); `.github/workflows/pages.yml` can deploy the same folder to GitHub Pages if the Pages source is ever set to "GitHub Actions". The getting-started page carries the agent setup prompt (`#agent`, copy button with a select-text fallback); if the setup steps change, update that prompt, the README section that points at it, and `redlining init` together. Keep the key table, options and format reference in sync with the README and the overlay; the link/anchor check is a shell loop over `href`/`src`/`id` (see the commit that added the site).
 
 ## Design system
 
