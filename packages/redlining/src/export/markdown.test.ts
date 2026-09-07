@@ -291,7 +291,7 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
   - width: 96px → 128px (≈ 33 % of parent)
   - padding-left, padding-right: 12px → 16px
   - visual nudge: +8px right, −4px up — previewed with a transform; implement as spacing or alignment, never ship a transform
-- Applies at: ≤ 768px (approximate; viewport preset, not a media query)
+- Applies at: ≤ 768px (made in a 768px device frame)
 
 ---`)
     expect(md).not.toContain('- Note:')

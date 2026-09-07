@@ -392,35 +392,55 @@ test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page
   await expect(page.getByTestId('rl-tweak-changes')).not.toContainText('nudge')
 })
 
-test('viewport preset marks annotations and the before/after screenshot writes two files', async ({
+test('device frame: a real narrow viewport in an iframe; its annotations sync into the session', async ({
   page,
 }) => {
   await page.goto('/dashboard')
   await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
   await page.keyboard.press('Alt+r')
-  await page.getByTestId('rl-viewport').selectOption('768')
-  await expect(page.locator('html')).toHaveAttribute('data-rl-viewport', '768')
-  await expect(page.locator('html')).toHaveCSS('max-width', '768px')
+  await page.getByTestId('rl-viewport').selectOption('375')
+  const frame = page.getByTestId('rl-device-frame')
+  await expect(frame).toBeVisible()
+  const inner = page.frameLocator('.rl-frame')
+  // The page inside is a genuine 375px viewport and its overlay is already open.
+  await expect(inner.locator('body')).toHaveJSProperty('clientWidth', 375)
+  await expect(inner.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  await expect(inner.locator('.rl-frame-badge')).toHaveText('375px')
 
+  const heading = inner.locator('.page-head h1')
+  await heading.click()
+  await inner.getByTestId('rl-note').fill('Shorter title on phones.')
+  await inner.getByTestId('rl-note').press('Enter')
+  await expect(inner.getByTestId('rl-pin')).toHaveText('1')
+
+  // The outer session picked it up through the storage event.
+  await page.getByTestId('rl-viewport').selectOption('')
+  await expect(frame).toHaveCount(0)
+  await page.keyboard.press('l')
+  await expect(page.getByTestId('rl-panel')).toContainText('Annotations (1)')
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('- Applies at: ≤ 375px (made in a 375px device frame)')
+  expect(clipboard).toContain('- Note: Shorter title on phones.')
+})
+
+test('before/after screenshot writes two files', async ({ page }) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
   await page.keyboard.press('t')
   const button = page.locator('.toolbar button').first()
   await button.click()
   await page.getByRole('button', { name: 'Font size +1' }).click()
   await page.getByTestId('rl-tweak-done').click()
   await page.keyboard.press('Enter')
-
   await page
     .getByRole('button', { name: 'Also capture a before screenshot (previews reset)' })
     .click()
   await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
   await expect(page.getByTestId('rl-toast')).toContainText('Saved')
   const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
-  expect(md).toContain('· preset ≤ 768px)')
-  expect(md).toContain('- Applies at: ≤ 768px (approximate; viewport preset, not a media query)')
   expect(md).toContain('· before the tweaks: .redlining/screenshot-before.png')
   expect(existsSync(path.join(OUT, 'screenshot-before.png'))).toBe(true)
   expect(existsSync(path.join(OUT, 'screenshot.png'))).toBe(true)
-
-  await page.getByTestId('rl-viewport').selectOption('')
-  await expect(page.locator('html')).not.toHaveAttribute('data-rl-viewport', '768')
 })

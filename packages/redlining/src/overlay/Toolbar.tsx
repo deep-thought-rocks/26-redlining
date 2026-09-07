@@ -25,6 +25,8 @@ export interface ToolbarProps {
   screenshot: boolean
   beforeAfter: boolean
   viewport: number | null
+  /** Width of the device frame this overlay runs inside, if any. */
+  framed: number | null
   position: Position
   hotkey: string
   onToggle(): void
@@ -82,19 +84,25 @@ export function Toolbar(p: ToolbarProps) {
         {p.count > 0 ? <span className="rl-count">{p.count}</span> : null}
       </IconButton>
       <span className="rl-sep" />
-      <select
-        className="rl-select"
-        aria-label="Viewport preset"
-        data-testid="rl-viewport"
-        title="Viewport preset: annotate at a narrower width (approximate; not a media query)"
-        value={p.viewport ?? ''}
-        onChange={(e) => p.onViewport(e.target.value ? Number(e.target.value) : null)}
-      >
-        <option value="">Full</option>
-        <option value="375">375</option>
-        <option value="768">768</option>
-        <option value="1280">1280</option>
-      </select>
+      {p.framed ? (
+        <span className="rl-frame-badge" title="This page runs inside a device frame">
+          {p.framed}px
+        </span>
+      ) : (
+        <select
+          className="rl-select"
+          aria-label="Device frame width"
+          data-testid="rl-viewport"
+          title="Open this page in a real narrow viewport (an iframe); media queries apply"
+          value={p.viewport ?? ''}
+          onChange={(e) => p.onViewport(e.target.value ? Number(e.target.value) : null)}
+        >
+          <option value="">Full</option>
+          <option value="375">375</option>
+          <option value="768">768</option>
+          <option value="1280">1280</option>
+        </select>
+      )}
       <IconButton
         label="Include screenshot in export"
         pressed={p.screenshot}

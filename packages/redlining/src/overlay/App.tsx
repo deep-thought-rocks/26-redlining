@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { toMarkdown } from '../export'
 import type { Action, Change } from '../types'
 import { findByAnchor, pageRect } from './dom'
+import { DeviceFrame, frameWidth } from './DeviceFrame'
 import { DrawLayer } from './DrawLayer'
 import { Inspector } from './Inspector'
 import { ListPanel } from './ListPanel'
@@ -14,7 +15,7 @@ import { isEditable, matchesHotkey } from './hotkey'
 import { adoptSnapshot, apply, reset, snapshot, type Snapshot } from './preview'
 import { captureScreenshot } from './screenshot'
 import { reduce, toSession, type Draft, type Entry, type Position } from './session'
-import { loadEntries, saveEntries } from './storage'
+import { loadEntries, saveEntries, storageKey } from './storage'
 
 /** Restores an entry's element when it carried a tweak preview; the handle may be gone after a reload. */
 function resetEntry(e: Entry): void {
@@ -62,7 +63,10 @@ export function App({
   maxAnnotations,
   screenshot: screenshotDefault,
 }: AppProps) {
-  const [active, setActive] = useState(false)
+  /** Inside a device frame this document IS the narrow viewport; outside, a preset opens one. */
+  const framed = useMemo(() => frameWidth(), [])
+  // Inside the frame the overlay opens by itself; the outer page stays the controller.
+  const [active, setActive] = useState(framed !== null)
   const [tool, setTool] = useState<Tool>('select')
   // Session persistence per route (PRD §6): restored on first render, saved on change.
   const [entries, dispatch] = useReducer(reduce, undefined, () =>
@@ -78,7 +82,6 @@ export function App({
   const [panel, setPanel] = useState(false)
   const [screenshot, setScreenshot] = useState(screenshotDefault)
   const [beforeAfter, setBeforeAfter] = useState(false)
-  /** Viewport preset (px) applied to <html> as a max-width; approximate, not a media query. */
   const [viewport, setViewport] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -108,24 +111,24 @@ export function App({
     return () => mo.disconnect()
   }, [entries])
 
+  // Annotations made in the device frame (another document, same storage key) show up here.
   useEffect(() => {
-    const root = document.documentElement
-    const set = (w: number | null) => {
-      root.style.maxWidth = w ? `${w}px` : ''
-      root.style.marginLeft = w ? 'auto' : ''
-      root.style.marginRight = w ? 'auto' : ''
-      if (w) root.setAttribute('data-rl-viewport', String(w))
-      else root.removeAttribute('data-rl-viewport')
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== storageKey(window.location.pathname)) return
+      dispatch({
+        type: 'load',
+        entries: loadEntries(window.localStorage, window.location.pathname),
+      })
     }
-    set(viewport)
-    return () => set(null)
-  }, [viewport])
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   const session = useCallback(() => {
     const out = toSession(entries, window.location, { w: window.innerWidth, h: window.innerHeight })
-    if (viewport) out.preset = viewport
+    if (framed) out.preset = framed
     return out
-  }, [entries, viewport])
+  }, [entries, framed])
 
   const copy = useCallback(async () => {
     await navigator.clipboard.writeText(toMarkdown(session()))
@@ -271,7 +274,7 @@ export function App({
       action,
       note,
       position,
-      appliesAt: viewport ?? undefined,
+      appliesAt: framed ?? undefined,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     })
@@ -386,6 +389,9 @@ export function App({
           />
         ) : null}
       </div>
+      {active && viewport && !framed ? (
+        <DeviceFrame width={viewport} onClose={() => setViewport(null)} />
+      ) : null}
       <Toolbar
         active={active}
         tool={tool}
@@ -393,7 +399,8 @@ export function App({
         panelOpen={panel}
         screenshot={screenshot}
         beforeAfter={beforeAfter}
-        viewport={viewport}
+        viewport={framed ? null : viewport}
+        framed={framed}
         position={position}
         hotkey={hotkey}
         onToggle={toggle}

@@ -71,7 +71,7 @@ function annotationBlock(a: Annotation): string[] {
     for (const c of changes) out.push(`  - ${describe(c)}`)
   }
   if (a.appliesAt) {
-    out.push(`- Applies at: ≤ ${a.appliesAt}px (approximate; viewport preset, not a media query)`)
+    out.push(`- Applies at: ≤ ${a.appliesAt}px (made in a ${a.appliesAt}px device frame)`)
   }
   const fallback = fallbackNote(a.anchor)
   if (fallback) out.push(`- Resolved: ${fallback}`)

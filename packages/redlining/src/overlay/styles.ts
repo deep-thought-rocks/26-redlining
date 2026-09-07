@@ -7,7 +7,7 @@ button { font: inherit; color: inherit; }
 .rl-layer { position: absolute; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
 .rl-fixed { position: fixed; pointer-events: auto; z-index: 10; }
 
-.rl-toolbar { display: flex; gap: var(--sbm-space-1); padding: var(--sbm-space-1); background: var(--color-background-elevated); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-xl); box-shadow: var(--shadow-2); font-family: var(--sbm-font-heading); }
+.rl-toolbar { display: flex; flex-wrap: wrap; max-width: calc(100vw - 32px); justify-content: flex-end; gap: var(--sbm-space-1); padding: var(--sbm-space-1); background: var(--color-background-elevated); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-xl); box-shadow: var(--shadow-2); font-family: var(--sbm-font-heading); }
 .rl-toolbar[data-pos="bottom-right"] { right: 16px; bottom: 16px; }
 .rl-toolbar[data-pos="bottom-left"] { left: 16px; bottom: 16px; }
 .rl-toolbar[data-pos="top-right"] { right: 16px; top: 16px; }
@@ -24,6 +24,10 @@ button { font: inherit; color: inherit; }
 .rl-btn--toggle:hover { background: var(--color-accent-fill-hover); color: var(--color-on-accent); }
 .rl-count { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--sbm-radius-full); background: var(--color-accent-fill); color: var(--color-on-accent); font-size: 11px; font-weight: var(--sbm-weight-semibold); line-height: 18px; text-align: center; }
 .rl-select { height: 28px; align-self: center; padding: 0 4px; font: 600 12px var(--sbm-font-heading); color: var(--color-text-secondary); background: var(--color-background-elevated); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-md); }
+.rl-frame-scrim { inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px; background: var(--color-background-sunken); overflow: auto; }
+.rl-frame-bar { display: flex; align-items: center; gap: 12px; font-family: var(--sbm-font-heading); font-size: var(--sbm-text-sm); color: var(--color-text-secondary); }
+.rl-frame { flex: none; box-sizing: content-box; background: #fff; border: var(--sbm-border-w) solid var(--color-border-strong); border-radius: var(--sbm-radius-xl); box-shadow: var(--shadow-3); }
+.rl-frame-badge { align-self: center; padding: 2px 8px; border-radius: var(--sbm-radius-full); background: var(--color-accent-soft); color: var(--color-on-accent-soft); font: 600 12px var(--sbm-font-heading); }
 .rl-sep { width: 1px; margin: 6px 2px; background: var(--color-border-default); }
 
 .rl-outline { position: absolute; pointer-events: none; outline: var(--sbm-border-w-thick) solid var(--color-border-focus); outline-offset: 1px; border-radius: var(--sbm-radius-sm); }
