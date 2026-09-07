@@ -17,6 +17,6 @@ export default tseslint.config(
   {
     // Node scripts outside the TypeScript build.
     files: ['**/scripts/**/*.mjs'],
-    languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly' } },
   },
 )
