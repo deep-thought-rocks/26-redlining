@@ -1,6 +1,7 @@
 import {
   ArrowRightLeft,
   Camera,
+  CircleHelp,
   Copy,
   Images,
   ListChecks,
@@ -11,7 +12,6 @@ import {
   Settings,
   SlidersHorizontal,
   SquareDashedMousePointer,
-  Trash2,
   X,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -25,6 +25,7 @@ export interface ToolbarProps {
   count: number
   panelOpen: boolean
   settingsOpen: boolean
+  helpOpen: boolean
   screenshot: boolean
   beforeAfter: boolean
   viewport: number | null
@@ -38,6 +39,7 @@ export interface ToolbarProps {
   onTool(tool: Tool): void
   onPanel(): void
   onSettings(): void
+  onHelp(): void
   onScreenshot(): void
   onBeforeAfter(): void
   onViewport(width: number | null): void
@@ -45,7 +47,6 @@ export interface ToolbarProps {
   onCorner(): void
   onCopy(): void
   onSend(): void
-  onClear(): void
 }
 
 export function Toolbar(p: ToolbarProps) {
@@ -87,6 +88,7 @@ export function Toolbar(p: ToolbarProps) {
       <IconButton label="Tweak (T)" pressed={p.tool === 'tweak'} onClick={() => p.onTool('tweak')}>
         <SlidersHorizontal size={18} />
       </IconButton>
+      <span className="rl-sep" />
       <IconButton label="Annotations (L)" pressed={p.panelOpen} onClick={p.onPanel}>
         <ListChecks size={18} />
         {p.count > 0 ? <span className="rl-count">{p.count}</span> : null}
@@ -127,6 +129,7 @@ export function Toolbar(p: ToolbarProps) {
           <Images size={18} />
         </IconButton>
       ) : null}
+      <span className="rl-sep" />
       <IconButton label="Copy prompt (⌘⇧C)" onClick={p.onCopy}>
         <Copy size={18} />
       </IconButton>
@@ -137,10 +140,10 @@ export function Toolbar(p: ToolbarProps) {
       >
         <Send size={18} />
       </IconButton>
-      <IconButton label="Clear session" onClick={p.onClear}>
-        <Trash2 size={18} />
-      </IconButton>
       <span className="rl-sep" />
+      <IconButton label="Help (?)" pressed={p.helpOpen} onClick={p.onHelp}>
+        <CircleHelp size={18} />
+      </IconButton>
       <IconButton label="Settings" pressed={p.settingsOpen} onClick={p.onSettings}>
         <Settings size={18} />
       </IconButton>

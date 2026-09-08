@@ -153,7 +153,7 @@ test('the session survives a reload and can be cleared', async ({ page }) => {
   await expect(page.getByTestId('rl-panel')).toContainText('Shorter copy.')
 
   page.once('dialog', (d) => d.accept())
-  await page.getByRole('button', { name: 'Clear session' }).click()
+  await page.getByRole('button', { name: 'Clear session' }).click() // in the panel header now
   await expect(page.getByTestId('rl-pin')).toHaveCount(0)
   await page.reload()
   await openOverlay(page)
@@ -463,6 +463,31 @@ test('tweak: snapping steps through the stylesheet scale and names the class; fr
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('- Classes: `text-base`')
   expect(clipboard).toContain('  - font-size: 15px → 17px (class text-base → text-lg)')
+})
+
+test('help: ? and the toolbar button open the in-package help; Escape closes it first', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('?')
+  const help = page.getByTestId('rl-help')
+  await expect(help).toBeVisible()
+  await expect(help).toContainText('Select · Draw · Move · Tweak')
+  await expect(help.getByRole('link', { name: 'Guide' })).toHaveAttribute(
+    'href',
+    'https://frankgoeltl.github.io/26-redlining/guide',
+  )
+  await page.keyboard.press('Escape')
+  await expect(help).toHaveCount(0)
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  await page.getByRole('button', { name: 'Help (?)' }).click()
+  await expect(help).toBeVisible()
+  // Help and settings are exclusive.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await expect(help).toHaveCount(0)
+  await expect(page.getByTestId('rl-settings')).toBeVisible()
 })
 
 test('settings: the styling idiom is detected, can be overridden, persists, and maps values to utilities', async ({

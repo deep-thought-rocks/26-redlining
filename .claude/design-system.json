@@ -5,7 +5,8 @@
   "adopted_at": "2026-09-06",
   "canon": "~/Repositories/design-systems/silverballmania/",
   "vendored": [
-    "packages/redlining/src/overlay/tokens.generated.ts (from canon tokens.css via packages/redlining/scripts/vendor-tokens.mjs)"
+    "packages/redlining/src/overlay/tokens.generated.ts (from canon tokens.css via packages/redlining/scripts/vendor-tokens.mjs)",
+    "site/favicons/* and site/images/silverballmania-mark.svg (copied from canon assets/favicons and assets/logos; re-copy when the canon's mark changes)"
   ],
   "theme_policy": "light-default",
   "divergences": [
@@ -16,8 +17,8 @@
     },
     {
       "id": "D2",
-      "what": "Brand assets (mark, glyph, wordmark, favicons, broadcast and instructional layers) are not adopted",
-      "why": "Redlining is its own npm package with its own name. Only tokens, type, spacing, radii, shadows, motion and component specs are consumed."
+      "what": "Brand assets: only the mark is adopted, for the docs site (header and favicon set); wordmark, lockup, broadcast and instructional layers are not",
+      "why": "Redlining is its own npm package with its own name, but it is made under the silverballmania brand: since 2026-09-08 the mark sits beside the red wordmark in the site header and is the favicon set under site/favicons/. The user chose the canon's own black-and-white variant (silverballmania-mark-black.svg: black disc, white turbine) over the green primary, so the site reads as black, white and red; the PNG favicons and the single-PNG .ico were rendered from that SVG with Chromium. The mark is never recoloured beyond the canon's own variants and never mirrored. The overlay itself carries no logo."
     },
     {
       "id": "D3",
@@ -28,6 +29,11 @@
       "id": "D4",
       "what": "No Tailwind in the overlay; component styles are hand-written CSS on the vendored tokens",
       "why": "The overlay is a small shadow-scoped UI; a Tailwind compile step would add build complexity for a dozen classes. The PRD listed Tailwind 4; the tokens, not the utility layer, carry the design."
+    },
+    {
+      "id": "D5",
+      "what": "Accent is a redline red (#9e2018 fill, #b92b22 / #66150f text) instead of the canon's green",
+      "why": "Chosen by the user on 2026-09-08, darkened one step on request the same day: the product is called Redlining and its marks should read as red lines. Applied as an override of the --sbm-green ramp in src/overlay/styles.ts (brandCss) after the vendored tokens, so every semantic accent token follows and both themes keep the canon's lightness steps; the burned-in screenshot pins and site.css use the same values. Nothing else in the palette changes."
     }
   ],
   "gaps": [
@@ -51,7 +57,7 @@
     }
   ],
   "known_debt": [],
-  "notes": "Overlay built 2026-09-06 on the vendored tokens. Remaining gaps: G4 (port canon components \u2014 the overlay uses its own small set), G5 (spec review of pins/popover/panel against the canon), G7 (contrast re-measure over host pages).",
+  "notes": "Overlay built 2026-09-06 on the vendored tokens. Remaining gaps: G4 (port canon components — the overlay uses its own small set), G5 (spec review of pins/popover/panel against the canon), G7 (contrast re-measure over host pages). D5 (red accent) added 2026-09-08.",
   "applied": [
     {
       "id": "G1",
@@ -60,7 +66,7 @@
     },
     {
       "id": "G2",
-      "what": ":root \u2192 :host and [data-theme=light] \u2192 :host([data-theme=light]) applied by the vendor script; the shadow host carries data-theme=\"light\" by default",
+      "what": ":root → :host and [data-theme=light] → :host([data-theme=light]) applied by the vendor script; the shadow host carries data-theme=\"light\" by default",
       "date": "2026-09-06"
     },
     {

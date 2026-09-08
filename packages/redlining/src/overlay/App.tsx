@@ -4,6 +4,7 @@ import type { Action, Change, Styling } from '../types'
 import { findByAnchor, pageRect } from './dom'
 import { DeviceFrame, frameWidth } from './DeviceFrame'
 import { DrawLayer } from './DrawLayer'
+import { HelpPopover } from './HelpPopover'
 import { detectFramework, FRAMEWORK_LABEL, type FrameworkKind } from './framework'
 import { Inspector } from './Inspector'
 import { ListPanel } from './ListPanel'
@@ -151,6 +152,7 @@ export function App({
   const [reply, setReply] = useState<Map<number, ReplyLine>>(() => new Map())
   const [settings, setSettings] = useState<Settings>(() => loadSettings(window.localStorage))
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const updateSettings = useCallback((next: Settings) => {
     setSettings(next)
     saveSettings(window.localStorage, next)
@@ -422,6 +424,7 @@ export function App({
         if (draft) setDraft(null)
         else if (tweak) cancelTweak()
         else if (moveSource) setMoveSource(null)
+        else if (helpOpen) setHelpOpen(false)
         else if (settingsOpen) setSettingsOpen(false)
         else if (panel) setPanel(false)
         else toggle()
@@ -445,6 +448,10 @@ export function App({
       else if (!mod && key === 'm') switchTool('move')
       else if (!mod && key === 't') switchTool('tweak')
       else if (!mod && key === 'l') setPanel((p) => !p)
+      else if (!mod && e.key === '?') {
+        setHelpOpen((h) => !h)
+        setSettingsOpen(false)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -455,6 +462,7 @@ export function App({
     moveSource,
     panel,
     settingsOpen,
+    helpOpen,
     hotkey,
     toggle,
     switchTool,
@@ -610,6 +618,7 @@ export function App({
         count={entries.length}
         panelOpen={panel}
         settingsOpen={settingsOpen}
+        helpOpen={helpOpen}
         screenshot={screenshot}
         beforeAfter={beforeAfter}
         viewport={framed ? null : viewport}
@@ -620,15 +629,29 @@ export function App({
         onToggle={toggle}
         onTool={switchTool}
         onPanel={() => setPanel((p) => !p)}
-        onSettings={() => setSettingsOpen((s) => !s)}
+        onSettings={() => {
+          setSettingsOpen((s) => !s)
+          setHelpOpen(false)
+        }}
+        onHelp={() => {
+          setHelpOpen((h) => !h)
+          setSettingsOpen(false)
+        }}
         onScreenshot={() => setScreenshot((v) => !v)}
         onBeforeAfter={() => setBeforeAfter((v) => !v)}
         onViewport={setViewport}
         onCorner={nextCorner}
         onCopy={() => void copy()}
         onSend={() => void send()}
-        onClear={clear}
       />
+      {active && helpOpen ? (
+        <HelpPopover
+          position={corner}
+          panelOpen={panel}
+          hotkey={hotkey}
+          onClose={() => setHelpOpen(false)}
+        />
+      ) : null}
       {active && settingsOpen ? (
         <SettingsPopover
           settings={settings}
@@ -649,6 +672,7 @@ export function App({
               : []
           }
           onClearRoute={clearOther}
+          onClear={clear}
           verdicts={verdicts}
           reply={reply}
           onVerify={() => void verify()}

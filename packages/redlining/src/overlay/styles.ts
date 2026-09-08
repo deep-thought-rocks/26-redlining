@@ -1,5 +1,29 @@
 // Overlay styles on top of the vendored silverballmania tokens. Everything is
 // scoped by the shadow root; the host page never sees these rules.
+/**
+ * D5 in .claude/design-system.json: Redlining's accent is a redline red, not the
+ * canon's green. The semantic accent tokens (fill, text, border-focus, soft, muted)
+ * all derive from the --sbm-green ramp, so the ramp is re-pointed here after the
+ * vendored tokens; components keep using --color-* only. Same lightness steps as
+ * the canon, so both themes keep their contrast.
+ */
+export const brandCss = `
+:host {
+  --sbm-green-50: #fae6e5;
+  --sbm-green-100: #f4c9c6;
+  --sbm-green-200: #ea9a94;
+  --sbm-green-300: #dc6560;
+  --sbm-green-400: #d1483f;
+  --sbm-green-500: #b92b22;
+  --sbm-green-550: #9e2018;
+  --sbm-green-600: #8c1c15;
+  --sbm-green-650: #7a1912;
+  --sbm-green-700: #66150f;
+  --sbm-green-800: #4e100b;
+  --sbm-green-900: #340a07;
+}
+`
+
 export const overlayCss = `
 :host { all: initial; font-family: var(--sbm-font-body); font-size: var(--sbm-text-sm); line-height: var(--sbm-text-sm-line); color: var(--color-text-primary); }
 :host *, :host *::before, :host *::after { box-sizing: border-box; }
@@ -142,6 +166,15 @@ button { font: inherit; color: inherit; }
 .rl-settings[data-pos="top-right"] { right: 16px; top: 72px; }
 .rl-settings[data-pos="top-left"] { left: 16px; top: 72px; }
 .rl-settings[data-pos$="right"][data-panel] { right: 336px; }
+.rl-help { width: 360px; }
+.rl-help-lead { margin: 0 0 var(--sbm-space-2); font-size: var(--sbm-text-xs); color: var(--color-text-secondary); line-height: 1.45; }
+.rl-help-lead code { font-family: var(--sbm-font-mono); font-size: 11px; }
+.rl-help-keys { width: 100%; border-collapse: collapse; font-size: var(--sbm-text-xs); }
+.rl-help-keys td { padding: 3px 0; border-top: var(--sbm-border-w) solid var(--color-border-subtle); color: var(--color-text-secondary); vertical-align: top; }
+.rl-help-keys td:first-child { width: 44%; padding-right: 8px; }
+.rl-help-keys kbd { font-family: var(--sbm-font-mono); font-size: 11px; color: var(--color-text-primary); }
+.rl-help-links { display: flex; gap: var(--sbm-space-3); margin: var(--sbm-space-2) 0 0; font-size: var(--sbm-text-xs); }
+.rl-help-links a { color: var(--color-text-accent); }
 .rl-settings header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sbm-space-2); font-family: var(--sbm-font-heading); font-weight: var(--sbm-weight-semibold); }
 .rl-setting { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sbm-space-2); padding: 6px 0; border-top: var(--sbm-border-w) solid var(--color-border-subtle); color: var(--color-text-secondary); }
 .rl-setting > span > small { display: block; color: var(--color-text-muted); font-size: 11px; }

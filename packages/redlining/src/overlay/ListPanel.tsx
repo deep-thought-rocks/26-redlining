@@ -1,4 +1,4 @@
-import { CheckCheck, ChevronDown, ChevronRight, Eye, ScanSearch, X } from 'lucide-react'
+import { CheckCheck, ChevronDown, ChevronRight, Eye, ScanSearch, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { describe } from '../export/changes'
 import type { ReplyLine } from '../export/reply'
@@ -19,6 +19,8 @@ export interface ListPanelProps {
   onNote(id: string, note: string): void
   onRemove(id: string): void
   onClearRoute(route: string): void
+  /** Discard this route's session (asks first). */
+  onClear(): void
   onClose(): void
 }
 
@@ -39,6 +41,7 @@ export function ListPanel({
   onNote,
   onRemove,
   onClearRoute,
+  onClear,
   onClose,
 }: ListPanelProps) {
   const applied = entries.filter((e) => verdicts.get(e.id)?.state === 'applied').length
@@ -57,6 +60,17 @@ export function ListPanel({
       <header>
         <span>Annotations ({entries.length})</span>
         <span className="rl-panel-actions">
+          {entries.length ? (
+            <button
+              type="button"
+              className="rl-btn rl-icon"
+              aria-label="Clear session"
+              title="Discard every annotation on this route"
+              onClick={onClear}
+            >
+              <Trash2 size={16} />
+            </button>
+          ) : null}
           {entries.length ? (
             <button
               type="button"

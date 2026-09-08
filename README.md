@@ -1,6 +1,12 @@
-# Redlining
+<p align="center">
+  <img src="docs/images/silverballmania-mark.svg" alt="" width="64" height="64" />
+</p>
 
-Redlining, in the proofreader's sense: mark up your **running** Next.js app the way you would mark up a proof, and hand Claude Code a spec that names the exact file, line, host element and React owner chain for every note. No guessing which component "the form on the right" is.
+<h1 align="center">redlining</h1>
+
+<p align="center">Mark up the running app. Hand Claude Code the exact file and line.</p>
+
+Redlining, in the proofreader's sense: mark up your **running** app the way you would mark up a proof, and hand Claude Code a spec that names the exact file, line, host element and component owner chain for every note (built for Next.js; works on any page). No guessing which component "the form on the right" is.
 
 ```sh
 pnpm add -D redlining && npx redlining init
@@ -111,9 +117,10 @@ or call it: `import { mount } from 'redlining/standalone'; mount({ endpoint: fal
 | `L`                                               | Annotation list                                                                                 |
 | Tweak: handles, `⌥` drag, arrows, `⌘Z`, `⌥` hover | Resize, spacing, nudge, undo, measure; the export lists every change as before → after          |
 | Width select (375 / 768 / 1280)                   | Open the page in a real narrow viewport (an iframe); annotations made inside carry `Applies at` |
-| Move button                                       | Cycle the toolbar through the four corners (remembered)                                         |
+| Move button                                       | Cycle the toolbar through the four corners (remembered); Clear session sits in the list panel   |
 | `⌘⇧C`                                             | Copy the prompt to the clipboard                                                                |
 | `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)                |
+| `?`                                               | In-package help: keys, the loop, links to the docs                                              |
 | `Esc`                                             | Close popover → panel → overlay                                                                 |
 
 ## Options
@@ -156,12 +163,13 @@ export const { GET, POST } = createHandlers({ outDir: '.redlining', maxBytes: 16
 
 ## Support
 
-| Setup                                         | Status                               | Precision                            |
-| --------------------------------------------- | ------------------------------------ | ------------------------------------ |
-| Next.js 16+, Turbopack or webpack, App Router | Supported                            | file:line + owner chain              |
-| Vite + React (`redlining/vite`)               | Supported                            | file:line + owner chain              |
-| Any React app without the loader              | Reduced: mount `<Redlining />` alone | owner chain + selector, no file:line |
-| Non-React frameworks                          | Not supported                        | —                                    |
+| Setup                                                     | Status                                                           | Precision                            |
+| --------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------ |
+| Next.js 16+, Turbopack or webpack, App Router             | Supported                                                        | file:line + owner chain              |
+| Vite + React (`redlining/vite`)                           | Supported                                                        | file:line + owner chain              |
+| Any React app without the loader                          | Supported: mount `<Redlining />` alone; Save downloads the files | owner chain + selector, no file:line |
+| Angular (dev mode) via `redlining/standalone`             | Supported; Save downloads the files                              | component names + selector           |
+| Vue, plain HTML, anything else via `redlining/standalone` | Supported; Save downloads the files                              | selector (+ Vue instance names)      |
 
 `stripRedlining(html)` removes `data-rl` attributes from dev-rendered HTML for snapshot tests.
 

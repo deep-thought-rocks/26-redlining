@@ -58,7 +58,7 @@ export function drawPins(ctx: PinCanvas, pins: Pin[], scale = 1): void {
     const y = pin.y * scale
     ctx.beginPath()
     ctx.arc(x, y, RADIUS * scale, 0, Math.PI * 2)
-    ctx.fillStyle = '#02872d' // --sbm-green-550, the accent fill
+    ctx.fillStyle = '#9e2018' // the accent fill (brandCss, step 550)
     ctx.fill()
     ctx.strokeStyle = '#ffffff'
     ctx.stroke()

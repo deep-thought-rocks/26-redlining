@@ -81,7 +81,7 @@ Each ambiguity costs a round-trip: Claude Code guesses, edits the wrong componen
 - **Not a visual editor.** No WYSIWYG, no writing code, no drag-and-drop layout engine.
 - **Not a screenshot parser.** Pixels → components is the wrong direction when the DOM is available.
 - **No cloud, accounts, or telemetry.** Localhost only.
-- **No non-React frameworks.** A Vite/React adapter is a later track (§14, M3); the support contract is stated in §17.1.
+- **No non-React frameworks in v1.** Superseded in 0.6.0 by the standalone bundle (§17.1); template stamping for non-JSX frameworks stays out of scope.
 
 ---
 
@@ -453,9 +453,9 @@ Other setups are not silently "less good" — they are a **stated limitation** i
 | Setup | Status | Precision |
 |---|---|---|
 | Next.js 16+, Turbopack or webpack | Supported | file:line + owner chain |
-| Vite + React | Planned adapter (M3) — same loader concept via Vite's `transform` hook | file:line + owner chain once shipped |
-| Any React app without a build integration | Manual overlay import; **reduced** path, documented as such | owner chain + selector only (no file:line) |
-| Non-React frameworks | Not supported; accepted as contributions, not promised on a roadmap | — |
+| Vite + React | Supported since 0.1.0 (`redlining/vite`, same transform; dev-server endpoint since 0.6.0) | file:line + owner chain |
+| Any React app without a build integration | Supported: mount the overlay alone; Save downloads the files when no endpoint answers | owner chain + selector only (no file:line) |
+| Angular (dev mode), Vue, plain HTML | Supported since 0.6.0 via `redlining/standalone` (React bundled, script tag or `mount()`); HTML templates are not stamped | component names (Angular `ng`, Vue instances) + selector; selector only elsewhere |
 
 Anything less explicit generates issues from users who reasonably expected parity.
 

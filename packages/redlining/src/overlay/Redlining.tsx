@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { App } from './App'
-import { overlayCss } from './styles'
+import { brandCss, overlayCss } from './styles'
 import type { Position } from './Toolbar'
 import { tokensCss } from './tokens.generated'
 
@@ -67,7 +67,7 @@ function Host({
     const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
     if (!root.querySelector('style')) {
       const style = document.createElement('style')
-      style.textContent = tokensCss + overlayCss
+      style.textContent = tokensCss + brandCss + overlayCss
       root.appendChild(style)
     }
     setMount({ host, root })

@@ -10,9 +10,9 @@
   --text: #0a0a0a;
   --text-secondary: #4b5563;
   --text-muted: #5d6875;
-  --accent: #03a737;
-  --accent-fill: #02872d;
-  --accent-fill-hover: #027828;
+  --accent: #b92b22;
+  --accent-fill: #9e2018;
+  --accent-fill-hover: #8c1c15;
   --link: #027a29;
   --link-hover: #015e20;
   --border: #d7dae0;
@@ -164,6 +164,9 @@ img {
   height: 3.5rem;
 }
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-heading);
   font-weight: 700;
   color: var(--text);
@@ -171,6 +174,11 @@ img {
 }
 .brand b {
   color: var(--accent);
+}
+.brand img {
+  display: block;
+  width: 24px;
+  height: 24px;
 }
 .top nav {
   display: flex;
