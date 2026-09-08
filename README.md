@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-![Redlining in use: open the overlay, click the nav and write a note, drag a box and write a note, open the list, save to the project](docs/images/overlay.gif)
+![Redlining in use: open the overlay, click the nav and write a note, drag a box and write a note, remove a button, move a card, tweak a button's font size and colour, open the list, save to the project](docs/images/overlay.gif)
 
 Press **Alt+R** in the running app. Click an element or drag a box, write a note, and press **Save**. Then, in Claude Code (any other agent reads the same file or the copied prompt):
 

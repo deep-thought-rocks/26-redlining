@@ -1,4 +1,4 @@
-// Records the README demo: the PRD §9.1 scenario on examples/next-app /dashboard.
+// Records the README demo: the PRD §9.1 scenario plus a tweak on examples/next-app /dashboard.
 // Usage: pnpm build && (pnpm --filter next-app dev -p 3123 &) && node scripts/record-demo.mjs
 //        ffmpeg -i test-results/demo-video/*.webm -vf "fps=10,scale=1000:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5" docs/images/overlay.gif
 import { chromium } from '@playwright/test'
@@ -90,6 +90,27 @@ await page.getByRole('button', { name: 'after', exact: true }).click()
 await pause(250)
 await type('Show quick stats above the main content on this page only.')
 await pause(400)
+await page.keyboard.press('Enter')
+await pause(700)
+
+// 5 · TWEAK — the New report button: font size up a step, background from the --ink token.
+await page.keyboard.press('t')
+await pause(300)
+const primary = await center('button:has-text("New report")')
+await page.mouse.move(primary.x, primary.y)
+await pause(600)
+await page.mouse.click(primary.x, primary.y)
+await pause(600)
+await page.getByTestId('rl-section-type').click()
+await pause(500)
+await page.getByRole('button', { name: /^Font size (up|\+1)$/ }).click()
+await pause(700)
+await page.getByTestId('rl-section-colour').click()
+await pause(500)
+await page.getByTestId('rl-token-background-color').selectOption('--ink')
+await pause(900)
+await page.getByTestId('rl-tweak-done').click()
+await pause(600)
 await page.keyboard.press('Enter')
 await pause(700)
 
