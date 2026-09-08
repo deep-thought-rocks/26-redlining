@@ -1,5 +1,20 @@
 # redlining
 
+## 0.6.2
+
+### Patch Changes
+
+- Vite endpoint: the request body is capped while it streams (413 past `maxBytes`, now a plugin option) and adapter errors become a 500 instead of an unhandled rejection; the Next.js route counts UTF-8 bytes, not string length.
+- A failing screenshot no longer aborts the save or leaves the before/after previews reset; the export continues without the image.
+- Nudges are previewed on the CSS `translate` property, so an element's own `transform` (rotation, scale) is kept; older sessions with `translate(x, y)` values still load.
+- Two tweak annotations on one element now show together: previews are grouped per element and applied from one snapshot; deleting one keeps the other.
+- The overlay restores the page's own inline `cursor` and `user-select` after an interaction instead of clearing them.
+- A blocked clipboard shows a toast instead of failing silently.
+- `withRedlining()` appends to a consumer's existing `*.tsx` / `*.jsx` Turbopack rule instead of replacing it.
+- Provenance: a stylesheet `!important` now wins over a normal inline style, and among `!important` declarations a layered one wins over an unlayered one.
+- `react-dom` is a declared peer dependency and `next` is optional, so Vite and standalone consumers no longer pull Next.
+- Tests: the packed CLI's usage exit and `redlining init` are asserted in the smoke test; the anchor and save scenarios also run under `next dev --webpack`; a Vite fixture exercises the transform and the dev-server endpoint. `SECURITY.md` describes the reporting process.
+
 ## 0.6.1
 
 ### Patch Changes
