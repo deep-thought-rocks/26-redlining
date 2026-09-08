@@ -112,6 +112,33 @@ describe('provenance', () => {
     expect(provenance(document.querySelector('p')!, 'opacity')).toEqual({ kind: 'default' })
   })
 
+  test('a stylesheet !important beats a normal inline style; an inline !important beats everything', () => {
+    css('.loud { color: red !important } .quiet { color: blue }')
+    document.body.innerHTML =
+      '<i class="loud" style="color: green"></i><b class="quiet" style="color: green"></b><u class="loud" style="color: green !important"></u>'
+    expect(provenance(document.querySelector('i')!, 'color')).toMatchObject({
+      kind: 'rule',
+      selector: '.loud',
+    })
+    expect(provenance(document.querySelector('b')!, 'color')).toMatchObject({
+      kind: 'inline',
+      value: 'green',
+    })
+    expect(provenance(document.querySelector('u')!, 'color')).toMatchObject({
+      kind: 'inline',
+      value: 'green',
+    })
+  })
+
+  test('among !important declarations a layered one beats an unlayered one', () => {
+    css('@layer base { .x { color: red !important } } .x { color: blue !important }')
+    document.body.innerHTML = '<i class="x"></i>'
+    const p = provenance(document.querySelector('i')!, 'color')
+    // jsdom may not model @layer; when it does, the layered rule wins.
+    if (document.styleSheets[0]!.cssRules.length === 2) expect(p).toMatchObject({ value: 'red' })
+    else expect(p.kind).toBe('rule')
+  })
+
   test('media queries are honoured when matchMedia exists, and missing matchMedia counts as matching', () => {
     css('@media (min-width: 1px) { .m { color: red } }')
     document.body.innerHTML = '<i class="m"></i>'

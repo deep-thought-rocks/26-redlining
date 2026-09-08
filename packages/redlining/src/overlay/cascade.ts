@@ -154,7 +154,8 @@ function winner(list: Candidate[]): Candidate | null {
   if (list.length === 0) return null
   return list.reduce((best, c) => {
     if (c.important !== best.important) return c.important ? c : best
-    if (c.layered !== best.layered) return c.layered ? best : c // unlayered beats layered
+    // Normal declarations: unlayered beats layered. Important ones: the reverse.
+    if (c.layered !== best.layered) return c.layered === c.important ? c : best
     if (c.specificity !== best.specificity) return c.specificity > best.specificity ? c : best
     return c.order >= best.order ? c : best
   })
@@ -175,12 +176,14 @@ function describeWinner(c: Candidate, extra: Partial<Provenance> = {}): Provenan
 
 /** Where `property`'s value on `el` comes from. */
 export function provenance(el: Element, property: string): Provenance {
-  const inline = (el as HTMLElement).style?.getPropertyValue(property)
-  if (inline) {
+  const style = (el as HTMLElement).style
+  const inline = style?.getPropertyValue(property)
+  const own = winner(candidates(el, property))
+  // A normal inline declaration loses to a stylesheet `!important`; an inline `!important` beats all.
+  if (inline && (style.getPropertyPriority(property) === 'important' || !own?.important)) {
     const token = /var\((--[\w-]+)/.exec(inline)?.[1]
     return { kind: 'inline', value: inline.trim(), ...(token ? { token } : {}) }
   }
-  const own = winner(candidates(el, property))
   if (own) return describeWinner(own)
   if (INHERITED.has(property)) {
     let parent = el.parentElement
