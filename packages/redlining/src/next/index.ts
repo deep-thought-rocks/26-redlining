@@ -44,10 +44,16 @@ function apply(base: NextConfig, include: string[]): NextConfig {
     condition: { all: [{ not: 'foreign' }, { path: new RegExp(`(^|/)(${dirs})/.*\\.${ext}$`) }] },
     loaders: [loader],
   })
+  // A consumer's own rule for the same glob is kept: Next runs an array of rules in order.
+  const withExisting = (glob: string, ours: ReturnType<typeof rule>) => {
+    const existing = base.turbopack?.rules?.[glob]
+    if (!existing) return ours
+    return [...(Array.isArray(existing) ? existing : [existing]), ours]
+  }
   const rules: TurbopackRules = {
     ...base.turbopack?.rules,
-    '*.tsx': rule('tsx'),
-    '*.jsx': rule('jsx'),
+    '*.tsx': withExisting('*.tsx', rule('tsx')),
+    '*.jsx': withExisting('*.jsx', rule('jsx')),
   }
 
   const webpack: WebpackHook = (webpackConfig, wctx) => {

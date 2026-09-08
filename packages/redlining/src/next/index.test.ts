@@ -42,6 +42,23 @@ describe('withRedlining', () => {
     expect(Object.keys(out.turbopack!.rules!).sort()).toEqual(['*.jsx', '*.svg', '*.tsx'])
   })
 
+  test('appends to a consumer rule on the same glob instead of replacing it', () => {
+    const mine = { loaders: ['my-loader'], as: '*.tsx' }
+    const out = resolve(
+      withRedlining({ turbopack: { rules: { '*.tsx': mine, '*.jsx': [mine] } } }),
+      PHASE_DEVELOPMENT_SERVER,
+    )
+    const tsx = out.turbopack!.rules!['*.tsx'] as unknown[]
+    expect(Array.isArray(tsx)).toBe(true)
+    expect(tsx[0]).toBe(mine)
+    expect(tsx[1]).toMatchObject({
+      loaders: [expect.objectContaining({ loader: expect.stringContaining('loader') })],
+    })
+    const jsx = out.turbopack!.rules!['*.jsx'] as unknown[]
+    expect(jsx).toHaveLength(2)
+    expect(jsx[0]).toBe(mine)
+  })
+
   test('adds a pre-loader rule through the webpack hook in dev, composing an existing hook', () => {
     let seen = false
     const out = resolve(
