@@ -73,8 +73,10 @@ export async function serveRedlining(
       if (typeof v === 'string') headers.set(k, v)
     }
     const body = await readBody(req)
+    // The request's own origin comes from the Host header, so the same-origin check works.
+    const host = typeof req.headers.host === 'string' ? req.headers.host : 'localhost'
     response = await handlers.POST(
-      new Request(`http://localhost${req.url ?? '/'}`, { method: 'POST', headers, body }),
+      new Request(`http://${host}${req.url ?? '/'}`, { method: 'POST', headers, body }),
     )
   } else {
     next()

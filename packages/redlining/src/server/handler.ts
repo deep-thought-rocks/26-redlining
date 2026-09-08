@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { assetFiles, IMAGE_DATA_URL, toJson, toMarkdown, withAssetPaths } from '../export'
 import type { Session } from '../types'
+import { crossOrigin, parseSession } from './validate'
 
 export interface RouteOptions {
   /** Directory the files are written to, relative to `projectRoot`. Default `.redlining`. */
@@ -19,8 +20,8 @@ const DEFAULT_MAX_BYTES = 16 * 1024 * 1024
 /**
  * Builds the `POST` handler that writes `annotations.md`, `annotations.json`,
  * `screenshot.png`, reference images (`ref-<n>-<i>.*`) and crops (`crop-<n>.png`)
- * under `<projectRoot>/<outDir>/`. Refuses outside development; never writes
- * outside `outDir`.
+ * under `<projectRoot>/<outDir>/`. Refuses outside development and cross-origin
+ * browser requests; validates the session; never writes outside `outDir`.
  */
 export function createHandler(options: RouteOptions = {}) {
   return createHandlers(options).POST
@@ -39,6 +40,13 @@ export function createHandlers(options: RouteOptions = {}) {
   const relPosix = rel.split(path.sep).join('/')
 
   const isEnabled = () => options.enabled ?? process.env.NODE_ENV === 'development'
+  /** A file inside outDir, or null when `name` would leave it. */
+  const inside = (name: string): string | null => {
+    if (!name || /[/\\]|\.\./.test(name)) return null
+    const resolved = path.resolve(outDir, name)
+    const r = path.relative(outDir, resolved)
+    return !r || r.startsWith('..') || path.isAbsolute(r) ? null : resolved
+  }
 
   async function GET(): Promise<Response> {
     if (!isEnabled()) return text(403, 'Redlining is disabled outside development')
@@ -53,25 +61,29 @@ export function createHandlers(options: RouteOptions = {}) {
 
   async function POST(request: Request): Promise<Response> {
     if (!isEnabled()) return text(403, 'Redlining is disabled outside development')
+    const foreign = crossOrigin(request)
+    if (foreign) return text(403, `Cross-origin save refused: ${foreign}`)
 
     const declared = Number(request.headers.get('content-length') ?? 0)
     if (declared > maxBytes) return text(413, `Body exceeds ${maxBytes} bytes`)
     const raw = await request.text()
     if (raw.length > maxBytes) return text(413, `Body exceeds ${maxBytes} bytes`)
 
-    let session: Session
+    let body: { session?: unknown }
     try {
-      const body = JSON.parse(raw) as { session?: unknown }
-      if (!isSession(body.session)) return text(400, 'Expected { session }')
-      session = body.session
+      body = JSON.parse(raw) as { session?: unknown }
     } catch {
       return text(400, 'Invalid JSON')
     }
+    const parsed = parseSession(body.session)
+    if ('error' in parsed) return text(400, parsed.error)
+    const session: Session = parsed.session
 
     await mkdir(outDir, { recursive: true })
     // Stale images from the last save go first; the session decides what exists.
     for (const name of await readdir(outDir)) {
-      if (/^(ref|crop)-/.test(name)) await rm(path.join(outDir, name), { force: true })
+      const file = inside(name)
+      if (file && /^(ref|crop)-/.test(name)) await rm(file, { force: true })
     }
     const files: string[] = []
     const screenshotPath = `${relPosix}/screenshot.png`
@@ -82,8 +94,9 @@ export function createHandlers(options: RouteOptions = {}) {
     files.push(`${relPosix}/annotations.json`)
     for (const asset of assetFiles(session)) {
       const bytes = decodeImage(asset.dataUrl)
-      if (!bytes) continue
-      await writeFile(path.join(outDir, asset.name), bytes)
+      const file = inside(asset.name)
+      if (!bytes || !file) return text(400, `Refusing asset name ${JSON.stringify(asset.name)}`)
+      await writeFile(file, bytes)
       files.push(`${relPosix}/${asset.name}`)
     }
     const png = session.screenshot ? decodePng(session.screenshot) : null
@@ -108,18 +121,6 @@ export function createHandlers(options: RouteOptions = {}) {
 
 /** Default handlers: `export { GET, POST } from 'redlining/next/route'`. */
 export const { GET, POST } = createHandlers()
-
-function isSession(value: unknown): value is Session {
-  const s = value as Session | null
-  return (
-    !!s &&
-    typeof s === 'object' &&
-    typeof s.route === 'string' &&
-    typeof s.url === 'string' &&
-    Array.isArray(s.annotations) &&
-    !!s.viewport
-  )
-}
 
 function decodeImage(dataUrl: string): Uint8Array | null {
   const m = IMAGE_DATA_URL.exec(dataUrl)

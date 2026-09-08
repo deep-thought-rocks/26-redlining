@@ -101,6 +101,19 @@ test('endpoint: serves GET and POST from the dev server and writes under the roo
       handler!(request('GET', ''), got.like, () => {})
     })
     expect(JSON.parse(got.res.body)).toEqual({ reply: null, mtime: null })
+    // A forged Origin is refused through the adapter; the Host header defines the own origin.
+    const forged = response()
+    await new Promise<void>((done) => {
+      forged.like.end = (b) => {
+        forged.res.body = b ?? ''
+        done()
+      }
+      const req = request('POST', JSON.stringify({ session }))
+      req.headers.origin = 'https://evil.example'
+      req.headers.host = 'localhost:5173'
+      handler!(req, forged.like, () => {})
+    })
+    expect(forged.res.statusCode).toBe(403)
     let passed = false
     handler!(request('DELETE', ''), response().like, () => (passed = true))
     expect(passed).toBe(true)

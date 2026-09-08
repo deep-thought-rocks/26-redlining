@@ -145,6 +145,51 @@ describe('route handler', () => {
     expect((await createHandlers({ projectRoot: root, enabled: false }).GET()).status).toBe(403)
   })
 
+  test('refuses cross-origin browser requests and validates the session before writing', async () => {
+    const POST = createHandler({ projectRoot: root, enabled: true })
+    const evil = await POST(post({ session }, { origin: 'https://evil.example' }))
+    expect(evil.status).toBe(403)
+    expect(await evil.text()).toContain('Cross-origin save refused')
+    expect((await POST(post({ session }, { 'sec-fetch-site': 'cross-site' }))).status).toBe(403)
+    expect((await POST(post({ session }, { origin: 'http://localhost' }))).status).toBe(200)
+    expect(
+      (
+        await POST(
+          post({ session }, { origin: 'http://127.0.0.1', 'sec-fetch-site': 'same-origin' }),
+        )
+      ).status,
+    ).toBe(200)
+    expect(existsSync(path.join(root, '.redlining/annotations.md'))).toBe(true)
+
+    const forged = {
+      ...session,
+      annotations: [
+        {
+          id: 'a',
+          index: '../../../../tmp/redlining-pwned',
+          action: 'change',
+          anchor: {
+            tag: 'p',
+            owners: [],
+            selector: 'p',
+            rect: { x: 0, y: 0, w: 1, h: 1 },
+            resolved: 'exact',
+          },
+          note: 'n',
+          refs: [`data:image/png;base64,${Buffer.from('PWNED').toString('base64')}`],
+        },
+      ],
+    }
+    const res = await POST(post({ session: forged }))
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe('annotations[0].index must be a positive integer')
+    expect(existsSync('/tmp/redlining-pwned-1.png')).toBe(false)
+    const badCrop = await POST(
+      post({ session: { ...session, crops: { '../x': 'data:image/png;base64,AA' } } }),
+    )
+    expect(badCrop.status).toBe(400)
+  })
+
   test('refuses outside development', async () => {
     const POST = createHandler({ projectRoot: root, enabled: false })
     expect((await POST(post({ session }))).status).toBe(403)
