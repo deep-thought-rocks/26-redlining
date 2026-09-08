@@ -1,21 +1,23 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+Redlining is a development-only overlay. The save endpoint (`redlining/next/route`, or the
+Vite dev-server middleware) refuses to run outside `NODE_ENV=development`, writes only under
+`.redlining/` inside the project, validates every posted session, and rejects cross-origin
+browser requests. Never expose a dev server that hosts it to the internet; the overlay's
+`production` export condition and the route's guard exist so that shipping it by accident
+does nothing.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+## Supported versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+Only the latest published `0.x` minor receives fixes. Upgrade with
+`pnpm add -D redlining@latest`.
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Use this section to tell people how to report a vulnerability.
+Please report privately through GitHub's
+[Report a vulnerability](https://github.com/deep-thought-rocks/26-redlining/security/advisories/new)
+form on this repository; do not open a public issue for a security problem.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+You will get an acknowledgement within a few days. Confirmed issues are fixed in the next
+patch release and noted in `packages/redlining/CHANGELOG.md`; reports that turn out not to be
+vulnerabilities get an explanation.

@@ -151,7 +151,7 @@ import { redlining } from 'redlining/vite'
 export default defineConfig({ plugins: [redlining(), react()] })
 ```
 
-Mount `<Redlining />` in your root component. The plugin runs only under `vite dev`; `include` defaults to `['src']`. There is no route handler outside Next.js yet, so use **Copy prompt** rather than Save.
+Mount `<Redlining />` in your root component. The plugin runs only under `vite dev`; `include` defaults to `['src']`. Pass `redlining({ endpoint: true })` to serve the save endpoint from the dev server at `/api/redlining` (it writes to `.redlining/` and reads `reply.md` like the Next.js route; `outDir` and `maxBytes` are options); without it, Save downloads the files.
 
 The route handler can be configured too:
 
