@@ -1,6 +1,6 @@
 {
   "name": "redlining",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Figma-style comments on your running app, exported as a file-anchored spec for your coding agent (Claude Code first; built for Next.js, runs on any page).",
   "keywords": [
     "nextjs",
@@ -90,8 +90,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "vendor-tokens": "node scripts/vendor-tokens.mjs",
-    "prepublishOnly": "pnpm build && cp ../../README.md ../../LICENSE .",
-    "postpublish": "rm -f README.md LICENSE"
+    "prepublishOnly": "node scripts/check-version.mjs && pnpm build && cp ../../README.md ../../LICENSE .",
+    "postpublish": "rm -f README.md LICENSE",
+    "check-version": "node scripts/check-version.mjs"
   },
   "peerDependencies": {
     "next": ">=16",

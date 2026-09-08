@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- **Security.** The save endpoint validates the whole session before anything reaches the filesystem: every annotation index must be a positive integer, crop keys likewise, and every asset file name is checked to stay inside `outDir`. A crafted index could previously write an image outside `.redlining/`.
+- **Security.** Cross-origin browser requests to the save endpoint are refused (`Origin` must be this server, `Sec-Fetch-Site` must be same-origin), in the Next.js route and the Vite middleware alike; requests without those headers (curl, tests) still pass. A hostile page could previously post a forged export to a running dev server.
 - The in-package help links to the docs at https://redlining.deep-thought.rocks (was the never-enabled GitHub Pages URL); the package `homepage` follows.
 
 ## 0.6.0
