@@ -14,9 +14,9 @@
   "homepage": "https://redlining.deep-thought.rocks/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frankgoeltl/26-redlining.git",
-    "directory": "packages/redlining"
+    "url": "git+https://github.com/deep-thought-rocks/26-redlining.git"
   },
+  "bugs": "https://github.com/deep-thought-rocks/26-redlining/issues",
   "type": "module",
   "sideEffects": false,
   "engines": {

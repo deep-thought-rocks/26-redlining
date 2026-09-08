@@ -175,10 +175,10 @@ export const { GET, POST } = createHandlers({ outDir: '.redlining', maxBytes: 16
 
 ## Docs
 
-Getting started, the guide, the annotation-format reference and help: [`site/`](site/), published at https://redlining.deep-thought.rocks (Vercel; DNS at Cloudflare).
+Getting started, the guide, the annotation-format reference and help: [`site/`](site/), published at https://redlining.deep-thought.rocks (Vercel; DNS at Cloudflare). Source, issues and pull requests: https://github.com/deep-thought-rocks/26-redlining.
 
 ## Status
 
-Pre-release, `0.0.x`. The annotation file format is unstable until the next minor; the design is in [docs/redlining-prd.md](docs/redlining-prd.md).
+Pre-release, `0.x`. The annotation file format is unstable until the next minor; the design is in [docs/redlining-prd.md](docs/redlining-prd.md).
 
 MIT.
