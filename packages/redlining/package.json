@@ -17,7 +17,6 @@
     "url": "git+https://github.com/frankgoeltl/26-redlining.git",
     "directory": "packages/redlining"
   },
-  "bugs": "https://github.com/frankgoeltl/26-redlining/issues",
   "type": "module",
   "sideEffects": false,
   "engines": {
