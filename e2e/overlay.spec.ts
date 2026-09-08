@@ -25,7 +25,7 @@ async function openOverlay(page: Page) {
 
 test.beforeEach(() => rmSync(OUT, { recursive: true, force: true }))
 
-test('the loader anchors every fixture element', async ({ page }) => {
+test('the loader anchors every fixture element @webpack', async ({ page }) => {
   await page.goto('/spike')
   const rows = await page
     .locator('[data-spike]')
@@ -36,7 +36,9 @@ test('the loader anchors every fixture element', async ({ page }) => {
   for (const [n, rl] of rows) expect(rl, `element ${n}`).toMatch(/^app\/spike\/\w+\.tsx:\d+:\d+$/)
 })
 
-test('select mode: hover badge, click, note, pin, list, save to project', async ({ page }) => {
+test('select mode: hover badge, click, note, pin, list, save to project @webpack', async ({
+  page,
+}) => {
   await openOverlay(page)
   const at = await stampsOf(page)
 
@@ -368,7 +370,7 @@ test('tweak gestures: a handle drag resizes, arrow keys nudge, and both export',
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('Shift+ArrowDown')
-  await expect(card).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 2, 10)')
+  await expect(card).toHaveCSS('translate', '2px 10px')
   await expect(page.getByTestId('rl-tweak-changes')).toContainText(
     'visual nudge: +2px right, +10px down',
   )

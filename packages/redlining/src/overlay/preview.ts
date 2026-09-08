@@ -58,7 +58,8 @@ export function apply(el: Element, changes: Change[]): void {
         break
       }
       case 'nudge':
-        html.style.setProperty('transform', c.to)
+        // The independent `translate` property composes with any transform the element has.
+        html.style.setProperty('translate', c.to)
         break
       case 'visibility':
         html.style.setProperty('display', c.to)

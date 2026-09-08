@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { anchorFor, resolveContainer } from '../resolve'
 import type { Rect } from '../types'
-import { isOverlay, layoutIgnoring } from './dom'
+import { holdBodyStyle, isOverlay, layoutIgnoring } from './dom'
 import type { Draft } from './session'
 
 const MIN_SIZE = 4
@@ -18,10 +18,10 @@ export function DrawLayer({ host, onDraw }: { host: Element; onDraw(draft: Draft
       setBox(null)
     }
     document.addEventListener('mousedown', down, true)
-    document.body.style.cursor = 'crosshair'
+    const release = holdBodyStyle({ cursor: 'crosshair' })
     return () => {
       document.removeEventListener('mousedown', down, true)
-      document.body.style.cursor = ''
+      release()
     }
   }, [host])
 

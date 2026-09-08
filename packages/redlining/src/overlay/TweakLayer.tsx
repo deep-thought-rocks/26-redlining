@@ -3,7 +3,7 @@ import type { Change, Rect } from '../types'
 import { provenance } from './cascade'
 import type { FrameworkKind } from './framework'
 import type { ThemeContext } from './theme'
-import { isOverlay, pageRect } from './dom'
+import { holdBodyStyle, isOverlay, pageRect } from './dom'
 import { suggestionFor, upsert } from './Inspector'
 import { computed, isInline, relativeTo } from './preview'
 
@@ -41,9 +41,12 @@ interface Drag {
   changes: Change[]
 }
 
-/** Parses "translate(12px, -4px)" into its offsets. */
-export function parseNudge(transform: string | undefined): { dx: number; dy: number } {
-  const m = transform ? /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(transform) : null
+/** Parses a nudge value, "12px -4px" (the CSS translate property) or the older "translate(12px, -4px)". */
+export function parseNudge(value: string | undefined): { dx: number; dy: number } {
+  const m = value
+    ? (/^(-?[\d.]+)px\s+(-?[\d.]+)px$/.exec(value.trim()) ??
+      /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(value))
+    : null
   return m ? { dx: parseFloat(m[1]!), dy: parseFloat(m[2]!) } : { dx: 0, dy: 0 }
 }
 
@@ -61,7 +64,7 @@ export function nudgeChange(changes: Change[], dx: number, dy: number, from: str
     kind: 'nudge',
     property: 'transform',
     from,
-    to: `translate(${dx}px, ${dy}px)`,
+    to: `${dx}px ${dy}px`,
     input: describeNudge(dx, dy),
   })
 }
@@ -79,6 +82,8 @@ export function TweakLayer({
   /** Alt+hover: the element measured against; a ruler, records nothing. */
   const [measure, setMeasure] = useState<Element | null>(null)
   const dragRef = useRef<Drag | null>(null)
+  /** Restores the body's own cursor/user-select after a drag. */
+  const releaseRef = useRef<(() => void) | null>(null)
   const changesRef = useRef(changes)
   useEffect(() => {
     changesRef.current = changes
@@ -136,8 +141,11 @@ export function TweakLayer({
       base,
       changes: changesRef.current,
     }
-    document.body.style.cursor = kind === 'nudge' ? 'move' : handle ? CURSOR[handle] : 'move'
-    document.body.style.userSelect = 'none'
+    releaseRef.current?.()
+    releaseRef.current = holdBodyStyle({
+      cursor: kind === 'nudge' ? 'move' : handle ? CURSOR[handle] : 'move',
+      userSelect: 'none',
+    })
   }
 
   useEffect(() => {
@@ -166,7 +174,7 @@ export function TweakLayer({
       if (d.kind === 'nudge') {
         const from =
           changesRef.current.find((c) => c.kind === 'nudge')?.from ??
-          computed(element, 'transform') ??
+          computed(element, 'translate') ??
           'none'
         list = nudgeChange(
           list,
@@ -207,8 +215,8 @@ export function TweakLayer({
     const up = () => {
       if (!dragRef.current) return
       dragRef.current = null
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
+      releaseRef.current?.()
+      releaseRef.current = null
     }
     // Body drag = nudge. Capture phase, like the other layers, so the host page does not react.
     const down = (e: MouseEvent) => {
@@ -238,7 +246,7 @@ export function TweakLayer({
       const dy = n.dy + (e.key === 'ArrowDown' ? step : e.key === 'ArrowUp' ? -step : 0)
       const from =
         changesRef.current.find((c) => c.kind === 'nudge')?.from ??
-        computed(element, 'transform') ??
+        computed(element, 'translate') ??
         'none'
       onChange(nudgeChange(changesRef.current, dx, dy, from || 'none'))
     }
@@ -253,8 +261,8 @@ export function TweakLayer({
       document.removeEventListener('mousedown', down, true)
       document.removeEventListener('click', click, true)
       window.removeEventListener('keydown', key)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
+      releaseRef.current?.()
+      releaseRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [host, element, onChange])

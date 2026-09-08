@@ -32,6 +32,23 @@ export function findByAnchor(anchor: Anchor): Element | null {
   }
 }
 
+/** Sets inline body styles for an interaction and returns the restore function (exact previous values). */
+export function holdBodyStyle(
+  values: Partial<Record<'cursor' | 'userSelect', string>>,
+): () => void {
+  const body = document.body
+  const previous = {
+    cursor: body.style.cursor,
+    userSelect: body.style.userSelect,
+  }
+  if (values.cursor !== undefined) body.style.cursor = values.cursor
+  if (values.userSelect !== undefined) body.style.userSelect = values.userSelect
+  return () => {
+    body.style.cursor = previous.cursor
+    body.style.userSelect = previous.userSelect
+  }
+}
+
 /** Layout that ignores the overlay's own host element. */
 export function layoutIgnoring(host: Element): Layout {
   const base = domLayout(document)

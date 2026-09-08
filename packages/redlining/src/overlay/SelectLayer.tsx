@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { anchorFor, domLayout } from '../resolve'
-import { ancestorsOf, isOverlay, pageRect } from './dom'
+import { ancestorsOf, holdBodyStyle, isOverlay, pageRect } from './dom'
 import type { Draft } from './session'
 
 interface Hover {
@@ -90,13 +90,13 @@ export function SelectLayer({ host, onPick, prefix, onExtend }: SelectLayerProps
     document.addEventListener('click', click, true)
     document.addEventListener('wheel', wheel, { capture: true, passive: false })
     window.addEventListener('keydown', key)
-    document.body.style.cursor = 'crosshair'
+    const release = holdBodyStyle({ cursor: 'crosshair' })
     return () => {
       document.removeEventListener('mousemove', move, true)
       document.removeEventListener('click', click, true)
       document.removeEventListener('wheel', wheel, { capture: true })
       window.removeEventListener('keydown', key)
-      document.body.style.cursor = ''
+      release()
     }
   }, [host, onPick, onExtend])
 

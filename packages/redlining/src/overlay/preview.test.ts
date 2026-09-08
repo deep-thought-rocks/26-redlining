@@ -48,7 +48,7 @@ describe('apply / reset', () => {
     expect(el.hasAttribute('data-rl-preview')).toBe(false)
   })
 
-  test('nudge writes a transform and visibility toggles display', () => {
+  test('nudge writes the translate property and visibility toggles display', () => {
     document.body.innerHTML = '<div>x</div>'
     const el = document.querySelector('div')!
     apply(el, [
@@ -56,12 +56,12 @@ describe('apply / reset', () => {
         kind: 'nudge',
         property: 'transform',
         from: 'none',
-        to: 'translate(12px, -4px)',
+        to: '12px -4px',
         input: '+12px right, −4px up',
       },
       { kind: 'visibility', property: 'display', from: 'block', to: 'none' },
     ])
-    expect(el.style.transform).toBe('translate(12px, -4px)')
+    expect(el.style.getPropertyValue('translate')).toBe('12px -4px')
     expect(el.style.display).toBe('none')
   })
 

@@ -17,7 +17,8 @@ import { TweakLayer } from './TweakLayer'
 import { downloadFiles, exportFiles } from './download'
 import { isEditable, matchesHotkey } from './hotkey'
 import { dataUrlBytes } from './image'
-import { adoptSnapshot, apply, remPx, reset, rootTokens, snapshot, type Snapshot } from './preview'
+import { apply, remPx, reset, rootTokens, snapshot, type Snapshot } from './preview'
+import { applyPreviews, removePreview, resetPreviews } from './previews'
 import { captureScreenshot } from './screenshot'
 import { reduce, toSession, type Draft, type Entry, type Position } from './session'
 import {
@@ -54,24 +55,6 @@ function markSaved(route: string): void {
   } catch {
     // storage unavailable: auto-verify just will not trigger
   }
-}
-
-/** Restores an entry's element when it carried a tweak preview; the handle may be gone after a reload. */
-function resetEntry(e: Entry): void {
-  if (!e.changes?.length) return
-  const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
-  if (!el) return
-  if (e.preview) adoptSnapshot(el, e.preview)
-  reset(el)
-}
-
-/** Re-applies an entry's tweak preview to its (re-found) element. */
-function reapplyEntry(e: Entry): void {
-  if (!e.changes?.length) return
-  const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
-  if (!el) return
-  if (e.preview) adoptSnapshot(el, e.preview)
-  apply(el, e.changes)
 }
 
 /** PRD §7.6: larger batches degrade agent output. */
@@ -190,13 +173,7 @@ export function App({
 
   // Tweak previews are re-applied to their elements on load and after HMR replaces them.
   useEffect(() => {
-    const reapply = () => {
-      for (const e of entries) {
-        if (!e.changes?.length) continue
-        const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
-        if (el && !el.hasAttribute('data-rl-preview')) reapplyEntry(e)
-      }
-    }
+    const reapply = () => applyPreviews(entries, true)
     reapply()
     const mo = new MutationObserver(reapply)
     mo.observe(document.body, { childList: true, subtree: true })
@@ -241,21 +218,39 @@ export function App({
   }, [entries, framed, styling, settings.routes, others])
 
   const copy = useCallback(async () => {
-    await navigator.clipboard.writeText(toMarkdown(session()))
-    notify('Copied prompt')
+    try {
+      await navigator.clipboard.writeText(toMarkdown(session()))
+      notify('Copied prompt')
+    } catch (err) {
+      notify(
+        `Clipboard blocked by the browser (${err instanceof Error ? err.message : String(err)}) — use Save, or copy from the list panel.`,
+      )
+    }
   }, [session, notify])
 
   const send = useCallback(async () => {
     try {
       const payload = session()
       if (screenshot) {
+        // A failing capture must neither leave the previews reset nor abort the save.
+        const capture = async () => {
+          try {
+            return await captureScreenshot(entries, host)
+          } catch (err) {
+            return { error: err instanceof Error ? err.message : String(err) }
+          }
+        }
         if (beforeAfter && entries.some((e) => e.changes?.length)) {
-          for (const e of entries) resetEntry(e)
-          const before = await captureScreenshot(entries, host)
-          for (const e of entries) reapplyEntry(e)
+          resetPreviews(entries)
+          let before: Awaited<ReturnType<typeof capture>>
+          try {
+            before = await capture()
+          } finally {
+            applyPreviews(entries)
+          }
           if ('dataUrl' in before) payload.screenshotBefore = before.dataUrl
         }
-        const shot = await captureScreenshot(entries, host)
+        const shot = await capture()
         if ('dataUrl' in shot) {
           payload.screenshot = shot.dataUrl
           if (Object.keys(shot.crops).length) payload.crops = shot.crops
@@ -331,14 +326,14 @@ export function App({
       ),
     )
     const next = new Map<string, Verdict>()
-    for (const e of entries) resetEntry(e)
+    resetPreviews(entries)
     try {
       for (const e of entries) {
         const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
         next.set(e.id, verifyEntry(e, el))
       }
     } finally {
-      for (const e of entries) reapplyEntry(e)
+      applyPreviews(entries)
     }
     setVerdicts(next)
     const applied = Array.from(next.values()).filter((v) => v.state === 'applied').length
@@ -348,11 +343,10 @@ export function App({
   }, [entries, fetchReply, notify])
 
   const removeApplied = useCallback(() => {
-    for (const e of entries) {
-      if (verdicts.get(e.id)?.state !== 'applied') continue
-      resetEntry(e)
-      dispatch({ type: 'remove', id: e.id })
-    }
+    const keep = entries.filter((e) => verdicts.get(e.id)?.state !== 'applied')
+    resetPreviews(entries)
+    applyPreviews(keep)
+    for (const e of entries) if (!keep.includes(e)) dispatch({ type: 'remove', id: e.id })
     setVerdicts(new Map())
   }, [entries, verdicts])
 
@@ -376,7 +370,7 @@ export function App({
 
   const clear = useCallback(() => {
     if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`)) {
-      for (const e of entries) resetEntry(e)
+      resetPreviews(entries)
       dispatch({ type: 'clear' })
     }
   }, [entries])
@@ -684,8 +678,7 @@ export function App({
           onRemoveApplied={removeApplied}
           onNote={(id, note) => dispatch({ type: 'note', id, note })}
           onRemove={(id) => {
-            const e = entries.find((x) => x.id === id)
-            if (e) resetEntry(e)
+            removePreview(entries, id)
             dispatch({ type: 'remove', id })
           }}
           onClose={() => setPanel(false)}

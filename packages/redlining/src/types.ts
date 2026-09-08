@@ -56,7 +56,7 @@ export type ChangeKind = 'style' | 'text' | 'nudge' | 'visibility'
 
 export interface Change {
   kind: ChangeKind
-  /** CSS longhand in kebab-case for `style`; `text`, `transform` or `display` otherwise. */
+  /** CSS longhand in kebab-case for `style`; `text`, `transform` (a nudge, previewed on the `translate` property) or `display` otherwise. */
   property: string
   /** Computed value before the change, e.g. "14px" or "rgb(37, 99, 235)". */
   from: string
