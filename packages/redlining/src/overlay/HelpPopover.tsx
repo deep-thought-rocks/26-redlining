@@ -8,7 +8,7 @@ export interface HelpPopoverProps {
   onClose(): void
 }
 
-const DOCS = 'https://frankgoeltl.github.io/26-redlining/'
+const DOCS = 'https://redlining.deep-thought.rocks/'
 
 const KEYS: [string, string][] = [
   ['S · D · M · T', 'Select · Draw · Move · Tweak'],

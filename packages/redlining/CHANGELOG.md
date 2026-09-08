@@ -1,5 +1,11 @@
 # redlining
 
+## 0.6.1
+
+### Patch Changes
+
+- The in-package help links to the docs at https://redlining.deep-thought.rocks (was the never-enabled GitHub Pages URL); the package `homepage` follows.
+
 ## 0.6.0
 
 ### Minor Changes

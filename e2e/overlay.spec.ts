@@ -477,7 +477,7 @@ test('help: ? and the toolbar button open the in-package help; Escape closes it 
   await expect(help).toContainText('Select · Draw · Move · Tweak')
   await expect(help.getByRole('link', { name: 'Guide' })).toHaveAttribute(
     'href',
-    'https://frankgoeltl.github.io/26-redlining/guide',
+    'https://redlining.deep-thought.rocks/guide',
   )
   await page.keyboard.press('Escape')
   await expect(help).toHaveCount(0)

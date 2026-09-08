@@ -175,7 +175,7 @@ export const { GET, POST } = createHandlers({ outDir: '.redlining', maxBytes: 16
 
 ## Docs
 
-Getting started, the guide, the annotation-format reference and help: [`site/`](site/), published at https://frankgoeltl.github.io/26-redlining/ once GitHub Pages is enabled for the repository (Settings → Pages → Source: GitHub Actions).
+Getting started, the guide, the annotation-format reference and help: [`site/`](site/), published at https://redlining.deep-thought.rocks (Vercel; DNS at Cloudflare).
 
 ## Status
 
