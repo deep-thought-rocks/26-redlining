@@ -14,7 +14,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "e2e": "playwright test",
-    "smoke": "node scripts/smoke-pack.mjs"
+    "smoke": "node scripts/smoke-pack.mjs",
+    "e2e:webpack": "playwright test --config playwright.webpack.config.ts",
+    "e2e:vite": "playwright test --config playwright.vite.config.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.2",

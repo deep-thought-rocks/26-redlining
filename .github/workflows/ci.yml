@@ -35,6 +35,10 @@ jobs:
           rm -rf .next
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
+      - name: Same anchors under next dev --webpack
+        run: pnpm e2e:webpack
+      - name: Vite adapter against a real dev server
+        run: pnpm e2e:vite
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

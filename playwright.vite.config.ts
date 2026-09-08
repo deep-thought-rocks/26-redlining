@@ -1,11 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 3199
+// The Vite fixture: examples/vite-app with redlining({ endpoint: true }).
+const PORT = 3197
 
 export default defineConfig({
   testDir: 'e2e',
-  testMatch: 'overlay.spec.ts',
-  globalSetup: './e2e/global-setup.ts',
+  testMatch: 'vite.spec.ts',
   fullyParallel: false,
   workers: 1,
   reporter: 'list',
@@ -16,8 +16,8 @@ export default defineConfig({
     permissions: ['clipboard-read', 'clipboard-write'],
   },
   webServer: {
-    command: `pnpm --filter next-app exec next dev -p ${PORT}`,
-    url: `http://localhost:${PORT}/spike`,
+    command: `pnpm --filter vite-app exec vite --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}/`,
     reuseExistingServer: false,
     timeout: 120_000,
   },

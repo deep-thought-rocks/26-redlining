@@ -2,7 +2,15 @@
 // with plain Node (no bundler), ESM and CJS. Catches what bundlers hide, such as
 // extensionless deep imports. Usage: node scripts/smoke-pack.mjs (after pnpm build).
 import { execSync } from 'node:child_process'
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -53,7 +61,27 @@ console.log('cjs ok')
   )
   console.log(sh('node esm.mjs', dir))
   console.log(sh('node cjs.cjs', dir))
-  console.log(sh('npx redlining 2>&1 || true', dir))
+  // The packed CLI: a usage error exits 1, and init writes its three files once.
+  let usage
+  try {
+    execSync('npx redlining', { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] })
+    throw new Error('redlining without a command should exit 1')
+  } catch (err) {
+    usage = err
+  }
+  if (usage.status !== 1 || !String(usage.stderr).includes('Usage: redlining init'))
+    throw new Error(`unexpected CLI exit: ${usage.status} ${usage.stderr}`)
+  mkdirSync(path.join(dir, 'app'), { recursive: true })
+  const first = sh('npx redlining init', dir)
+  for (const f of ['app/api/redlining/route.ts', '.gitignore', '.claude/commands/redline.md']) {
+    if (!first.includes(`wrote    ${f}`) || !existsSync(path.join(dir, f)))
+      throw new Error(`init did not write ${f}:\n${first}`)
+  }
+  if (!readFileSync(path.join(dir, 'app/api/redlining/route.ts'), 'utf8').includes('GET, POST'))
+    throw new Error('route file lacks GET')
+  const second = sh('npx redlining init', dir)
+  if (second.includes('wrote')) throw new Error(`second init was not idempotent:\n${second}`)
+  console.log('cli ok')
 } finally {
   rmSync(path.join(pkg, 'README.md'), { force: true })
   rmSync(path.join(pkg, 'LICENSE'), { force: true })
