@@ -347,7 +347,7 @@ redlining/
 |---|---|---|
 | `<Redlining />` | Client component; mounts the overlay | Returns `null` unless `process.env.NODE_ENV === 'development'` → dead-code-eliminated in prod. Shadow DOM host; Tailwind 4 compiled to a CSS string and injected into the shadow root, so neither preflight nor `@layer` leaks in either direction. |
 | `withRedlining(config, opts?)` | Adds the loader rule under `turbopack.rules` (+ `webpack` fallback) | Only in `PHASE_DEVELOPMENT_SERVER`; no-op otherwise. |
-| `redlining/next/route` | `POST` handler | Refuses outside dev; writes only under `<projectRoot>/.redlining/`; path-validated; body size-capped (screenshot ≤ 8 MB). |
+| `redlining/next/route` | `POST` handler | Refuses outside dev; writes only under `<projectRoot>/.redlining/`; path-validated; body size-capped (16 MB; screenshot ≤ 7 MB, plus crops and reference images). |
 | `redlining/loader` | `transform(src, filename) → { code, map }` | Pure, unit-tested against JSX/TSX fixtures incl. fragments, spreads, conditionals, `'use client'`/server files. |
 | `redlining init` | Scaffolds route, command, gitignore | Idempotent; prints next steps. |
 
@@ -369,7 +369,7 @@ export default function RootLayout({ children }) {
 
 ```ts
 // app/api/redlining/route.ts   (written by `npx redlining init`)
-export { POST } from 'redlining/next/route'
+export { GET, POST } from 'redlining/next/route'
 ```
 
 ---
@@ -466,13 +466,14 @@ Anything currently hardcoded to kpunkt conventions becomes an option on `withRed
 | Option | Default | Why it must be configurable |
 |---|---|---|
 | `outDir` | `.redlining/` | Not everyone uses Claude Code, or this path |
-| `endpoint` | `/api/redlining` | Route collisions in existing apps |
+| `endpoint` | `/api/redlining` (`false` = download the files) | Route collisions in existing apps; pages without a dev server route |
 | `include` | `app/**`, `components/**`, `src/**` (`.tsx`/`.jsx`) | Monorepos and non-standard layouts |
 | `screenshot` | `true` | PNG capture via `html-to-image` is optional weight |
 | `enabled` | `NODE_ENV === 'development'` | Some teams want it in a staging build |
 | `hotkey` | `Alt+R` | Will collide with someone's binding |
 | `position` | `bottom-right` | Next DevTools and other overlays |
 | `maxAnnotations` | `15` | Teams differ on batch size |
+| `framework` | detected (`tailwind4` \| `tailwind3` \| `css-modules` \| `css`) | Decides how values map to classes and what idiom the export names; detection can be wrong |
 
 The export format itself is one formatter, not the only conceivable output. Pluggable formatters (`format: 'markdown' | 'json' | (session) => string`) do not have to ship in v1, but the internals must not assume them away — the serializers already live in `src/export/` as pure functions for this reason.
 

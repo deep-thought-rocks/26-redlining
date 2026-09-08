@@ -1,5 +1,5 @@
 import type { Anchor, AnchorContext } from '../types'
-import { ownerChain } from './fiber'
+import { owners } from './owners'
 import type { Layout } from './layout'
 import { cssPath } from './selector'
 
@@ -25,7 +25,7 @@ export function anchorFor(el: Element, layout: Layout): Anchor {
   const display = view ? view.getComputedStyle(el).display || undefined : undefined
   const base = {
     tag: el.tagName.toLowerCase(),
-    owners: ownerChain(el),
+    owners: owners(el),
     selector: cssPath(el),
     text: textOf(el),
     rect: layout.rectOf(el),

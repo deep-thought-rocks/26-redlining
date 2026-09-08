@@ -63,7 +63,7 @@ function mediaMatches(doc: Document, condition: string): boolean {
 }
 
 /** Every style rule in the document's same-origin sheets, with sheet index, order and layer flag. */
-function* rules(
+export function* rules(
   doc: Document,
 ): Generator<{ rule: CSSStyleRule; sheet: number; order: number; layered: boolean }> {
   let order = 0
@@ -209,21 +209,42 @@ export function provenance(el: Element, property: string): Provenance {
   return { kind: 'default' }
 }
 
-const classCache = new WeakMap<
-  Document,
-  Map<string, { className: string; value: string; sheet: number }[]>
->()
+interface ClassCache {
+  /** The sheet objects and their rule counts when the cache was built. */
+  sheets: { sheet: CSSStyleSheet; rules: number }[]
+  byProperty: Map<string, { className: string; value: string; sheet: number }[]>
+}
+const classCache = new WeakMap<Document, ClassCache>()
+
+/** The document's sheets with their rule counts; a swapped (HMR) or grown sheet invalidates the cache. */
+function sheetState(doc: Document): ClassCache['sheets'] {
+  return Array.from(doc.styleSheets).map((sheet) => {
+    try {
+      return { sheet, rules: sheet.cssRules.length }
+    } catch {
+      return { sheet, rules: -1 }
+    }
+  })
+}
+
+function sameSheets(a: ClassCache['sheets'], b: ClassCache['sheets']): boolean {
+  return (
+    a.length === b.length && a.every((x, i) => x.sheet === b[i]!.sheet && x.rules === b[i]!.rules)
+  )
+}
 
 /** Single-class rules that set `property`, across same-origin sheets, cached per document. */
 function classRules(
   doc: Document,
   property: string,
 ): { className: string; value: string; sheet: number }[] {
-  let perDoc = classCache.get(doc)
-  if (!perDoc) {
-    perDoc = new Map()
-    classCache.set(doc, perDoc)
+  const sheets = sheetState(doc)
+  let cache = classCache.get(doc)
+  if (!cache || !sameSheets(cache.sheets, sheets)) {
+    cache = { sheets, byProperty: new Map() }
+    classCache.set(doc, cache)
   }
+  const perDoc = cache.byProperty
   let list = perDoc.get(property)
   if (!list) {
     list = []
@@ -236,6 +257,34 @@ function classRules(
     perDoc.set(property, list)
   }
   return list
+}
+
+/**
+ * The scale the stylesheet offers for `property`: every single-class rule's computed
+ * pixel value in `el`'s context, ascending and deduplicated, e.g.
+ * [{ className: 'text-sm', px: 14 }, { className: 'text-base', px: 16 }, …].
+ */
+export function scaleFor(el: Element, property: string): { className: string; px: number }[] {
+  const doc = el.ownerDocument
+  const view = doc.defaultView
+  if (!view) return []
+  const list = classRules(doc, property)
+  if (list.length === 0) return []
+  const probe = doc.createElement(el.tagName)
+  probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;'
+  ;(el.parentElement ?? doc.body).appendChild(probe)
+  const out: { className: string; px: number }[] = []
+  try {
+    for (const c of list) {
+      probe.style.setProperty(property, c.value)
+      const px = parseFloat(view.getComputedStyle(probe).getPropertyValue(property))
+      if (Number.isNaN(px) || out.some((o) => Math.abs(o.px - px) < 0.01)) continue
+      out.push({ className: c.className, px })
+    }
+  } finally {
+    probe.remove()
+  }
+  return out.sort((a, b) => a.px - b.px)
 }
 
 /**

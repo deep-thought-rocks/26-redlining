@@ -1,17 +1,47 @@
-import { ChevronDown, ChevronRight, X } from 'lucide-react'
+import { CheckCheck, ChevronDown, ChevronRight, Eye, ScanSearch, X } from 'lucide-react'
 import { useState } from 'react'
 import { describe } from '../export/changes'
+import type { ReplyLine } from '../export/reply'
 import type { Anchor } from '../types'
+import type { Verdict } from './verify'
 import type { Entry } from './session'
 
 export interface ListPanelProps {
   entries: Entry[]
+  /** Other routes with saved sessions in this browser; exported together when enabled. */
+  others: { route: string; count: number }[]
+  /** Verify results by entry id, once a check ran. */
+  verdicts: Map<string, Verdict>
+  /** The agent's reply lines by annotation index, when `reply.md` exists. */
+  reply: Map<number, ReplyLine>
+  onVerify(): void
+  onRemoveApplied(): void
   onNote(id: string, note: string): void
   onRemove(id: string): void
+  onClearRoute(route: string): void
   onClose(): void
 }
 
-export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps) {
+const VERDICT_LABEL: Record<Verdict['state'], string> = {
+  applied: 'applied',
+  differs: 'differs',
+  missing: 'missing',
+  manual: 'check by eye',
+}
+
+export function ListPanel({
+  entries,
+  others,
+  verdicts,
+  reply,
+  onVerify,
+  onRemoveApplied,
+  onNote,
+  onRemove,
+  onClearRoute,
+  onClose,
+}: ListPanelProps) {
+  const applied = entries.filter((e) => verdicts.get(e.id)?.state === 'applied').length
   const [editing, setEditing] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const toggle = (id: string) =>
@@ -26,16 +56,48 @@ export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps
     <aside className="rl-fixed rl-panel" data-testid="rl-panel" aria-label="Annotations">
       <header>
         <span>Annotations ({entries.length})</span>
-        <button type="button" className="rl-btn rl-icon" aria-label="Close panel" onClick={onClose}>
-          <X size={16} />
-        </button>
+        <span className="rl-panel-actions">
+          {entries.length ? (
+            <button
+              type="button"
+              className="rl-btn rl-icon"
+              aria-label="Verify against the page"
+              title="Check each annotation against the page as it is now (after the agent's edit)"
+              onClick={onVerify}
+            >
+              <ScanSearch size={16} />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="rl-btn rl-icon"
+            aria-label="Close panel"
+            onClick={onClose}
+          >
+            <X size={16} />
+          </button>
+        </span>
       </header>
+      {verdicts.size ? (
+        <div className="rl-panel-verify" data-testid="rl-verify-summary">
+          <span>
+            {applied} of {entries.length} applied
+          </span>
+          {applied ? (
+            <button type="button" className="rl-chip" onClick={onRemoveApplied}>
+              <CheckCheck size={12} /> Remove applied
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {entries.length === 0 ? (
         <p className="rl-empty">Click an element or draw a box to add one.</p>
       ) : null}
       <ol>
         {entries.map((e) => {
           const open = expanded.has(e.id)
+          const verdict = verdicts.get(e.id)
+          const said = reply.get(e.index)
           return (
             <li
               key={e.id}
@@ -58,6 +120,33 @@ export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps
                     {e.changes?.length ? ` · ≈ ${e.changes.length}` : ''} · {short(e.anchor)}
                   </span>
                 </button>
+                {verdict || said ? (
+                  <div className="rl-verdicts">
+                    {verdict ? (
+                      <span
+                        className="rl-verdict"
+                        data-state={verdict.state}
+                        data-testid="rl-verdict"
+                      >
+                        {verdict.state === 'manual' ? <Eye size={11} /> : null}
+                        {VERDICT_LABEL[verdict.state]}
+                        {verdict.details[0] && verdict.state !== 'applied'
+                          ? ` · ${verdict.details[0]}`
+                          : ''}
+                      </span>
+                    ) : null}
+                    {said ? (
+                      <span
+                        className="rl-verdict rl-verdict--agent"
+                        data-state={said.state}
+                        data-testid="rl-agent"
+                      >
+                        agent: {said.state}
+                        {said.text ? ` · ${said.text}` : ''}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 {open ? (
                   <dl className="rl-row-details" data-testid="rl-row-details">
                     <Detail
@@ -81,6 +170,30 @@ export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps
                               <li key={i}>{describe(c)}</li>
                             ))}
                           </ul>
+                        </dd>
+                      </>
+                    ) : null}
+                    {verdict && verdict.details.length > 1 ? (
+                      <>
+                        <dt>Check</dt>
+                        <dd>
+                          <ul className="rl-changes">
+                            {verdict.details.map((d, i) => (
+                              <li key={i}>{d}</li>
+                            ))}
+                          </ul>
+                        </dd>
+                      </>
+                    ) : null}
+                    {e.refs?.length ? (
+                      <>
+                        <dt>Reference</dt>
+                        <dd className="rl-refs">
+                          {e.refs.map((url, i) => (
+                            <span key={i} className="rl-ref">
+                              <img src={url} alt={`Reference ${i + 1}`} />
+                            </span>
+                          ))}
                         </dd>
                       </>
                     ) : null}
@@ -139,6 +252,26 @@ export function ListPanel({ entries, onNote, onRemove, onClose }: ListPanelProps
           )
         })}
       </ol>
+      {others.length ? (
+        <footer className="rl-panel-routes" data-testid="rl-panel-routes">
+          <span>Also saved with this session</span>
+          <ul>
+            {others.map((o) => (
+              <li key={o.route}>
+                <code>{o.route}</code> ({o.count})
+                <button
+                  type="button"
+                  className="rl-btn rl-icon"
+                  aria-label={`Clear ${o.route}`}
+                  onClick={() => onClearRoute(o.route)}
+                >
+                  <X size={12} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </footer>
+      ) : null}
     </aside>
   )
 }

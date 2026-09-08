@@ -24,12 +24,13 @@ describe('redlining init', () => {
       notes: [],
     })
     expect(readFileSync(path.join(cwd, 'app/api/redlining/route.ts'), 'utf8')).toBe(
-      "export { POST } from 'redlining/next/route'\n",
+      "export { GET, POST } from 'redlining/next/route'\n",
     )
     expect(readFileSync(path.join(cwd, '.gitignore'), 'utf8')).toBe('node_modules\n.redlining/\n')
-    expect(readFileSync(path.join(cwd, '.claude/commands/redline.md'), 'utf8')).toContain(
-      'Read `.redlining/annotations.md`',
-    )
+    const command = readFileSync(path.join(cwd, '.claude/commands/redline.md'), 'utf8')
+    expect(command).toContain('Read `.redlining/annotations.md`')
+    expect(command).toContain('several routes')
+    expect(command).toContain('reply.md')
 
     const second = await init(cwd)
     expect(second).toEqual({
@@ -44,6 +45,23 @@ describe('redlining init', () => {
     const r = await init(cwd)
     expect(r.written).toContain('src/app/api/redlining/route.ts')
     expect(readFileSync(path.join(cwd, '.gitignore'), 'utf8')).toBe('.redlining/\n')
+  })
+
+  test('points out a route without GET and a command without the reply step', async () => {
+    mkdirSync(path.join(cwd, 'app/api/redlining'), { recursive: true })
+    writeFileSync(
+      path.join(cwd, 'app/api/redlining/route.ts'),
+      "export { POST } from 'redlining/next/route'\n",
+    )
+    mkdirSync(path.join(cwd, '.claude/commands'), { recursive: true })
+    writeFileSync(
+      path.join(cwd, '.claude/commands/redline.md'),
+      'Read `.redlining/annotations.md`.\n',
+    )
+    const r = await init(cwd)
+    expect(r.notes).toHaveLength(2)
+    expect(r.notes[0]).toContain('exports only POST')
+    expect(r.notes[1]).toContain('predates the verify loop')
   })
 
   test('leaves a note instead of guessing when there is no app directory', async () => {

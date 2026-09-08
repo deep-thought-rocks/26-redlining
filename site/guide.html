@@ -28,7 +28,8 @@
         <h4>On this page</h4>
         <a href="#toolbar">Toolbar and keys</a><a href="#select">Select</a><a href="#draw">Draw</a
         ><a href="#move">Move</a><a href="#multi">Multi-select</a><a href="#tweak">Tweak</a
-        ><a href="#list">List panel</a><a href="#export">Copy and Save</a
+        ><a href="#settings">Settings</a><a href="#list">List panel</a
+        ><a href="#export">Copy and Save</a><a href="#verify">Verify</a
         ><a href="#session">Sessions</a><a href="#anchors">How anchors resolve</a>
       </aside>
       <main>
@@ -194,6 +195,9 @@
             single-class rule in your own stylesheet, the export names it (<em
               >class text-base → text-lg</em
             >) so the agent swaps a class instead of inventing a number.
+            <strong>Snap to scale</strong>
+            (on by default) makes the plus and minus buttons step through those classes (14 → 16 →
+            18 → 20) rather than by a pixel; turn it off for free values.
           </li>
           <li>
             <strong>Handles.</strong> Drag a corner or edge to resize (<kbd>⇧</kbd> keeps the
@@ -238,7 +242,25 @@
           (file and line, owner chain, usage site, element text), the target of a move or the box of
           an add, and the complete note. Click the note to edit it inline (<kbd>⏎</kbd> saves,
           <kbd>Esc</kbd> cancels); the × deletes and renumbers the rest. The toolbar moves aside
-          while the panel is open.
+          while the panel is open. Sessions are kept per route; when other routes in this browser
+          have annotations, the panel lists them at the bottom and Save and Copy include them, each
+          under its own <code># Redlining — /route</code> heading, so one <code>/redline</code> run
+          covers the whole pass. The × next to a route clears it.
+        </p>
+
+        <h2 id="settings">Settings</h2>
+        <p>
+          The gear in the toolbar opens the settings. <strong>Styling</strong> shows which idiom was
+          detected from the page (Tailwind 4 from its theme tokens, Tailwind 3 from the preflight
+          variables, CSS Modules from hashed class names, otherwise plain CSS) and lets you override
+          it; the <code>framework</code> prop sets it in code. It decides how tweak values map to
+          classes: under Tailwind, <em>padding-left 12 → 24</em> exports as
+          <em>add class pl-6</em> even if <code>pl-6</code> is not used anywhere yet, off-scale
+          values become <em>pl-[13px]</em>, colours use their <code>--color-*</code> token
+          (<em>bg-brand-500</em>), and the steppers snap to the theme scale. The export header
+          states the idiom and the footer tells the agent how to apply it.
+          <strong>Snap to scale</strong> sets the Inspector's default, and
+          <strong>Include other routes</strong> controls the multi-route export.
         </p>
 
         <h2 id="export">Copy and Save</h2>
@@ -247,11 +269,38 @@
           agent. <strong>Save</strong> posts the session to the endpoint, which writes
           <code>annotations.md</code>, <code>annotations.json</code> and, with the camera on,
           <code>screenshot.png</code> with the pins burned in. Pins in the screenshot carry the same
-          numbers as the Markdown headings, so <em>"pin 3"</em> is unambiguous.
+          numbers as the Markdown headings, so <em>"pin 3"</em> is unambiguous. With the camera on,
+          every annotation also gets <code>crop-N.png</code>, the element as it looks now with a
+          small margin, so the agent sees exactly the thing being discussed.
+        </p>
+        <p>
+          <strong>Reference images.</strong> Paste or drop a mockup into the note (up to three per
+          note; shrunk to 1600px on the long edge). It shows as a thumbnail in the popover and the
+          panel, survives reloads with the session, and is saved as <code>ref-N-i.jpg</code>; the
+          Markdown line <em>Reference: .redlining/ref-3-1.jpg — match this</em> tells the agent to
+          look at it. "Copy prompt" cannot carry images, so it only counts them.
         </p>
         <p>
           The screenshot is rendered in the browser and skipped with a toast if it would exceed 7
-          MB.
+          MB; the route accepts bodies up to 16 MB.
+        </p>
+
+        <h2 id="verify">Verify — did the agent's edit land?</h2>
+        <p>
+          The <code>/redline</code> command ends by writing <code>.redlining/reply.md</code>, one
+          line per annotation:
+          <code>## 3 · done — text-sm → text-lg (components/toolbar.tsx:31)</code> (or
+          <em>partial</em>, <em>skipped</em>). When you open the overlay after that, it reads the
+          reply through the route's <code>GET</code>, removes its previews for a moment, and checks
+          every annotation against the page as it is now: each tweak's target values against the
+          computed styles, edited text against the DOM, a hidden element against its display, a
+          removed element against its absence. The list opens with a verdict per row —
+          <em>applied</em>, <em>differs · font-size is 15px, expected 16px</em>, <em>missing</em>,
+          or <em>check by eye</em> for notes and nudges — beside what the agent reported.
+          <em>Remove applied</em> drops what landed and keeps the rest for a second round; the
+          magnifier in the panel header runs the check again at any time. Routes created before
+          0.6.0 export only <code>POST</code>; add <code>GET</code> (<code>npx redlining init</code>
+          says so) or the reply is simply not read.
         </p>
 
         <h2 id="session">Sessions</h2>

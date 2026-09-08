@@ -120,8 +120,8 @@ expect(stripRedlining(html)).toMatchSnapshot()</code></pre>
           <p>
             The route is missing. Run <code>npx redlining init</code>, or create
             <code>app/api/redlining/route.ts</code> with
-            <code>export { POST } from 'redlining/next/route'</code>. If you changed the path, pass
-            the same value as <code>endpoint</code> to <code>&lt;Redlining /&gt;</code>.
+            <code>export { GET, POST } from 'redlining/next/route'</code>. If you changed the path,
+            pass the same value as <code>endpoint</code> to <code>&lt;Redlining /&gt;</code>.
           </p>
         </details>
         <details>
@@ -211,6 +211,17 @@ expect(stripRedlining(html)).toMatchSnapshot()</code></pre>
         </details>
 
         <h2 id="faq">FAQ</h2>
+        <details>
+          <summary>Does it work outside Next.js — Angular, Vue, plain HTML?</summary>
+          <p>
+            Yes, with selector anchors instead of <code>file:line</code>: load
+            <code>redlining/dist/standalone.js</code> from a script tag (React bundled, dev only) or
+            call <code>mount()</code> from <code>redlining/standalone</code>. Angular component
+            names come from <code>ng.getComponent</code> in dev mode, Vue names from the instance
+            chain. Without a save endpoint the files are downloaded. See
+            <a href="getting-started#other">Other stacks</a>.
+          </p>
+        </details>
         <details>
           <summary>Why not a visual editor that writes the code itself?</summary>
           <p>

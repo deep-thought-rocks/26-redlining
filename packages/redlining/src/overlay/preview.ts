@@ -2,6 +2,7 @@
 // DOM change on the host page; the exported spec records computed before → after
 // values. Everything here is idempotent: `apply` always starts from the snapshot.
 import type { Change } from '../types'
+import { rules } from './cascade'
 
 /** The element's own state before the first change. */
 export interface Snapshot {
@@ -110,7 +111,18 @@ export function relativeTo(
   return `≈ ${Math.round((px / total) * 100)} % of parent`
 }
 
-let tokenCache: Map<string, string> | null = null
+interface TokenScan {
+  /** normalised value → first token name with that value */
+  byValue: Map<string, string>
+  /** token name → raw computed value */
+  byName: Map<string, string>
+}
+let tokenCache: TokenScan | null = null
+
+function tokens(doc: Document): TokenScan {
+  if (!tokenCache) tokenCache = scanTokens(doc)
+  return tokenCache
+}
 
 /**
  * The first `:root` custom property whose value equals `value`, e.g. "--accent"
@@ -118,8 +130,19 @@ let tokenCache: Map<string, string> | null = null
  * a probe element so "#2563eb" and "rgb(37, 99, 235)" compare equal.
  */
 export function tokenFor(value: string, doc: Document = document): string | undefined {
-  if (!tokenCache) tokenCache = scanTokens(doc)
-  return tokenCache.get(value.trim())
+  return tokens(doc).byValue.get(value.trim())
+}
+
+/** Every `:root` / `:host` custom property by name, raw value; `@layer` blocks included. */
+export function rootTokens(doc: Document = document): Map<string, string> {
+  return tokens(doc).byName
+}
+
+/** The root font size in px, for rem-based theme tokens. */
+export function remPx(doc: Document = document): number {
+  const view = doc.defaultView
+  const n = view ? parseFloat(view.getComputedStyle(doc.documentElement).fontSize) : NaN
+  return Number.isNaN(n) || n <= 0 ? 16 : n
 }
 
 export function resetTokenCache(): void {
@@ -128,10 +151,9 @@ export function resetTokenCache(): void {
 
 /** Every :root token whose value is a colour, as [name, normalised rgb()] pairs, once per page. */
 export function colorTokens(doc: Document = document): { name: string; value: string }[] {
-  if (!tokenCache) tokenCache = scanTokens(doc)
   // Both the raw text and the probe-normalised form are keyed; prefer the canonical rgb(r, g, b).
   const byName = new Map<string, string>()
-  for (const [value, name] of tokenCache) {
+  for (const [value, name] of tokens(doc).byValue) {
     if (!value.startsWith('rgb')) continue
     const canonical = /^rgb\(\d+, \d+, \d+\)$/.test(value)
     if (!byName.has(name) || canonical) byName.set(name, value)
@@ -153,23 +175,17 @@ export function toRgb(hex: string): string {
   return `rgb(${parseInt(m[1]!, 16)}, ${parseInt(m[2]!, 16)}, ${parseInt(m[3]!, 16)})`
 }
 
-function scanTokens(doc: Document): Map<string, string> {
-  const map = new Map<string, string>()
+const ROOT = /(^|,)\s*(:root|:host|html)\s*(,|$)/
+
+function scanTokens(doc: Document): TokenScan {
+  const byValue = new Map<string, string>()
+  const byName = new Map<string, string>()
   const view = doc.defaultView
-  if (!view) return map
+  if (!view) return { byValue, byName }
   const names = new Set<string>()
-  for (const sheet of Array.from(doc.styleSheets)) {
-    let rules: CSSRuleList
-    try {
-      rules = sheet.cssRules
-    } catch {
-      continue // cross-origin stylesheet
-    }
-    for (const rule of Array.from(rules)) {
-      if (!(rule instanceof view.CSSStyleRule) || !/(^|,)\s*:root\s*(,|$)/.test(rule.selectorText))
-        continue
-      for (const name of Array.from(rule.style)) if (name.startsWith('--')) names.add(name)
-    }
+  for (const { rule } of rules(doc)) {
+    if (!ROOT.test(rule.selectorText)) continue
+    for (const name of Array.from(rule.style)) if (name.startsWith('--')) names.add(name)
   }
   const root = view.getComputedStyle(doc.documentElement)
   const probe = doc.createElement('span')
@@ -177,15 +193,16 @@ function scanTokens(doc: Document): Map<string, string> {
   for (const name of names) {
     const raw = root.getPropertyValue(name).trim()
     if (!raw) continue
-    if (!map.has(raw)) map.set(raw, name)
+    byName.set(name, raw)
+    if (!byValue.has(raw)) byValue.set(raw, name)
     // Colours: normalise through the probe so hex and rgb() forms match.
     probe.style.color = ''
     probe.style.color = raw
     if (probe.style.color) {
       const normalised = view.getComputedStyle(probe).color
-      if (normalised && !map.has(normalised)) map.set(normalised, name)
+      if (normalised && !byValue.has(normalised)) byValue.set(normalised, name)
     }
   }
   probe.remove()
-  return map
+  return { byValue, byName }
 }

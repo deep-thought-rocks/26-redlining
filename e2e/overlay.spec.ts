@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 
@@ -267,6 +267,8 @@ test('tweak mode: steppers and text edit preview live, export deltas with classe
   await expect(page.getByTestId('rl-section-padding')).toHaveAttribute('aria-expanded', 'false')
   await expect(page.getByTestId('rl-section-padding')).toContainText('7 12 7 12')
   await expect(page.getByRole('button', { name: 'Font size +1' })).toHaveCount(0)
+  // Free 1px steps for this scenario; snapping to the stylesheet's scale is tested below.
+  await page.getByTestId('rl-snap').click()
   await page.getByTestId('rl-section-type').click()
   await expect(page.getByTestId('rl-section-type')).toHaveAttribute('aria-expanded', 'true')
   // Every value says where it comes from: `button { font: inherit }` wins for font-size.
@@ -395,6 +397,7 @@ test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page
   const inspector = page.getByTestId('rl-inspector')
   await expect(inspector).toContainText('Layout (flex)')
   await expect(page.getByTestId('rl-section-layout')).toContainText('gap 8')
+  await page.getByTestId('rl-snap').click() // free 2px steps rather than the stylesheet's gap values
   await page.getByTestId('rl-section-layout').click()
   await page.getByRole('button', { name: 'Gap +2' }).click()
   await expect(chips).toHaveCSS('gap', '10px')
@@ -421,7 +424,7 @@ test('tweak: colour tokens, layout chips and the Alt-hover ruler', async ({ page
   await expect(page.getByTestId('rl-tweak-changes')).not.toContainText('nudge')
 })
 
-test('tweak: a value from a class suggests the sibling class that matches the new value', async ({
+test('tweak: snapping steps through the stylesheet scale and names the class; free steps still suggest', async ({
   page,
 }) => {
   await page.goto('/dashboard')
@@ -434,20 +437,239 @@ test('tweak: a value from a class suggests the sibling class that matches the ne
   await page.getByTestId('rl-section-type').click()
   const inspector = page.getByTestId('rl-inspector')
   await expect(inspector).toContainText('from .text-base')
-  await page.getByRole('button', { name: 'Font size +1' }).click()
-  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
-    'font-size: 15px → 16px (from class text-base)',
-  )
-  await page.getByRole('button', { name: 'Font size +1' }).click()
+  // Snap to scale is on: one step jumps to the next class (.text-lg = 17px), not to 16px.
+  await expect(page.getByTestId('rl-snap')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Font size up' }).click()
+  await expect(title).toHaveCSS('font-size', '17px')
   await expect(page.getByTestId('rl-tweak-changes')).toContainText(
     'font-size: 15px → 17px (class text-base → text-lg)',
   )
+  await page.getByRole('button', { name: 'Font size up' }).click()
+  await expect(title).toHaveCSS('font-size', '20px')
+  await page.getByRole('button', { name: 'Font size down' }).click()
+  await expect(title).toHaveCSS('font-size', '17px')
+  // Off: free 1px steps, and a value between classes only names its source.
+  await page.getByTestId('rl-snap').click()
+  await page.getByRole('button', { name: 'Font size −1' }).click()
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    'font-size: 15px → 16px (from class text-base)',
+  )
+  await page.getByTestId('rl-snap').click()
+  await page.getByRole('button', { name: 'Font size up' }).click()
+  await expect(title).toHaveCSS('font-size', '17px')
   await page.getByTestId('rl-tweak-done').click()
   await page.keyboard.press('Enter')
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('- Classes: `text-base`')
   expect(clipboard).toContain('  - font-size: 15px → 17px (class text-base → text-lg)')
+})
+
+test('settings: the styling idiom is detected, can be overridden, persists, and maps values to utilities', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  const settings = page.getByTestId('rl-settings')
+  await expect(settings).toContainText('no Tailwind tokens, no hashed class names')
+  await expect(page.getByTestId('rl-setting-framework')).toHaveValue('auto')
+  await expect(page.getByTestId('rl-setting-framework').locator('option[value="auto"]')).toHaveText(
+    'Auto — Plain CSS (detected)',
+  )
+  await page.getByTestId('rl-setting-framework').selectOption('tailwind4')
+  await page.keyboard.press('Escape') // closes the settings, not the overlay
+  await expect(settings).toHaveCount(0)
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+
+  // Under Tailwind 4 the padding stepper snaps to the spacing scale and names the utility.
+  await page.keyboard.press('t')
+  const button = page.locator('.toolbar button').first()
+  await button.click()
+  await page.getByTestId('rl-section-padding').click()
+  await page.getByRole('button', { name: 'Padding left up' }).click()
+  await expect(button).toHaveCSS('padding-left', '14px')
+  await expect(page.getByTestId('rl-tweak-changes')).toContainText(
+    'padding-left: 12px → 14px (from class btn; add class pl-3.5)',
+  )
+  await page.getByTestId('rl-tweak-done').click()
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('\nStyling: Tailwind 4 (set by hand)\n')
+  expect(clipboard).toContain('  - padding-left: 12px → 14px (from class btn; add class pl-3.5)')
+  expect(clipboard).toContain('theme values live in the `@theme` block')
+
+  // The choice is remembered per browser.
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await expect(page.getByTestId('rl-setting-framework')).toHaveValue('tailwind4')
+})
+
+test("multi-route: other routes' sessions ride along on Save and can be cleared from the panel", async ({
+  page,
+}) => {
+  await page.goto('/spike')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.locator('nav').first().click()
+  await page.getByTestId('rl-note').fill('Horizontal nav.')
+  await page.getByTestId('rl-note').press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.locator('.page-head h1').click()
+  await page.getByTestId('rl-note').fill('Shorter title.')
+  await page.getByTestId('rl-note').press('Enter')
+  await page.keyboard.press('l')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText('/spike (1)')
+
+  await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
+  await expect(page.getByTestId('rl-toast')).toContainText('Saved')
+  const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
+  expect(md).toContain('# Redlining — /dashboard')
+  expect(md).toContain('# Redlining — /spike  (1 annotation, made earlier in the same browser)')
+  expect(md).toContain('- Note: Horizontal nav.')
+  expect(md.split('Apply in order.')).toHaveLength(2)
+  const json = JSON.parse(readFileSync(path.join(OUT, 'annotations.json'), 'utf8')) as {
+    others: { route: string }[]
+  }
+  expect(json.others.map((o) => o.route)).toEqual(['/spike'])
+
+  await page.getByRole('button', { name: 'Clear /spike' }).click()
+  await expect(page.getByTestId('rl-panel-routes')).toHaveCount(0)
+  await page.goto('/spike')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+})
+
+test('references: a pasted mockup rides along as ref-N-i, and every annotation gets a crop', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.locator('.page-head h1').click()
+  const note = page.getByTestId('rl-note')
+  await note.fill('Match the mockup: bolder, with a subtitle.')
+  // Paste a generated PNG into the note.
+  await note.evaluate(async (el) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 2400
+    canvas.height = 600
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#2563eb'
+    ctx.fillRect(0, 0, 2400, 600)
+    const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), 'image/png'))
+    const dt = new DataTransfer()
+    dt.items.add(new File([blob], 'mock.png', { type: 'image/png' }))
+    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }))
+  })
+  const thumb = page.getByTestId('rl-refs').locator('img')
+  await expect(thumb).toHaveCount(1)
+  // Shrunk to 1600 on the long edge.
+  await expect(thumb).toHaveJSProperty('naturalWidth', 1600)
+  await note.press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  await page.keyboard.press('l')
+  await page.getByRole('button', { name: 'Expand annotation 1' }).click()
+  await expect(page.getByTestId('rl-row-details').locator('img')).toHaveCount(1)
+
+  // Before Save the Markdown only counts them.
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
+    '- Reference: 1 pasted image (written to .redlining/ on Save)',
+  )
+  await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
+  await expect(page.getByTestId('rl-toast')).toContainText('Saved')
+  const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
+  expect(md).toContain(
+    '- Reference: .redlining/ref-1-1.jpg — match this; it shows the intended result',
+  )
+  expect(md).toContain('- Crop: .redlining/crop-1.png — this element as it looks now')
+  expect(existsSync(path.join(OUT, 'ref-1-1.jpg'))).toBe(true)
+  expect(existsSync(path.join(OUT, 'crop-1.png'))).toBe(true)
+  // The session survives a reload with the image.
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('l')
+  await page.getByRole('button', { name: 'Expand annotation 1' }).click()
+  await expect(page.getByTestId('rl-row-details').locator('img')).toHaveCount(1)
+})
+
+test("verify loop: the agent's reply.md opens the panel, differing values are named, applied ones can be removed", async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.keyboard.press('t')
+  const button = page.locator('.toolbar button').first()
+  await button.click()
+  await page.getByTestId('rl-snap').click()
+  await page.getByTestId('rl-section-type').click()
+  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await page.getByTestId('rl-tweak-done').click()
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
+  await expect(page.getByTestId('rl-toast')).toContainText('Saved')
+
+  // The agent answers; nothing in the code changed yet.
+  await page.waitForTimeout(50)
+  writeFileSync(
+    path.join(OUT, 'reply.md'),
+    '## 1 · done — text-sm → text-base (components/toolbar.tsx:31)\n',
+  )
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  const panel = page.getByTestId('rl-panel')
+  await expect(panel).toBeVisible()
+  await expect(page.getByTestId('rl-verify-summary')).toContainText('0 of 1 applied')
+  await expect(page.getByTestId('rl-verdict')).toContainText(
+    'differs · font-size is 15px, expected 16px',
+  )
+  await expect(page.getByTestId('rl-agent')).toContainText('agent: done · text-sm → text-base')
+  // The preview is back after the check.
+  await expect(button).toHaveCSS('font-size', '16px')
+
+  // Once the code carries the value, Verify says so and the entry can go.
+  await page.addStyleTag({ content: '.toolbar button { font-size: 16px !important }' })
+  await page.getByRole('button', { name: 'Verify against the page' }).click()
+  await expect(page.getByTestId('rl-verify-summary')).toContainText('1 of 1 applied')
+  await expect(page.getByTestId('rl-verdict')).toHaveAttribute('data-state', 'applied')
+  await page.getByRole('button', { name: 'Remove applied' }).click()
+  await expect(panel).toContainText('Annotations (0)')
+  await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+})
+
+test('standalone: the bundled overlay runs on a plain page, anchors by selector, and downloads the export', async ({
+  page,
+}) => {
+  await page.goto('/standalone.html')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await page.locator('#title').click()
+  await page.getByTestId('rl-note').fill('Shorter, and centred.')
+  await page.getByTestId('rl-note').press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+  expect(clipboard).toContain('## 1 · CHANGE — "A page without a framework" h1')
+  expect(clipboard).toContain('- Resolved: unresolved — locate by selector `#title` and text')
+  expect(clipboard).toContain('Styling: Plain CSS (detected')
+  // No endpoint: Save hands the files to the browser.
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download export (⌘⏎)' }).click()
+  expect((await download).suggestedFilename()).toBe('annotations.md')
+  await expect(page.getByTestId('rl-toast')).toContainText('Downloaded annotations.md')
 })
 
 test('device frame: a real narrow viewport in an iframe; its annotations sync into the session', async ({
@@ -490,7 +712,7 @@ test('before/after screenshot writes two files', async ({ page }) => {
   const button = page.locator('.toolbar button').first()
   await button.click()
   await page.getByTestId('rl-section-type').click()
-  await page.getByRole('button', { name: 'Font size +1' }).click()
+  await page.getByRole('button', { name: 'Font size up' }).click()
   await page.getByTestId('rl-tweak-done').click()
   await page.keyboard.press('Enter')
   await page

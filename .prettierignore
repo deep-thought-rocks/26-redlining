@@ -4,3 +4,4 @@ dist
 pnpm-lock.yaml
 docs
 .redlining
+examples/next-app/public/redlining-standalone.js

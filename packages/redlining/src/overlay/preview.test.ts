@@ -161,6 +161,14 @@ describe('summarise / describe', () => {
         suggestion: 'text-lg',
       }),
     ).toBe('font-size: 15px → 17px (from `button`; add class text-lg)')
+    // A utility from another family is added, not swapped in for a component class.
+    expect(
+      describeChange({
+        ...style('padding-left', '12px', '14px'),
+        source: { kind: 'rule', selector: '.btn', className: 'btn', value: '7px 12px' },
+        suggestion: 'pl-3.5',
+      }),
+    ).toBe('padding-left: 12px → 14px (from class btn; add class pl-3.5)')
     expect(
       describeChange({
         ...style('line-height', '24px', '28px'),

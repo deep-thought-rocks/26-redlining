@@ -28,8 +28,8 @@
         <h4>On this page</h4>
         <a href="#install">Install</a><a href="#agent">Set up with an agent</a
         ><a href="#next">Next.js setup</a><a href="#vite">Vite setup</a
-        ><a href="#first">Your first session</a><a href="#claude">Applying with Claude Code</a
-        ><a href="#options">Options</a>
+        ><a href="#other">Other stacks</a><a href="#first">Your first session</a
+        ><a href="#claude">Applying with Claude Code</a><a href="#options">Options</a>
       </aside>
       <main>
         <h1>Getting started</h1>
@@ -148,9 +148,34 @@ import { defineConfig } from 'vite'
 export default defineConfig({ plugins: [redlining(), react()] })</code></pre>
         <p>
           Mount <code>&lt;Redlining /&gt;</code> in your root component. The plugin runs only under
-          <code>vite dev</code> and stamps files under <code>src/</code> by default. There is no
-          save endpoint outside Next.js yet, so use <strong>Copy prompt</strong> and paste the
-          Markdown into Claude Code.
+          <code>vite dev</code> and stamps files under <code>src/</code> by default. Pass
+          <code>redlining({ endpoint: true })</code> to serve the save endpoint from the dev server
+          at <code>/api/redlining</code> (it writes to <code>.redlining/</code> and reads
+          <code>reply.md</code> like the Next.js route); without it, Save downloads the files.
+        </p>
+
+        <h2 id="other">Other stacks: Angular, Vue, plain HTML</h2>
+        <p>
+          Everything that reads the DOM works on any page: select, draw, move, tweak with provenance
+          and class hints, notes with reference images, the Markdown export. What needs a framework
+          is the exact <code>file:line</code> (JSX is stamped by the loader; HTML templates are not
+          yet, so those anchors are selector-only) and the component names (React's owner chain;
+          Angular's <code>ng.getComponent</code> in dev mode; Vue 3's instance names).
+        </p>
+        <pre><code>&lt;!-- dev only: React is bundled, ~155 KB gzipped --&gt;
+&lt;script type="module" src="/node_modules/redlining/dist/standalone.js"
+        data-redlining data-endpoint="off"&gt;&lt;/script&gt;</code></pre>
+        <pre><code>// or from code
+import { mount } from 'redlining/standalone'
+const unmount = mount({ endpoint: false, hotkey: 'Alt+R' })</code></pre>
+        <p>
+          <code>data-endpoint="off"</code> (or <code>endpoint: false</code>) makes Save download
+          <code>annotations.md</code>, <code>annotations.json</code> and the images; the browser may
+          ask once before allowing several downloads. Move them into <code>.redlining/</code> and
+          run <code>/redline</code>. Point <code>data-endpoint</code> at a path instead when your
+          dev server hosts the handler (<code>createHandlers</code> from
+          <code>redlining/next/route</code> takes a Fetch <code>Request</code>; the Vite plugin
+          shows how to adapt Node's).
         </p>
 
         <h2 id="first">Your first session</h2>
@@ -196,31 +221,37 @@ export default defineConfig({ plugins: [redlining(), react()] })</code></pre>
           The command tells Claude Code to read <code>.redlining/annotations.md</code>, look at the
           screenshot if there is one, apply every annotation in order at the exact anchor, reuse
           existing components and design tokens, change nothing that is not listed, verify in the
-          running app, report done / partial / skipped per annotation, and finally delete the three
-          files.
+          running app, report done / partial / skipped per annotation, write that report to
+          <code>.redlining/reply.md</code>, and finally delete the export files. The file may hold
+          several routes when you annotated more than one page.
         </p>
         <p>
-          Your session in the browser is not deleted by that. Hot reload shows the result; if
-          something needs a second pass, adjust the notes and save again.
+          Your session in the browser is not deleted by that. Hot reload shows the result, and the
+          next time you open the overlay it reads the reply, checks every annotation against the
+          page and opens the list with the verdicts: <em>applied</em>,
+          <em>differs · font-size is 15px, expected 16px</em>, <em>missing</em> or
+          <em>check by eye</em>, next to what the agent said. <em>Remove applied</em> clears what
+          landed; adjust the rest and save again.
         </p>
 
         <h2 id="options">Options</h2>
         <pre><code>&lt;Redlining
-  endpoint="/api/redlining"   // where Save posts
+  endpoint="/api/redlining"   // where Save posts; false downloads the files
   hotkey="Alt+R"              // e.g. "Ctrl+Shift+K"
   position="bottom-right"     // bottom-left | top-right | top-left
   theme="light"               // or "dark"
   maxAnnotations={15}         // a warning shows at 10
   screenshot                  // include screenshot.png with burned-in pins
+  framework="tailwind4"       // tailwind4 | tailwind3 | css-modules | css; detected when omitted
 /&gt;</code></pre>
         <pre><code>withRedlining(config, {
   include: ['app', 'components', 'src'],
 })</code></pre>
         <pre><code>// app/api/redlining/route.ts — instead of the default re-export
-import { createHandler } from 'redlining/next/route'
-export const POST = createHandler({ outDir: '.redlining', maxBytes: 8 * 1024 * 1024 })</code></pre>
+import { createHandlers } from 'redlining/next/route'
+export const { GET, POST } = createHandlers({ outDir: '.redlining', maxBytes: 16 * 1024 * 1024 })</code></pre>
         <p>
-          The route refuses requests outside development, caps the body at 8 MB, and only ever
+          The route refuses requests outside development, caps the body at 16 MB, and only ever
           writes inside <code>outDir</code>, which must be inside the project.
         </p>
       </main>

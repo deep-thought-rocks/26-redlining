@@ -1,24 +1,59 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
-import { toMarkdown } from '../export'
-import type { Action, Change } from '../types'
+import { parseReply, toMarkdown, type ReplyLine } from '../export'
+import type { Action, Change, Styling } from '../types'
 import { findByAnchor, pageRect } from './dom'
 import { DeviceFrame, frameWidth } from './DeviceFrame'
 import { DrawLayer } from './DrawLayer'
+import { detectFramework, FRAMEWORK_LABEL, type FrameworkKind } from './framework'
 import { Inspector } from './Inspector'
 import { ListPanel } from './ListPanel'
 import { NotePopover } from './NotePopover'
 import { Pins } from './Pins'
 import { SelectLayer } from './SelectLayer'
+import { SettingsPopover } from './SettingsPopover'
 import { Toolbar, type Position as Corner, type Tool } from './Toolbar'
 import { TweakLayer } from './TweakLayer'
+import { downloadFiles, exportFiles } from './download'
 import { isEditable, matchesHotkey } from './hotkey'
-import { adoptSnapshot, apply, reset, snapshot, type Snapshot } from './preview'
+import { dataUrlBytes } from './image'
+import { adoptSnapshot, apply, remPx, reset, rootTokens, snapshot, type Snapshot } from './preview'
 import { captureScreenshot } from './screenshot'
 import { reduce, toSession, type Draft, type Entry, type Position } from './session'
-import { loadEntries, saveEntries, storageKey } from './storage'
+import {
+  clearRoute,
+  loadEntries,
+  loadOtherSessions,
+  loadSettings,
+  saveEntries,
+  saveSettings,
+  storageKey,
+  type Settings,
+} from './storage'
+import type { ThemeContext } from './theme'
+import { verifyEntry, type Verdict } from './verify'
 
 const CORNERS: Corner[] = ['bottom-right', 'bottom-left', 'top-left', 'top-right']
 const CORNER_KEY = 'redlining:position'
+const SAVED_KEY = 'redlining:saved'
+
+/** When each route was last saved, so a newer agent reply triggers a verify on open. */
+function savedAt(route: string): string | null {
+  try {
+    const map = JSON.parse(window.localStorage.getItem(SAVED_KEY) ?? '{}') as Record<string, string>
+    return map[route] ?? null
+  } catch {
+    return null
+  }
+}
+function markSaved(route: string): void {
+  try {
+    const map = JSON.parse(window.localStorage.getItem(SAVED_KEY) ?? '{}') as Record<string, string>
+    map[route] = new Date().toISOString()
+    window.localStorage.setItem(SAVED_KEY, JSON.stringify(map))
+  } catch {
+    // storage unavailable: auto-verify just will not trigger
+  }
+}
 
 /** Restores an entry's element when it carried a tweak preview; the handle may be gone after a reload. */
 function resetEntry(e: Entry): void {
@@ -43,11 +78,13 @@ const WARN_AT = 10
 
 export interface AppProps {
   host: HTMLElement
-  endpoint: string
+  endpoint: string | false
   hotkey: string
   position: Corner
   maxAnnotations: number
   screenshot: boolean
+  /** Styling idiom set in code; the settings can still override it. */
+  framework?: FrameworkKind
 }
 
 /** An element being tweaked: live changes previewed on the page, not yet an entry. */
@@ -65,6 +102,7 @@ export function App({
   position,
   maxAnnotations,
   screenshot: screenshotDefault,
+  framework: frameworkProp,
 }: AppProps) {
   /** Inside a device frame this document IS the narrow viewport; outside, a preset opens one. */
   const framed = useMemo(() => frameWidth(), [])
@@ -107,12 +145,41 @@ export function App({
     })
   }, [])
   const [toast, setToast] = useState<string | null>(null)
+  const [routesTick, setRoutesTick] = useState(0)
+  /** Verify results by entry id and the agent's reply lines by index. */
+  const [verdicts, setVerdicts] = useState<Map<string, Verdict>>(() => new Map())
+  const [reply, setReply] = useState<Map<number, ReplyLine>>(() => new Map())
+  const [settings, setSettings] = useState<Settings>(() => loadSettings(window.localStorage))
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const updateSettings = useCallback((next: Settings) => {
+    setSettings(next)
+    saveSettings(window.localStorage, next)
+  }, [])
+  // The styling idiom: settings override the prop, the prop overrides the detection.
+  const detected = useMemo(() => detectFramework(document), [])
+  const frameworkKind: FrameworkKind =
+    settings.framework !== 'auto' ? settings.framework : (frameworkProp ?? detected.kind)
+  const styling: Styling = useMemo(() => {
+    const override = settings.framework !== 'auto' || !!frameworkProp
+    return {
+      kind: frameworkKind,
+      label: FRAMEWORK_LABEL[frameworkKind],
+      ...(override ? {} : { evidence: detected.evidence }),
+      override,
+    }
+  }, [settings.framework, frameworkProp, frameworkKind, detected])
+  const theme: ThemeContext = useMemo(() => ({ tokens: rootTokens(), remPx: remPx() }), [])
 
   const notify = useCallback((message: string) => setToast(message), [])
 
   useEffect(() => {
-    saveEntries(window.localStorage, window.location.pathname, entries)
-  }, [entries])
+    try {
+      saveEntries(window.localStorage, window.location.pathname, entries)
+    } catch (err) {
+      const message = `Browser storage is full; the session will not survive a reload (${String(err)})`
+      queueMicrotask(() => notify(message))
+    }
+  }, [entries, notify])
   useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(null), 3000)
@@ -137,6 +204,7 @@ export function App({
   // Annotations made in the device frame (another document, same storage key) show up here.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
+      setRoutesTick((n) => n + 1)
       if (e.key !== storageKey(window.location.pathname)) return
       dispatch({
         type: 'load',
@@ -147,11 +215,28 @@ export function App({
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
+  // Other routes' sessions in this browser; re-read when storage changes or a route is cleared.
+  const others = useMemo(
+    () =>
+      loadOtherSessions(window.localStorage, window.location.pathname, window.location.origin, {
+        w: window.innerWidth,
+        h: window.innerHeight,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- storage is read, not a dependency
+    [routesTick, panel],
+  )
+  const clearOther = useCallback((route: string) => {
+    clearRoute(window.localStorage, route)
+    setRoutesTick((n) => n + 1)
+  }, [])
+
   const session = useCallback(() => {
     const out = toSession(entries, window.location, { w: window.innerWidth, h: window.innerHeight })
     if (framed) out.preset = framed
+    out.styling = styling
+    if (settings.routes && others.length) out.others = others
     return out
-  }, [entries, framed])
+  }, [entries, framed, styling, settings.routes, others])
 
   const copy = useCallback(async () => {
     await navigator.clipboard.writeText(toMarkdown(session()))
@@ -169,14 +254,39 @@ export function App({
           if ('dataUrl' in before) payload.screenshotBefore = before.dataUrl
         }
         const shot = await captureScreenshot(entries, host)
-        if ('dataUrl' in shot) payload.screenshot = shot.dataUrl
-        else notify(`Saving without screenshot: ${shot.error}`)
+        if ('dataUrl' in shot) {
+          payload.screenshot = shot.dataUrl
+          if (Object.keys(shot.crops).length) payload.crops = shot.crops
+        } else notify(`Saving without screenshot: ${shot.error}`)
       }
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ session: payload }),
-      })
+      // No endpoint (or none answering): hand the same files to the browser as downloads.
+      const download = (why: string) => {
+        downloadFiles(exportFiles(payload))
+        markSaved(window.location.pathname)
+        notify(
+          `${why}Downloaded annotations.md — move the files into .redlining/ and run /redline.`,
+        )
+      }
+      if (endpoint === false) {
+        download('')
+        return
+      }
+      let res: Response
+      try {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ session: payload }),
+        })
+      } catch {
+        download('No save endpoint reachable. ')
+        return
+      }
+      if (res.status === 404) {
+        download('No save endpoint at this path. ')
+        return
+      }
+      if (res.ok) markSaved(window.location.pathname)
       notify(
         res.ok
           ? 'Saved — run /redline in Claude Code.'
@@ -186,6 +296,76 @@ export function App({
       notify(`Save failed: ${String(err)}`)
     }
   }, [endpoint, session, notify, screenshot, beforeAfter, entries, host])
+
+  /** Reads the agent's reply.md through the endpoint; null when there is none or no GET. */
+  const fetchReply = useCallback(async (): Promise<{
+    lines: ReplyLine[]
+    mtime: string
+  } | null> => {
+    if (endpoint === false) return null
+    try {
+      const res = await fetch(endpoint, { method: 'GET' })
+      if (!res.ok) return null
+      const body = (await res.json()) as { reply: string | null; mtime: string | null }
+      if (!body.reply || !body.mtime) return null
+      return { lines: parseReply(body.reply), mtime: body.mtime }
+    } catch {
+      return null
+    }
+  }, [endpoint])
+
+  /** Checks every entry against the page with its preview removed, then restores the previews. */
+  const verify = useCallback(async () => {
+    const got = await fetchReply()
+    const route = window.location.pathname
+    setReply(
+      new Map(
+        (got?.lines ?? []).filter((l) => !l.route || l.route === route).map((l) => [l.index, l]),
+      ),
+    )
+    const next = new Map<string, Verdict>()
+    for (const e of entries) resetEntry(e)
+    try {
+      for (const e of entries) {
+        const el = e.element?.isConnected ? e.element : findByAnchor(e.anchor)
+        next.set(e.id, verifyEntry(e, el))
+      }
+    } finally {
+      for (const e of entries) reapplyEntry(e)
+    }
+    setVerdicts(next)
+    const applied = Array.from(next.values()).filter((v) => v.state === 'applied').length
+    notify(
+      `${applied} of ${entries.length} applied${got ? ' · the agent replied' : ''} — see the list (L)`,
+    )
+  }, [entries, fetchReply, notify])
+
+  const removeApplied = useCallback(() => {
+    for (const e of entries) {
+      if (verdicts.get(e.id)?.state !== 'applied') continue
+      resetEntry(e)
+      dispatch({ type: 'remove', id: e.id })
+    }
+    setVerdicts(new Map())
+  }, [entries, verdicts])
+
+  // A reply newer than the last save means the agent ran: verify when the overlay opens.
+  useEffect(() => {
+    if (!active || entries.length === 0) return
+    let cancelled = false
+    void fetchReply().then((got) => {
+      if (cancelled || !got) return
+      const last = savedAt(window.location.pathname)
+      if (last && got.mtime > last) {
+        setPanel(true)
+        void verify()
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per opening
+  }, [active])
 
   const clear = useCallback(() => {
     if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`)) {
@@ -242,6 +422,7 @@ export function App({
         if (draft) setDraft(null)
         else if (tweak) cancelTweak()
         else if (moveSource) setMoveSource(null)
+        else if (settingsOpen) setSettingsOpen(false)
         else if (panel) setPanel(false)
         else toggle()
         return
@@ -273,6 +454,7 @@ export function App({
     tweak,
     moveSource,
     panel,
+    settingsOpen,
     hotkey,
     toggle,
     switchTool,
@@ -285,7 +467,7 @@ export function App({
   const full = entries.length >= maxAnnotations
   const fullMessage = `Session is full (${maxAnnotations}). Save it and start a new one.`
 
-  const saveDraft = (action: Action, note: string, position?: Position) => {
+  const saveDraft = (action: Action, note: string, position?: Position, refs?: string[]) => {
     if (!draft) return
     if (full) {
       notify(fullMessage)
@@ -298,6 +480,7 @@ export function App({
       note,
       position,
       appliesAt: framed ?? undefined,
+      refs,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     })
@@ -380,6 +563,8 @@ export function App({
             element={tweak.element}
             changes={tweak.changes}
             onChange={setTweakChanges}
+            framework={frameworkKind}
+            theme={theme}
           />
         ) : null}
         {picking && (tool === 'select' || tool === 'tweak') ? (
@@ -402,11 +587,15 @@ export function App({
             onReset={() => setTweakChanges([])}
             onDone={finishTweak}
             onCancel={cancelTweak}
+            framework={frameworkKind}
+            theme={theme}
+            snapDefault={settings.snap}
           />
         ) : null}
         {draft ? (
           <NotePopover
             draft={draft}
+            refBytes={dataUrlBytes(entries.flatMap((e) => e.refs ?? []))}
             onSave={saveDraft}
             onCancel={draft.kind === 'tweak' ? () => setDraft(null) : reset_}
           />
@@ -420,15 +609,18 @@ export function App({
         tool={tool}
         count={entries.length}
         panelOpen={panel}
+        settingsOpen={settingsOpen}
         screenshot={screenshot}
         beforeAfter={beforeAfter}
         viewport={framed ? null : viewport}
         framed={framed}
         position={corner}
         hotkey={hotkey}
+        download={endpoint === false}
         onToggle={toggle}
         onTool={switchTool}
         onPanel={() => setPanel((p) => !p)}
+        onSettings={() => setSettingsOpen((s) => !s)}
         onScreenshot={() => setScreenshot((v) => !v)}
         onBeforeAfter={() => setBeforeAfter((v) => !v)}
         onViewport={setViewport}
@@ -437,9 +629,30 @@ export function App({
         onSend={() => void send()}
         onClear={clear}
       />
+      {active && settingsOpen ? (
+        <SettingsPopover
+          settings={settings}
+          detected={detected}
+          fromProp={frameworkProp}
+          position={corner}
+          panelOpen={panel}
+          onChange={updateSettings}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
       {active && panel ? (
         <ListPanel
           entries={entries}
+          others={
+            settings.routes
+              ? others.map((o) => ({ route: o.route, count: o.annotations.length }))
+              : []
+          }
+          onClearRoute={clearOther}
+          verdicts={verdicts}
+          reply={reply}
+          onVerify={() => void verify()}
+          onRemoveApplied={removeApplied}
           onNote={(id, note) => dispatch({ type: 'note', id, note })}
           onRemove={(id) => {
             const e = entries.find((x) => x.id === id)

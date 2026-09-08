@@ -27,8 +27,8 @@
       <aside class="toc">
         <h4>On this page</h4>
         <a href="#markdown">annotations.md</a><a href="#blocks">Block shapes</a
-        ><a href="#changes">Tweaks</a><a href="#json">annotations.json</a
-        ><a href="#stability">Stability</a>
+        ><a href="#changes">Tweaks</a><a href="#reply">reply.md</a
+        ><a href="#json">annotations.json</a><a href="#stability">Stability</a>
       </aside>
       <main>
         <h1>Annotation format</h1>
@@ -40,6 +40,8 @@
 
         <h2 id="markdown">annotations.md</h2>
         <pre><code># Redlining — /dashboard  (2026-09-06 14:12 · viewport 1440×900)
+
+Styling: Tailwind 4 (detected: --spacing and --text-* tokens)
 
 Screenshot: .redlining/screenshot.png (pins numbered as below)
 
@@ -68,9 +70,12 @@ Screenshot: .redlining/screenshot.png (pins numbered as below)
 ---
 Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.</code></pre>
         <p>
-          The header names the route, the local time of the save and the viewport. The screenshot
-          line appears only when a screenshot was included. Blocks are numbered in the order of the
-          list panel; the footer is fixed.
+          The header names the route, the local time of the save and the viewport.
+          <code>Styling:</code> names the idiom the values map to (detected from the page or set by
+          hand); the footer speaks in that idiom. The screenshot line appears only when a screenshot
+          was included. Blocks are numbered in the order of the list panel. When other routes in the
+          same browser carry annotations, their blocks follow under their own
+          <code># Redlining — /route</code> heading, and the footer comes once at the end.
         </p>
 
         <h2 id="blocks">Block shapes</h2>
@@ -146,7 +151,9 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
   - padding-left, padding-right: 12px → 16px (from class btn)
   - background-color: rgb(243, 244, 246) → rgb(37, 99, 235) (from class btn; token --accent)
   - visual nudge: +8px right, −4px up — previewed with a transform; implement as spacing or alignment, never ship a transform
-- Applies at: ≤ 768px (made in a 768px device frame)</code></pre>
+- Applies at: ≤ 768px (made in a 768px device frame)
+- Reference: .redlining/ref-3-1.jpg — match this; it shows the intended result
+- Crop: .redlining/crop-3.png — this element as it looks now</code></pre>
         <p>
           <code>Classes</code> is the element's class list, so a value can be mapped to a utility
           class. Each change is <em>computed before → after</em>; sizes add their share of the
@@ -162,8 +169,21 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
             >values are computed px at the stated viewport; implement them in this project's own
             idiom (utility classes, tokens), not as inline styles.</em
           >
-          A tweak may have no <code>Note</code> line.
+          A tweak may have no <code>Note</code> line. <code>Reference</code> names mockups pasted
+          into the note and <code>Crop</code> the element cut from the screenshot; both appear on
+          any action, with the files next to the export.
         </p>
+
+        <h2 id="reply">reply.md</h2>
+        <p>
+          Written by the agent after a <code>/redline</code> run; the overlay reads it to verify.
+          One heading per annotation, in the export's numbering, with a route heading first when the
+          export held several routes:
+        </p>
+        <pre><code># /dashboard
+## 1 · done — text-sm → text-lg (components/toolbar.tsx:31)
+## 2 · partial — moved the card; the gap still needs a token
+## 3 · skipped — the element no longer exists</code></pre>
 
         <h2 id="json">annotations.json</h2>
         <pre><code>interface Session {

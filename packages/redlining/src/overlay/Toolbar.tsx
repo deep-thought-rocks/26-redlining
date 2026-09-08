@@ -8,6 +8,7 @@ import {
   MousePointerClick,
   PenLine,
   Send,
+  Settings,
   SlidersHorizontal,
   SquareDashedMousePointer,
   Trash2,
@@ -23,6 +24,7 @@ export interface ToolbarProps {
   tool: Tool
   count: number
   panelOpen: boolean
+  settingsOpen: boolean
   screenshot: boolean
   beforeAfter: boolean
   viewport: number | null
@@ -30,9 +32,12 @@ export interface ToolbarProps {
   framed: number | null
   position: Position
   hotkey: string
+  /** No endpoint: Save downloads the files. */
+  download?: boolean
   onToggle(): void
   onTool(tool: Tool): void
   onPanel(): void
+  onSettings(): void
   onScreenshot(): void
   onBeforeAfter(): void
   onViewport(width: number | null): void
@@ -125,13 +130,20 @@ export function Toolbar(p: ToolbarProps) {
       <IconButton label="Copy prompt (⌘⇧C)" onClick={p.onCopy}>
         <Copy size={18} />
       </IconButton>
-      <IconButton label="Save to project (⌘⏎)" className="rl-btn--primary" onClick={p.onSend}>
+      <IconButton
+        label={p.download ? 'Download export (⌘⏎)' : 'Save to project (⌘⏎)'}
+        className="rl-btn--primary"
+        onClick={p.onSend}
+      >
         <Send size={18} />
       </IconButton>
       <IconButton label="Clear session" onClick={p.onClear}>
         <Trash2 size={18} />
       </IconButton>
       <span className="rl-sep" />
+      <IconButton label="Settings" pressed={p.settingsOpen} onClick={p.onSettings}>
+        <Settings size={18} />
+      </IconButton>
       <IconButton label="Move toolbar to another corner" onClick={p.onCorner}>
         <Move size={18} />
       </IconButton>

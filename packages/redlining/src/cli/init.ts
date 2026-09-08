@@ -15,10 +15,19 @@ export async function init(cwd: string): Promise<InitResult> {
 
   const appDir = ['src/app', 'app'].find((d) => existsSync(path.join(cwd, d)))
   if (appDir) {
-    await writeOnce(cwd, path.join(appDir, 'api/redlining/route.ts'), ROUTE_FILE, result)
+    const route = path.join(appDir, 'api/redlining/route.ts')
+    await writeOnce(cwd, route, ROUTE_FILE, result)
+    if (
+      result.skipped.includes(route) &&
+      !(await readFile(path.join(cwd, route), 'utf8')).includes('GET')
+    ) {
+      result.notes.push(
+        `${route} exports only POST; export GET as well (export { GET, POST } from 'redlining/next/route') so the overlay can read the agent's reply.md`,
+      )
+    }
   } else {
     result.notes.push(
-      "No app/ directory found. Create app/api/redlining/route.ts with: export { POST } from 'redlining/next/route'",
+      "No app/ directory found. Create app/api/redlining/route.ts with: export { GET, POST } from 'redlining/next/route'",
     )
   }
 
@@ -32,7 +41,16 @@ export async function init(cwd: string): Promise<InitResult> {
     result.written.push('.gitignore')
   }
 
-  await writeOnce(cwd, '.claude/commands/redline.md', REDLINE_COMMAND, result)
+  const command = '.claude/commands/redline.md'
+  await writeOnce(cwd, command, REDLINE_COMMAND, result)
+  if (
+    result.skipped.includes(command) &&
+    !(await readFile(path.join(cwd, command), 'utf8')).includes('reply.md')
+  ) {
+    result.notes.push(
+      `${command} predates the verify loop; add the reply.md step from the docs, or delete the file and run init again`,
+    )
+  }
   return result
 }
 

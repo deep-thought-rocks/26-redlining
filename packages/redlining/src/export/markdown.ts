@@ -13,8 +13,15 @@ const TITLE_TEXT_MAX = 40
 
 const FOOTER =
   'Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.'
-const FOOTER_CHANGES =
-  'Values under "Changes" are computed px at the stated viewport; implement them in this project\'s own idiom (utility classes, tokens), not as inline styles.'
+const FOOTER_CHANGES: Record<string, string> = {
+  css: 'Values under "Changes" are computed px at the stated viewport; implement them in this project\'s own idiom (utility classes, tokens), not as inline styles.',
+  'css-modules':
+    'Values under "Changes" are computed px at the stated viewport; implement them in the component\'s CSS module that the hashed class names above come from, not as inline styles.',
+  tailwind4:
+    'Values under "Changes" are computed px at the stated viewport; implement them by editing the element\'s Tailwind class list — `class A → B` and `add class B` name the utility; theme values live in the `@theme` block, never in inline styles.',
+  tailwind3:
+    'Values under "Changes" are computed px at the stated viewport; implement them by editing the element\'s Tailwind class list — `class A → B` and `add class B` name the utility; theme values live in tailwind.config, never in inline styles.',
+}
 
 /** Renders a session as the agent-readable spec from PRD §9.1. */
 export function toMarkdown(session: Session, options: MarkdownOptions = {}): string {
@@ -25,6 +32,11 @@ export function toMarkdown(session: Session, options: MarkdownOptions = {}): str
     `# Redlining — ${session.route}  (${stamp(now)} · viewport ${session.viewport.w}×${session.viewport.h}${preset})`,
   )
   lines.push('')
+  if (session.styling) {
+    const s = session.styling
+    lines.push(`Styling: ${s.label} (${s.override ? 'set by hand' : `detected: ${s.evidence}`})`)
+    lines.push('')
+  }
   if (session.screenshot) {
     const shotPath = options.screenshotPath ?? '.redlining/screenshot.png'
     const before = session.screenshotBefore
@@ -35,16 +47,33 @@ export function toMarkdown(session: Session, options: MarkdownOptions = {}): str
   }
   const ordered = [...session.annotations].sort((a, b) => a.index - b.index)
   for (const a of ordered) {
-    lines.push(...annotationBlock(a))
+    lines.push(...annotationBlock(a, session.crops))
     lines.push('')
+  }
+  let anyChanges = ordered.some((a) => a.changes?.length)
+  // Other routes' sessions, saved from the same browser, ride along under their own heading.
+  for (const other of session.others ?? []) {
+    const rest = [...other.annotations].sort((a, b) => a.index - b.index)
+    if (rest.length === 0) continue
+    lines.push('---')
+    lines.push('')
+    lines.push(
+      `# Redlining — ${other.route}  (${rest.length} annotation${rest.length === 1 ? '' : 's'}, made earlier in the same browser)`,
+    )
+    lines.push('')
+    for (const a of rest) {
+      lines.push(...annotationBlock(a, other.crops))
+      lines.push('')
+    }
+    anyChanges ||= rest.some((a) => a.changes?.length)
   }
   lines.push('---')
   lines.push(FOOTER)
-  if (ordered.some((a) => a.changes?.length)) lines.push(FOOTER_CHANGES)
+  if (anyChanges) lines.push(FOOTER_CHANGES[session.styling?.kind ?? 'css']!)
   return lines.join('\n') + '\n'
 }
 
-function annotationBlock(a: Annotation): string[] {
+function annotationBlock(a: Annotation, crops?: Record<string, string>): string[] {
   const out = [`## ${a.index} · ${a.action.toUpperCase()} — ${title(a)}`]
   switch (a.action) {
     case 'add':
@@ -73,6 +102,16 @@ function annotationBlock(a: Annotation): string[] {
   if (a.appliesAt) {
     out.push(`- Applies at: ≤ ${a.appliesAt}px (made in a ${a.appliesAt}px device frame)`)
   }
+  if (a.refs?.length) {
+    const pending = a.refs.filter((r) => r.startsWith('data:')).length
+    out.push(
+      pending
+        ? `- Reference: ${pending} pasted image${pending === 1 ? '' : 's'} (written to .redlining/ on Save)`
+        : `- Reference: ${a.refs.join(', ')} — match this; it shows the intended result`,
+    )
+  }
+  const crop = crops?.[String(a.index)]
+  if (crop && !crop.startsWith('data:')) out.push(`- Crop: ${crop} — this element as it looks now`)
   const fallback = fallbackNote(a.anchor)
   if (fallback) out.push(`- Resolved: ${fallback}`)
   if (a.note.trim()) out.push(`- Note: ${indent(a.note)}`)

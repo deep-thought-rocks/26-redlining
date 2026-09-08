@@ -15,7 +15,8 @@ export function describe(c: Change): string {
     return `${c.property}: auto (${px}px, laid out by the parent ${s.from}) → ${c.to}${c.relative ? ` (${c.relative})` : ''} — set by ${s.from === 'grid' ? "the parent's columns/gap" : s.from === 'flex' ? "its content and the parent's flex sizing" : "the parent's width"}, not by this element; prefer changing the layout`
   }
   const extras: string[] = []
-  if (c.suggestion && s?.className) extras.push(`class ${s.className} → ${c.suggestion}`)
+  if (c.suggestion && s?.className && sameFamily(s.className, c.suggestion))
+    extras.push(`class ${s.className} → ${c.suggestion}`)
   else {
     const origin = s ? describeSource(s) : ''
     if (origin) extras.push(origin)
@@ -24,6 +25,11 @@ export function describe(c: Change): string {
   if (c.relative) extras.push(c.relative)
   if (c.token && !extras.some((e) => e.includes(c.token!))) extras.push(`token ${c.token}`)
   return `${c.property}: ${c.from} → ${c.to}${extras.length ? ` (${extras.join('; ')})` : ''}`
+}
+
+/** `text-sm` and `text-lg` are one scale; `btn` and `pl-6` are not, so `pl-6` is added, not swapped. */
+function sameFamily(a: string, b: string): boolean {
+  return a.split('-')[0] === b.split('-')[0]
 }
 
 /** "from class text-lg", "from var(--lh) via .p", "inherited from <section> via .prose", "inline style". */

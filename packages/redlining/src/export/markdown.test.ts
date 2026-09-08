@@ -305,6 +305,77 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     ).toBe(true)
   })
 
+  test('names the styling idiom and speaks its footer', () => {
+    const tweak = session.annotations.find((a) => a.changes?.length)
+      ? session
+      : {
+          ...session,
+          annotations: [
+            {
+              ...session.annotations[0]!,
+              changes: [
+                { kind: 'style' as const, property: 'font-size', from: '14px', to: '16px' },
+              ],
+            },
+          ],
+        }
+    const detected = toMarkdown(
+      {
+        ...tweak,
+        styling: {
+          kind: 'tailwind4',
+          label: 'Tailwind 4',
+          evidence: '--spacing and --text-* tokens',
+          override: false,
+        },
+      },
+      { now: NOW },
+    )
+    expect(detected).toContain('\nStyling: Tailwind 4 (detected: --spacing and --text-* tokens)\n')
+    expect(
+      detected.trim().endsWith('theme values live in the `@theme` block, never in inline styles.'),
+    ).toBe(true)
+    const byHand = toMarkdown(
+      { ...tweak, styling: { kind: 'css-modules', label: 'CSS Modules', override: true } },
+      { now: NOW },
+    )
+    expect(byHand).toContain('Styling: CSS Modules (set by hand)')
+    expect(byHand).toContain("in the component's CSS module")
+    expect(toMarkdown(session, { now: NOW })).not.toContain('Styling:')
+  })
+
+  test('counts pasted references before they are saved, and skips crops that are still data URLs', () => {
+    const a = {
+      ...session.annotations[0]!,
+      refs: ['data:image/png;base64,AA', 'data:image/png;base64,BB'],
+    }
+    const md = toMarkdown(
+      { ...session, annotations: [a], crops: { '1': 'data:image/png;base64,CC' } },
+      { now: NOW },
+    )
+    expect(md).toContain('- Reference: 2 pasted images (written to .redlining/ on Save)')
+    expect(md).not.toContain('- Crop:')
+  })
+
+  test('appends the other routes under their own heading, one footer at the end', () => {
+    const other = {
+      ...session,
+      route: '/settings',
+      annotations: [{ ...session.annotations[0]!, index: 1, note: 'Bigger toggle.' }],
+    }
+    const md = toMarkdown(
+      { ...session, others: [other, { ...other, route: '/empty', annotations: [] }] },
+      { now: NOW },
+    )
+    expect(md).toContain(
+      '\n---\n\n# Redlining — /settings  (1 annotation, made earlier in the same browser)\n',
+    )
+    expect(md).not.toContain('/empty')
+    expect(md).toContain('- Note: Bigger toggle.')
+    expect(md.split('Apply in order.')).toHaveLength(2)
+    expect(md.indexOf('/settings')).toBeLessThan(md.indexOf('Apply in order.'))
+  })
+
   test('header names the viewport preset and the screenshot line the before image', () => {
     const md = toMarkdown(
       { ...session, preset: 768, screenshotBefore: 'data:image/png;base64,AA' },

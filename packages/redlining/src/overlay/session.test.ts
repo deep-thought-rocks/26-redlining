@@ -24,6 +24,22 @@ const add = (entries: Entry[], id: string, draft: Partial<Draft> = {}) =>
   })
 
 describe('session reducer', () => {
+  test('keeps reference images on the entry', () => {
+    const s = reduce([], {
+      type: 'add',
+      draft: { kind: 'select', element: el(), anchor },
+      action: 'change',
+      note: 'n',
+      refs: ['data:image/png;base64,AA'],
+      id: 'r',
+      createdAt: 't',
+    })
+    expect(s[0]!.refs).toEqual(['data:image/png;base64,AA'])
+    expect(
+      toSession(s, { pathname: '/', href: 'http://l/' }, { w: 1, h: 1 }).annotations[0]!.refs,
+    ).toHaveLength(1)
+  })
+
   test('adds with a 1-based index and stores draw boxes relative to the container rect', () => {
     let s = add([], 'a')
     s = add(s, 'b', { kind: 'draw', box: { x: 150, y: 260, w: 100, h: 50, childIndex: 2 } })

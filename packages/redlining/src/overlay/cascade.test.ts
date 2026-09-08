@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, test } from 'vitest'
-import { provenance, specificity, suggestClass } from './cascade'
+import { provenance, scaleFor, specificity, suggestClass } from './cascade'
 
 function css(text: string) {
   const style = document.createElement('style')
@@ -132,5 +132,23 @@ describe('suggestClass', () => {
     expect(suggestClass(h3, 'font-size', '18px', source)).toBeUndefined() // the current class is not a suggestion
     expect(suggestClass(h3, 'width', '192px')).toBe('w-48')
     expect(document.querySelector('div')!.children).toHaveLength(1) // the probe is removed
+  })
+})
+
+describe('scaleFor', () => {
+  test('lists the single-class values for a property, ascending and without duplicates', () => {
+    css(
+      '.text-xl { font-size: 20px } .text-sm { font-size: 14px } .text-base { font-size: 16px } .lead { font-size: 20px } .w-48 { width: 192px }',
+    )
+    document.body.innerHTML = '<div><p>t</p></div>'
+    const p = document.querySelector('p')!
+    expect(scaleFor(p, 'font-size')).toEqual([
+      { className: 'text-sm', px: 14 },
+      { className: 'text-base', px: 16 },
+      { className: 'text-xl', px: 20 },
+    ])
+    expect(scaleFor(p, 'width')).toEqual([{ className: 'w-48', px: 192 }])
+    expect(scaleFor(p, 'opacity')).toEqual([])
+    expect(document.querySelector('div')!.children).toHaveLength(1)
   })
 })

@@ -1,7 +1,7 @@
 import { liveRect } from './Pins'
 import type { Entry } from './session'
 
-/** PRD §11: the route caps the body at 8 MB; leave headroom for the JSON around it. */
+/** The route caps the body at 16 MB; the screenshot keeps to 7 MB so crops, references and JSON fit beside it. */
 const MAX_DATA_URL = 7 * 1024 * 1024
 const RADIUS = 11
 
@@ -67,14 +67,33 @@ export function drawPins(ctx: PinCanvas, pins: Pin[], scale = 1): void {
   }
 }
 
+/** Crops larger than this on either edge are skipped: the full screenshot already shows them. */
+const MAX_CROP_EDGE = 1600
+const CROP_MARGIN = 16
+
+/** The crop around `rect` with a margin, clamped to the page; null when it would be huge. */
+export function cropRect(
+  rect: { x: number; y: number; w: number; h: number },
+  page: { w: number; h: number },
+  margin = CROP_MARGIN,
+): { x: number; y: number; w: number; h: number } | null {
+  const x = Math.max(0, Math.floor(rect.x - margin))
+  const y = Math.max(0, Math.floor(rect.y - margin))
+  const w = Math.min(page.w, Math.ceil(rect.x + rect.w + margin)) - x
+  const h = Math.min(page.h, Math.ceil(rect.y + rect.h + margin)) - y
+  if (w <= 0 || h <= 0 || w > MAX_CROP_EDGE || h > MAX_CROP_EDGE) return null
+  return { x, y, w, h }
+}
+
 /**
  * Captures the page (without the overlay) as a PNG data URL with pins burned
- * in. Returns an error instead when the capture fails or would exceed the cap.
+ * in, plus a pin-free crop around every attached anchor, keyed by annotation
+ * index. Returns an error instead when the capture fails or would exceed the cap.
  */
 export async function captureScreenshot(
   entries: Entry[],
   host: Element,
-): Promise<{ dataUrl: string } | { error: string }> {
+): Promise<{ dataUrl: string; crops: Record<string, string> } | { error: string }> {
   const { toCanvas } = await import('html-to-image')
   const canvas = await toCanvas(document.documentElement, {
     filter: (node) => node !== host,
@@ -83,9 +102,20 @@ export async function captureScreenshot(
   })
   const ctx = canvas.getContext('2d')
   if (!ctx) return { error: 'no 2d context' }
+  const crops: Record<string, string> = {}
+  for (const entry of entries) {
+    const r = liveRect(entry.element, entry.anchor)
+    const c = r ? cropRect(r, { w: canvas.width, h: canvas.height }) : null
+    if (!c) continue
+    const part = document.createElement('canvas')
+    part.width = c.w
+    part.height = c.h
+    part.getContext('2d')?.drawImage(canvas, c.x, c.y, c.w, c.h, 0, 0, c.w, c.h)
+    crops[String(entry.index)] = part.toDataURL('image/png')
+  }
   drawPins(ctx, pinsFor(entries))
   const dataUrl = canvas.toDataURL('image/png')
   if (dataUrl.length > MAX_DATA_URL)
     return { error: `screenshot too large (${Math.round(dataUrl.length / 1024 / 1024)} MB)` }
-  return { dataUrl }
+  return { dataUrl, crops }
 }

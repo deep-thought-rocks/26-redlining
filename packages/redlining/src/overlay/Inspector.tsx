@@ -1,8 +1,10 @@
-import { Check, ChevronDown, ChevronRight, EyeOff, RotateCcw, Undo2, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, EyeOff, Magnet, RotateCcw, Undo2, X } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { captionFor, describe } from '../export/changes'
 import type { Anchor, Change, ChangeSource } from '../types'
-import { provenance, suggestClass } from './cascade'
+import { provenance, scaleFor, suggestClass } from './cascade'
+import { isModuleClass, type FrameworkKind } from './framework'
+import { classFor, themeScale, type ThemeContext } from './theme'
 import {
   canEditText,
   colorTokens,
@@ -24,9 +26,45 @@ export interface InspectorProps {
   onReset(): void
   onDone(): void
   onCancel(): void
+  /** The styling idiom values map to; decides the class hints and the snap scale. */
+  framework: FrameworkKind
+  theme: ThemeContext
+  /** Initial state of the Snap-to-scale toggle (from the settings). */
+  snapDefault: boolean
 }
 
 const WIDTH = 360
+
+/** The stylesheet's emitted classes first, then the framework's theme steps, ascending. */
+export function mergeScale(
+  emitted: { className: string; px: number }[],
+  theme: { className: string; px: number }[],
+): { className: string; px: number }[] {
+  const out = [...emitted]
+  for (const t of theme) if (!out.some((e) => Math.abs(e.px - t.px) < 0.01)) out.push(t)
+  return out.sort((a, b) => a.px - b.px)
+}
+
+/**
+ * The class to suggest for a new value: the framework's exact utility (`pl-6`, `text-lg`),
+ * else an emitted single-class rule that computes to it, else an arbitrary utility
+ * (`text-[17px]`). Hashed CSS Modules classes are skipped.
+ */
+export function suggestionFor(
+  element: Element,
+  property: string,
+  value: string,
+  source: ChangeSource | undefined,
+  framework: FrameworkKind,
+  theme: ThemeContext,
+  token?: string,
+): string | undefined {
+  const hint = classFor(framework, property, value, theme, token)
+  if (hint?.exact) return hint.className
+  const emitted = suggestClass(element, property, value, source)
+  if (emitted && !isModuleClass(emitted)) return emitted
+  return hint?.className
+}
 
 interface Field {
   property: string
@@ -81,7 +119,7 @@ export function short(value: string): string {
 }
 
 export function Inspector(p: InspectorProps) {
-  const { element, anchor, changes, onChange } = p
+  const { element, anchor, changes, onChange, framework, theme } = p
   const el = element as HTMLElement
   // First-seen computed values per property, so `from` stays the pre-change value.
   const [baseline] = useState(() => new Map<string, string>())
@@ -113,6 +151,19 @@ export function Inspector(p: InspectorProps) {
   const display = computed(element, 'display')
   const isFlexOrGrid = /flex|grid/.test(display)
   const hidden = changes.some((c) => c.kind === 'visibility' && c.to === 'none')
+  // Snap to scale: plus/minus step through the stylesheet's own classes for the property
+  // (text-sm → text-base → text-lg) instead of by 1px, when such a scale exists.
+  const [snap, setSnap] = useState(p.snapDefault)
+  const [scales] = useState(() => new Map<string, { className: string; px: number }[]>())
+  const scaleOf = (property: string) => {
+    let s = scales.get(property)
+    if (!s) {
+      s = mergeScale(scaleFor(element, property), themeScale(framework, property, theme))
+      scales.set(property, s)
+    }
+    return s
+  }
+  const snaps = (property: string) => snap && scaleOf(property).length > 0
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const toggle = (title: string) =>
     setOpen((cur) => {
@@ -151,12 +202,21 @@ export function Inspector(p: InspectorProps) {
       const rel = relativeTo(element, property, parseFloat(value))
       if (rel) change.relative = rel
     }
-    const suggestion = suggestClass(element, property, value, source)
+    const suggestion = suggestionFor(element, property, value, source, framework, theme, token)
     if (suggestion) change.suggestion = suggestion
     onChange(upsert(next, change))
   }
   const stepField = (f: Field, delta: number) => {
     const n = parseFloat(current(f.property)) || 0
+    if (snaps(f.property)) {
+      const scale = scaleOf(f.property)
+      const next =
+        delta > 0
+          ? scale.find((s) => s.px > n + 0.01)
+          : [...scale].reverse().find((s) => s.px < n - 0.01)
+      if (next) setStyle(f.property, `${next.px}${f.unit}`, next.className)
+      return
+    }
     let v = Math.round((n + delta) / f.step) * f.step
     if (f.min !== undefined) v = Math.max(f.min, v)
     if (f.max !== undefined) v = Math.min(f.max, v)
@@ -175,6 +235,7 @@ export function Inspector(p: InspectorProps) {
     const value = current(property)
     const source = sourceOf(property)
     const caption = captionFor(source)
+    const snapped = snaps(property)
     return (
       <div key={property} className="rl-field" data-changed={changed(property) || undefined}>
         <span>
@@ -192,10 +253,10 @@ export function Inspector(p: InspectorProps) {
             </small>
           ) : null}
         </span>
-        <div className="rl-stepper">
+        <div className="rl-stepper" data-snap={snapped || undefined}>
           <button
             type="button"
-            aria-label={`${f.label} −${f.step}`}
+            aria-label={snapped ? `${f.label} down` : `${f.label} −${f.step}`}
             onClick={() => stepField(f, -f.step)}
           >
             −
@@ -213,7 +274,7 @@ export function Inspector(p: InspectorProps) {
           />
           <button
             type="button"
-            aria-label={`${f.label} +${f.step}`}
+            aria-label={snapped ? `${f.label} up` : `${f.label} +${f.step}`}
             onClick={() => stepField(f, f.step)}
           >
             +
@@ -472,6 +533,16 @@ export function Inspector(p: InspectorProps) {
         : null}
 
       <div className="rl-chips" style={{ marginTop: 8 }}>
+        <button
+          type="button"
+          className="rl-chip"
+          aria-pressed={snap}
+          data-testid="rl-snap"
+          title="Step through the classes in your stylesheet (text-sm → text-base → text-lg) instead of by 1px"
+          onClick={() => setSnap((s) => !s)}
+        >
+          <Magnet size={12} /> Snap to scale
+        </button>
         <button
           type="button"
           className="rl-chip"

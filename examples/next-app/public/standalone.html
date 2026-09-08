@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Standalone fixture</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 40px;
+      }
+      .cta {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: 1px solid #999;
+        background: #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="title">A page without a framework</h1>
+      <p class="lead">Redlining runs here from a single script tag.</p>
+      <button class="cta" type="button">Sign up</button>
+    </main>
+    <!-- Copied from packages/redlining/dist/standalone.js by the Playwright global setup. -->
+    <script
+      type="module"
+      src="/redlining-standalone.js"
+      data-redlining
+      data-endpoint="off"
+    ></script>
+  </body>
+</html>

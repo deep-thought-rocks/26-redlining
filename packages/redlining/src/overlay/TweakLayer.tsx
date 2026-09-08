@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Change, Rect } from '../types'
-import { provenance, suggestClass } from './cascade'
+import { provenance } from './cascade'
+import type { FrameworkKind } from './framework'
+import type { ThemeContext } from './theme'
 import { isOverlay, pageRect } from './dom'
-import { upsert } from './Inspector'
+import { suggestionFor, upsert } from './Inspector'
 import { computed, isInline, relativeTo } from './preview'
 
 export interface TweakLayerProps {
@@ -10,6 +12,8 @@ export interface TweakLayerProps {
   element: Element
   changes: Change[]
   onChange(changes: Change[]): void
+  framework: FrameworkKind
+  theme: ThemeContext
 }
 
 type Edge = 'n' | 's' | 'e' | 'w'
@@ -63,7 +67,14 @@ export function nudgeChange(changes: Change[], dx: number, dy: number, from: str
 }
 
 /** Resize handles, Alt-drag spacing, body-drag nudge and arrow-key nudging around the tweaked element. */
-export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps) {
+export function TweakLayer({
+  host,
+  element,
+  changes,
+  onChange,
+  framework,
+  theme,
+}: TweakLayerProps) {
   const [, tick] = useState(0)
   /** Alt+hover: the element measured against; a ruler, records nothing. */
   const [measure, setMeasure] = useState<Element | null>(null)
@@ -100,7 +111,7 @@ export function TweakLayer({ host, element, changes, onChange }: TweakLayerProps
       const rel = relativeTo(element, property, parseFloat(value))
       if (rel) change.relative = rel
     }
-    const suggestion = suggestClass(element, property, value, source)
+    const suggestion = suggestionFor(element, property, value, source, framework, theme)
     if (suggestion) change.suggestion = suggestion
     return upsert(list, change)
   }

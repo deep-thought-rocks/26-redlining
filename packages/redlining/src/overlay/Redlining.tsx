@@ -8,8 +8,8 @@ import type { Position } from './Toolbar'
 import { tokensCss } from './tokens.generated'
 
 export interface RedliningProps {
-  /** Where "Save to project" posts. Default `/api/redlining`. */
-  endpoint?: string
+  /** Where "Save to project" posts. Default `/api/redlining`; `false` downloads the files instead. */
+  endpoint?: string | false
   /** Toggle hotkey. Default `Alt+R`. */
   hotkey?: string
   /** Toolbar corner. Default `bottom-right` (Next DevTools sits bottom-left). */
@@ -22,6 +22,11 @@ export interface RedliningProps {
   maxAnnotations?: number
   /** Include a screenshot with burned-in pins when saving. Default true. */
   screenshot?: boolean
+  /**
+   * The styling idiom values map to (`pl-6`, `text-lg`) and the export speaks in.
+   * Detected from the page's stylesheets by default; set it when the detection is wrong.
+   */
+  framework?: 'tailwind4' | 'tailwind3' | 'css-modules' | 'css'
 }
 
 const HOST_STYLE: CSSProperties = {
@@ -52,6 +57,7 @@ function Host({
   theme = 'light',
   maxAnnotations = 15,
   screenshot = true,
+  framework,
 }: RedliningProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [mount, setMount] = useState<Mount | null>(null)
@@ -77,6 +83,7 @@ function Host({
               position={position}
               maxAnnotations={maxAnnotations}
               screenshot={screenshot}
+              framework={framework}
             />,
             mount.root,
           )

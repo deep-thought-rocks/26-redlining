@@ -31,6 +31,27 @@ export default defineConfig([
     deps: { alwaysBundle: ['magic-string'] },
   },
   {
+    // Everything bundled, for pages without a React toolchain (vanilla, Angular, Vue):
+    // dev-only by contract, so NODE_ENV is fixed and there is no production stub.
+    entry: { standalone: 'src/standalone.tsx' },
+    format: 'esm',
+    platform: 'browser',
+    dts: true,
+    minify: true,
+    define: { 'process.env.NODE_ENV': '"development"' },
+    deps: {
+      alwaysBundle: [
+        'react',
+        'react-dom',
+        /^react-dom\//,
+        /^react\//,
+        'lucide-react',
+        'html-to-image',
+      ],
+    },
+    outputOptions: { codeSplitting: false },
+  },
+  {
     entry: { cli: 'src/cli/index.ts' },
     format: 'esm',
     platform: 'node',

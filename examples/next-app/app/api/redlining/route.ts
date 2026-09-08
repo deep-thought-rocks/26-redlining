@@ -1,1 +1,1 @@
-export { POST } from 'redlining/next/route'
+export { GET, POST } from 'redlining/next/route'

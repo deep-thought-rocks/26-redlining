@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, test } from 'vitest'
 import type { Entry } from './session'
-import { drawPins, pinsFor, type PinCanvas } from './screenshot'
+import { cropRect, drawPins, pinsFor, type PinCanvas } from './screenshot'
 
 function recorder() {
   const calls: string[] = []
@@ -123,5 +123,24 @@ describe('pinsFor', () => {
       { label: '2', x: 10, y: 20 },
       { label: '→2', x: 300, y: 400 },
     ])
+  })
+})
+
+describe('cropRect', () => {
+  test('adds a margin, clamps to the page, and skips huge or empty crops', () => {
+    expect(cropRect({ x: 100, y: 50, w: 200, h: 40 }, { w: 1000, h: 800 })).toEqual({
+      x: 84,
+      y: 34,
+      w: 232,
+      h: 72,
+    })
+    expect(cropRect({ x: 4, y: 0, w: 990, h: 20 }, { w: 1000, h: 800 })).toEqual({
+      x: 0,
+      y: 0,
+      w: 1000,
+      h: 36,
+    })
+    expect(cropRect({ x: 0, y: 0, w: 1700, h: 20 }, { w: 2000, h: 800 })).toBeNull()
+    expect(cropRect({ x: 1200, y: 0, w: 10, h: 10 }, { w: 1000, h: 800 })).toBeNull()
   })
 })

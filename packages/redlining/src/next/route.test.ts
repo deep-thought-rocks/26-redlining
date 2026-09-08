@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import type { Session } from '../types'
-import { createHandler } from './route'
+import { createHandler, createHandlers } from './route'
 
 const session: Session = {
   route: '/x',
@@ -85,6 +85,64 @@ describe('route handler', () => {
     expect(existsSync(path.join(root, '.redlining/screenshot-before.png'))).toBe(true)
     await POST(post({ session }))
     expect(existsSync(path.join(root, '.redlining/screenshot-before.png'))).toBe(false)
+  })
+
+  test('writes reference images and crops as files, names them in the export, and prunes stale ones', async () => {
+    const POST = createHandler({ projectRoot: root, enabled: true })
+    const png = `data:image/png;base64,${Buffer.from('PNG1').toString('base64')}`
+    const jpg = `data:image/jpeg;base64,${Buffer.from('JPG2').toString('base64')}`
+    const annotation = {
+      id: 'a',
+      index: 1,
+      action: 'change' as const,
+      anchor: {
+        tag: 'p',
+        owners: [],
+        selector: 'p',
+        rect: { x: 0, y: 0, w: 1, h: 1 },
+        resolved: 'exact' as const,
+      },
+      note: 'Match the mockup.',
+      createdAt: 't',
+      refs: [png, jpg],
+    }
+    const res = await POST(
+      post({ session: { ...session, annotations: [annotation], crops: { '1': png } } }),
+    )
+    expect(await res.json()).toEqual({
+      files: [
+        '.redlining/annotations.md',
+        '.redlining/annotations.json',
+        '.redlining/ref-1-1.png',
+        '.redlining/ref-1-2.jpg',
+        '.redlining/crop-1.png',
+      ],
+    })
+    expect(readFileSync(path.join(root, '.redlining/ref-1-2.jpg'), 'utf8')).toBe('JPG2')
+    const md = readFileSync(path.join(root, '.redlining/annotations.md'), 'utf8')
+    expect(md).toContain(
+      '- Reference: .redlining/ref-1-1.png, .redlining/ref-1-2.jpg — match this; it shows the intended result',
+    )
+    expect(md).toContain('- Crop: .redlining/crop-1.png — this element as it looks now')
+    const json = JSON.parse(readFileSync(path.join(root, '.redlining/annotations.json'), 'utf8'))
+    expect(json.annotations[0].refs).toEqual(['.redlining/ref-1-1.png', '.redlining/ref-1-2.jpg'])
+    expect(json.crops).toEqual({ '1': '.redlining/crop-1.png' })
+    // The next save without images removes them.
+    await POST(post({ session }))
+    expect(existsSync(path.join(root, '.redlining/ref-1-1.png'))).toBe(false)
+    expect(existsSync(path.join(root, '.redlining/crop-1.png'))).toBe(false)
+  })
+
+  test('GET returns the agent reply with its mtime, or nulls when there is none', async () => {
+    const { GET, POST } = createHandlers({ projectRoot: root, enabled: true })
+    expect(await (await GET()).json()).toEqual({ reply: null, mtime: null })
+    await POST(post({ session }))
+    const { writeFile } = await import('node:fs/promises')
+    await writeFile(path.join(root, '.redlining/reply.md'), '## 1 · done — ok\n')
+    const body = (await (await GET()).json()) as { reply: string; mtime: string }
+    expect(body.reply).toBe('## 1 · done — ok\n')
+    expect(new Date(body.mtime).getTime()).toBeGreaterThan(0)
+    expect((await createHandlers({ projectRoot: root, enabled: false }).GET()).status).toBe(403)
   })
 
   test('refuses outside development', async () => {

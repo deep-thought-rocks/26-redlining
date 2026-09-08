@@ -71,6 +71,28 @@ Redlining never edits code. Claude Code stays the only thing that changes your c
 
 Prefer to have Claude Code do the setup? Paste the prompt from the docs' [Set up with an agent](site/getting-started.html#agent) section (copy button included; published with the site). It installs, wires, initialises and verifies Redlining in the current repository and reports back without committing.
 
+## Works with
+
+| Stack                      | Anchors                           | Component names            | Save                                                           |
+| -------------------------- | --------------------------------- | -------------------------- | -------------------------------------------------------------- |
+| Next.js 16+ (App Router)   | `file:line` via `withRedlining()` | React owner chain          | route handler (`redlining init`)                               |
+| Vite + React               | `file:line` via `redlining/vite`  | React owner chain          | `redlining({ endpoint: true })` on the dev server, or download |
+| Angular (dev mode)         | selector + text                   | component classes via `ng` | download, or your own endpoint                                 |
+| Any page (vanilla, Vue, …) | selector + text                   | Vue instance names         | download                                                       |
+
+Everything DOM-based works everywhere: select, draw, move, tweak with provenance and class hints, notes, references, Markdown export. Outside a React toolchain, load the bundled overlay from a script tag (React included, dev only):
+
+```html
+<script
+  type="module"
+  src="/node_modules/redlining/dist/standalone.js"
+  data-redlining
+  data-endpoint="off"
+></script>
+```
+
+or call it: `import { mount } from 'redlining/standalone'; mount({ endpoint: false })`. With `endpoint: false` (or when no endpoint answers) Save downloads `annotations.md`, `annotations.json` and the images; move them into `.redlining/` and run `/redline`. HTML templates are not stamped yet, so those anchors are selector-only.
+
 ## How it works
 
 - In development, a loader registered by `withRedlining()` stamps every host element (`<nav>`, `<button>`, not components) with `data-rl="<file>:<line>:<col>"`. Server Components get it for free: the attribute is static markup.
@@ -98,12 +120,13 @@ Prefer to have Claude Code do the setup? Paste the prompt from the docs' [Set up
 
 ```tsx
 <Redlining
-  endpoint="/api/redlining" // where Save posts
+  endpoint="/api/redlining" // where Save posts; false downloads the files instead
   hotkey="Alt+R"
   position="bottom-right" // Next DevTools sits bottom-left
   theme="light" // or "dark"
   maxAnnotations={15} // a warning shows at 10
   screenshot // include screenshot.png with burned-in pins
+  framework="tailwind4" // tailwind4 | tailwind3 | css-modules | css; detected when omitted
 />
 ```
 
@@ -127,8 +150,8 @@ The route handler can be configured too:
 
 ```ts
 // app/api/redlining/route.ts
-import { createHandler } from 'redlining/next/route'
-export const POST = createHandler({ outDir: '.redlining', maxBytes: 8 * 1024 * 1024 })
+import { createHandlers } from 'redlining/next/route'
+export const { GET, POST } = createHandlers({ outDir: '.redlining', maxBytes: 16 * 1024 * 1024 })
 ```
 
 ## Support

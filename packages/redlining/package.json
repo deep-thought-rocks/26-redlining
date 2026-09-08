@@ -76,6 +76,11 @@
         "default": "./dist/vite.cjs"
       },
       "default": "./dist/vite.mjs"
+    },
+    "./standalone": {
+      "types": "./dist/standalone.d.ts",
+      "import": "./dist/standalone.js",
+      "default": "./dist/standalone.js"
     }
   },
   "publishConfig": {

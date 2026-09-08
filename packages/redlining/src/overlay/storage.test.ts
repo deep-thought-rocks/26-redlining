@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, test } from 'vitest'
 import type { Entry } from './session'
-import { loadEntries, saveEntries, storageKey } from './storage'
+import { clearRoute, loadOtherSessions, loadEntries, saveEntries, storageKey } from './storage'
 
 const entry = (id: string, index: number): Entry => ({
   id,
@@ -21,6 +21,22 @@ const entry = (id: string, index: number): Entry => ({
 
 describe('session storage', () => {
   beforeEach(() => localStorage.clear())
+
+  test('lists the other routes as plain sessions, sorted, skipping settings and the current route', () => {
+    saveEntries(localStorage, '/b', [entry('z', 1)])
+    saveEntries(localStorage, '/a', [entry('x', 1), entry('y', 2)])
+    saveEntries(localStorage, '/current', [entry('c', 1)])
+    localStorage.setItem('redlining:settings', '{"snap":false}')
+    localStorage.setItem('redlining:position', 'top-left')
+    const others = loadOtherSessions(localStorage, '/current', 'http://x', { w: 1, h: 2 })
+    expect(others.map((s) => [s.route, s.url, s.annotations.length])).toEqual([
+      ['/a', 'http://x/a', 2],
+      ['/b', 'http://x/b', 1],
+    ])
+    expect(others[0]!.annotations[0]).not.toHaveProperty('element')
+    clearRoute(localStorage, '/a')
+    expect(loadOtherSessions(localStorage, '/current', 'http://x', { w: 1, h: 2 })).toHaveLength(1)
+  })
 
   test('round-trips entries per route without the element handle', () => {
     saveEntries(localStorage, '/a', [entry('x', 1), entry('y', 2)])

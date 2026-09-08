@@ -105,6 +105,8 @@ export interface Annotation {
   changes?: Change[]
   /** Viewport preset width (px) the annotation was made at, when one was active. */
   appliesAt?: number
+  /** Reference images pasted into the note: data URLs in the browser, file paths once saved. */
+  refs?: string[]
   note: string
   /** ISO timestamp. */
   createdAt: string
@@ -121,4 +123,20 @@ export interface Session {
   screenshotBefore?: string
   /** Viewport preset width (px) active at save time, when one was. */
   preset?: number
+  /** The styling idiom the export speaks in; detected from the page unless set by hand. */
+  styling?: Styling
+  /** Sessions of the other routes in this browser, exported together with this one. */
+  others?: Session[]
+  /** Per annotation index: a crop of the screenshot around the element (data URL, then path). */
+  crops?: Record<string, string>
+}
+
+export interface Styling {
+  kind: 'tailwind4' | 'tailwind3' | 'css-modules' | 'css'
+  /** "Tailwind 4", "Plain CSS" … */
+  label: string
+  /** What the detection saw; absent when set by hand. */
+  evidence?: string
+  /** True when chosen in the settings or via the `framework` prop. */
+  override: boolean
 }

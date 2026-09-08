@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { ImagePlus, X } from 'lucide-react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type DragEvent,
+  type KeyboardEvent,
+} from 'react'
 import { describe } from '../export/changes'
 import type { Action, Anchor } from '../types'
+import { dataUrlBytes, imageFiles, MAX_REF_BYTES, MAX_REFS, shrinkImage } from './image'
 import type { Draft, Position } from './session'
 
 const HINTS = ['Table', 'Form', 'Button', 'Card', 'Modal', 'Nav', 'List', 'Chart']
@@ -9,18 +18,59 @@ const WIDTH = 340
 
 export interface NotePopoverProps {
   draft: Draft
-  onSave(action: Action, note: string, position?: Position): void
+  onSave(action: Action, note: string, position?: Position, refs?: string[]): void
   onCancel(): void
+  /** Bytes of reference images the session already holds, for the per-session cap. */
+  refBytes?: number
 }
 
-export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
+export function NotePopover({ draft, onSave, onCancel, refBytes = 0 }: NotePopoverProps) {
   const [action, setAction] = useState<Action>(
     draft.kind === 'draw' ? 'add' : draft.kind === 'move' ? 'move' : 'change',
   )
   const [position, setPosition] = useState<Position>('before')
   const [note, setNote] = useState('')
   const [hint, setHint] = useState<string | null>(null)
+  const [refs, setRefs] = useState<string[]>([])
+  const [refHint, setRefHint] = useState<string | null>(null)
   const ref = useRef<HTMLTextAreaElement>(null)
+  // Images pasted or dropped become reference images; capped per note and per session.
+  const addImages = async (files: File[]) => {
+    if (files.length === 0) return
+    const next = [...refs]
+    for (const file of files) {
+      if (next.length >= MAX_REFS) {
+        setRefHint(`At most ${MAX_REFS} images per note`)
+        break
+      }
+      let url: string
+      try {
+        url = await shrinkImage(file)
+      } catch (err) {
+        setRefHint(`Could not read the image: ${String(err)}`)
+        continue
+      }
+      if (refBytes + dataUrlBytes([...next, url]) > MAX_REF_BYTES) {
+        setRefHint('Reference images would exceed what the browser session can hold')
+        break
+      }
+      next.push(url)
+    }
+    setRefs(next)
+    ref.current?.focus()
+  }
+  const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = imageFiles(e.clipboardData)
+    if (files.length === 0) return
+    e.preventDefault()
+    void addImages(files)
+  }
+  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+    const files = imageFiles(e.dataTransfer)
+    if (files.length === 0) return
+    e.preventDefault()
+    void addImages(files)
+  }
   useEffect(() => ref.current?.focus(), [])
 
   // A move's From/To and a tweak's changes already carry the intent; everything else needs a note.
@@ -33,7 +83,12 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
       ref.current?.focus()
       return
     }
-    onSave(action, hint ? `${hint}: ${text}` : text, draft.kind === 'move' ? position : undefined)
+    onSave(
+      action,
+      hint ? `${hint}: ${text}` : text,
+      draft.kind === 'move' ? position : undefined,
+      refs.length ? refs : undefined,
+    )
   }
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Stop here: the overlay's window handler would otherwise see the same
@@ -63,6 +118,8 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
       role="dialog"
       aria-label="Annotation"
       style={{ left, top }}
+      onDrop={onDrop}
+      onDragOver={(e) => e.preventDefault()}
     >
       <header>
         {draft.kind === 'move' && draft.target ? (
@@ -155,7 +212,26 @@ export function NotePopover({ draft, onSave, onCancel }: NotePopoverProps) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         onKeyDown={onKey}
+        onPaste={onPaste}
       />
+      <div className="rl-refs" data-testid="rl-refs">
+        {refs.map((url, i) => (
+          <span key={i} className="rl-ref">
+            <img src={url} alt={`Reference ${i + 1}`} />
+            <button
+              type="button"
+              className="rl-btn rl-icon"
+              aria-label={`Remove reference ${i + 1}`}
+              onClick={() => setRefs(refs.filter((_, k) => k !== i))}
+            >
+              <X size={12} />
+            </button>
+          </span>
+        ))}
+        <span className="rl-ref-hint">
+          <ImagePlus size={12} /> {refHint ?? 'Paste or drop a mockup to attach it'}
+        </span>
+      </div>
       <div className="rl-actions">
         <span className={`rl-kbd${nudged && noteRequired && !note.trim() ? ' rl-kbd--warn' : ''}`}>
           {nudged && noteRequired && !note.trim()

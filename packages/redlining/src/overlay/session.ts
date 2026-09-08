@@ -39,6 +39,8 @@ export type SessionAction =
       createdAt: string
       position?: Position
       appliesAt?: number
+      /** Reference images pasted into the note. */
+      refs?: string[]
     }
   | { type: 'note'; id: string; note: string }
   | { type: 'changes'; id: string; changes: Change[] }
@@ -76,6 +78,7 @@ export function reduce(entries: Entry[], a: SessionAction): Entry[] {
         entry.preview = draft.snapshot
       }
       if (a.appliesAt) entry.appliesAt = a.appliesAt
+      if (a.refs?.length) entry.refs = a.refs
       if (draft.extra?.length) {
         entry.anchors = [draft.anchor, ...draft.extra.map((x) => x.anchor)]
         entry.extraElements = draft.extra.map((x) => x.element)

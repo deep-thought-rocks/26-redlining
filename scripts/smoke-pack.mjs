@@ -37,6 +37,8 @@ if (!l.transform('const x = <div />', 'a.tsx').code.includes('data-rl="a.tsx:1:1
 const v = await import('redlining/vite'); if (typeof v.redlining !== 'function') throw new Error('vite')
 const r = await import('redlining/next/route'); if (typeof r.POST !== 'function') throw new Error('route')
 const i = await import('redlining'); if (typeof i.Redlining !== 'function' || typeof i.stripRedlining !== 'function') throw new Error('index')
+const s = await import('redlining/standalone'); if (typeof s.mount !== 'function') throw new Error('standalone')
+if (typeof r.GET !== 'function') throw new Error('route GET')
 console.log('esm ok')
 `,
   )
