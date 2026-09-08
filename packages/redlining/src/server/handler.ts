@@ -71,7 +71,7 @@ export function createHandlers(options: RouteOptions = {}) {
     await mkdir(outDir, { recursive: true })
     // Stale images from the last save go first; the session decides what exists.
     for (const name of await readdir(outDir)) {
-      if (/^(ref|crop)-\d+/.test(name)) await rm(path.join(outDir, name), { force: true })
+      if (/^(ref|crop)-/.test(name)) await rm(path.join(outDir, name), { force: true })
     }
     const files: string[] = []
     const screenshotPath = `${relPosix}/screenshot.png`

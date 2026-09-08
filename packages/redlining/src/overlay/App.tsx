@@ -262,9 +262,10 @@ export function App({
         } else notify(`Saving without screenshot: ${shot.error}`)
       }
       // No endpoint (or none answering): hand the same files to the browser as downloads.
+      const routes = [window.location.pathname, ...(payload.others ?? []).map((o) => o.route)]
       const download = (why: string) => {
         downloadFiles(exportFiles(payload))
-        markSaved(window.location.pathname)
+        for (const r of routes) markSaved(r)
         notify(
           `${why}Downloaded annotations.md — move the files into .redlining/ and run /redline.`,
         )
@@ -288,7 +289,11 @@ export function App({
         download('No save endpoint at this path. ')
         return
       }
-      if (res.ok) markSaved(window.location.pathname)
+      if (res.status === 413) {
+        download('The export is larger than the endpoint accepts. ')
+        return
+      }
+      if (res.ok) for (const r of routes) markSaved(r)
       notify(
         res.ok
           ? 'Saved — run /redline, or hand .redlining/ to your agent.'

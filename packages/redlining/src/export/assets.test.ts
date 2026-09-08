@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { Session } from '../types'
-import { assetFiles, cropName, imageExt, refName, withAssetPaths } from './assets'
+import { assetFiles, cropName, imageExt, refName, routeSlug, withAssetPaths } from './assets'
 
 const png = 'data:image/png;base64,iVBORw0KGgo='
 const jpg = 'data:image/jpeg;base64,/9j/4AAQ'
@@ -44,6 +44,30 @@ describe('assets', () => {
       'ref-2-2.jpg',
       'crop-2.png',
     ])
+  })
+
+  test('other routes are filed too, under route-scoped names that cannot collide', () => {
+    const other: Session = { ...session, route: '/settings/team', crops: { '2': jpg } }
+    const root: Session = { ...session, route: '/', annotations: [], crops: { '1': png } }
+    const bundled = { ...session, others: [other, root] }
+    expect(routeSlug('/settings/team')).toBe('settings-team')
+    expect(routeSlug('/')).toBe('root')
+    expect(assetFiles(bundled).map((f) => f.name)).toEqual([
+      'ref-2-1.png',
+      'ref-2-2.jpg',
+      'crop-2.png',
+      'ref-settings-team-2-1.png',
+      'ref-settings-team-2-2.jpg',
+      'crop-settings-team-2.jpg'.replace('.jpg', '.png'),
+      'crop-root-1.png',
+    ])
+    const filed = withAssetPaths(bundled, '.redlining')
+    expect(filed.others![0]!.annotations[0]!.refs).toEqual([
+      '.redlining/ref-settings-team-2-1.png',
+      '.redlining/ref-settings-team-2-2.jpg',
+    ])
+    expect(filed.others![0]!.crops).toEqual({ '2': '.redlining/crop-settings-team-2.png' })
+    expect(JSON.stringify(filed)).not.toContain('data:')
   })
 
   test('replaces data URLs with paths and leaves paths alone', () => {

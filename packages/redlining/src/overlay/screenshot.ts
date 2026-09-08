@@ -69,6 +69,8 @@ export function drawPins(ctx: PinCanvas, pins: Pin[], scale = 1): void {
 
 /** Crops larger than this on either edge are skipped: the full screenshot already shows them. */
 const MAX_CROP_EDGE = 1600
+/** Total crop bytes per save, so screenshot (7 MB) + crops + references stay under the route's 16 MB. */
+const MAX_CROP_BYTES = 4 * 1024 * 1024
 const CROP_MARGIN = 16
 
 /** The crop around `rect` with a margin, clamped to the page; null when it would be huge. */
@@ -103,6 +105,7 @@ export async function captureScreenshot(
   const ctx = canvas.getContext('2d')
   if (!ctx) return { error: 'no 2d context' }
   const crops: Record<string, string> = {}
+  let cropBytes = 0
   for (const entry of entries) {
     const r = liveRect(entry.element, entry.anchor)
     const c = r ? cropRect(r, { w: canvas.width, h: canvas.height }) : null
@@ -111,7 +114,10 @@ export async function captureScreenshot(
     part.width = c.w
     part.height = c.h
     part.getContext('2d')?.drawImage(canvas, c.x, c.y, c.w, c.h, 0, 0, c.w, c.h)
-    crops[String(entry.index)] = part.toDataURL('image/png')
+    const url = part.toDataURL('image/png')
+    cropBytes += url.length
+    if (cropBytes > MAX_CROP_BYTES) break
+    crops[String(entry.index)] = url
   }
   drawPins(ctx, pinsFor(entries))
   const dataUrl = canvas.toDataURL('image/png')

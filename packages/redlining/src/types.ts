@@ -20,7 +20,7 @@ export interface Anchor {
   column?: number
   /** Host element: 'nav' | 'form' | 'button' … */
   tag: string
-  /** React owner chain, outermost first; `[]` for server-only subtrees. */
+  /** Component owners, outermost first (React owner chain; Angular or Vue names on those stacks); `[]` for server-only subtrees or plain pages. */
   owners: string[]
   /** Fallback CSS path. */
   selector: string

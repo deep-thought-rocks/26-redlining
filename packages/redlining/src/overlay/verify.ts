@@ -1,5 +1,6 @@
 // After the agent's edit: does the page now show what each annotation asked for?
-// Pure over an injected reader; the caller resets the preview around the check.
+// Style reads go through an injected reader (tests inject values); text and visibility
+// read the element itself. The caller resets the preview around the check.
 import type { Change } from '../types'
 import { computed, soleTextNode, toRgb } from './preview'
 import type { Entry } from './session'
