@@ -1,7 +1,7 @@
 {
   "name": "redlining",
   "version": "0.5.0",
-  "description": "Figma-style comments on your running Next.js app, exported as a file-anchored spec for Claude Code.",
+  "description": "Figma-style comments on your running app, exported as a file-anchored spec for your coding agent (Claude Code first; built for Next.js, runs on any page).",
   "keywords": [
     "nextjs",
     "vite",

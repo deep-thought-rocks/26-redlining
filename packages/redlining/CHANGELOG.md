@@ -11,6 +11,7 @@
 - **Beyond Next.js.** `redlining/standalone` bundles React and mounts from a script tag (`data-redlining data-endpoint="off"`) or `mount()`, so the overlay runs on Angular, Vue and plain pages with selector anchors; component names come from Angular's `ng.getComponent` (dev mode) and Vue 3's instance chain, React's owner chain as before. `endpoint: false`, a 404 or an unreachable endpoint make Save download `annotations.md`, `annotations.json` and the images instead. `redlining/vite` can serve the save endpoint from the dev server (`redlining({ endpoint: true })`); the handler moved to `src/server/handler.ts` and `redlining/next/route` re-exports it unchanged.
 - **Red.** The accent is now a redline red (`#9e2018` fills, `#b92b22` / `#66150f` text), a recorded divergence from the design canon; pins in screenshots and the docs site follow.
 - **Toolbar.** Grouped as modes · list · frame and camera · copy and save · help, settings, corner, close. Clear session moved into the list panel's header. A `?` key and a help button open an in-package help popover with the keys, the loop and links to the docs.
+- Copy speaks to any coding agent: the save toast, the help popover and the package description say "run /redline, or hand .redlining/ to your agent"; Claude Code stays the first-class path.
 - `class A → B` is printed only when B is on A's scale (`text-sm → text-lg`); a utility from another family is `add class pl-6`, so component classes are never told to be replaced.
 
 ## 0.5.0

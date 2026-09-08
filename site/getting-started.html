@@ -39,7 +39,7 @@
         <a href="#install">Install</a><a href="#agent">Set up with an agent</a
         ><a href="#next">Next.js setup</a><a href="#vite">Vite setup</a
         ><a href="#other">Other stacks</a><a href="#first">Your first session</a
-        ><a href="#claude">Applying with Claude Code</a><a href="#options">Options</a>
+        ><a href="#claude">Applying with your agent</a><a href="#options">Options</a>
       </aside>
       <main>
         <h1>Getting started</h1>
@@ -63,7 +63,7 @@ npx redlining init</code></pre>
           <li>a <code>.redlining/</code> line in <code>.gitignore</code>.</li>
           <li>
             <code>.claude/commands/redline.md</code> — the <code>/redline</code> slash command for
-            Claude Code.
+            Claude Code; other agents read <code>.redlining/annotations.md</code> directly.
           </li>
         </ul>
         <p>
@@ -72,8 +72,8 @@ npx redlining init</code></pre>
 
         <h2 id="agent">Set up with an agent</h2>
         <p>
-          Paste this into Claude Code (or any coding agent) inside the repository. It installs,
-          wires, initialises and verifies Redlining, and reports back without committing.
+          Paste this into your coding agent (Claude Code or any other) inside the repository. It
+          installs, wires, initialises and verifies Redlining, and reports back without committing.
         </p>
         <div class="prompt">
           <div class="prompt-bar">
@@ -220,15 +220,15 @@ const unmount = mount({ endpoint: false, hotkey: 'Alt+R' })</code></pre>
           </li>
           <li>
             <strong>Save</strong> with <kbd>⌘</kbd>+<kbd>⏎</kbd> (or the green send button). A toast
-            confirms: <em>Saved — run /redline in Claude Code.</em>
+            confirms: <em>Saved — run /redline, or hand .redlining/ to your agent.</em>
           </li>
         </ol>
 
-        <h2 id="claude">Applying with Claude Code</h2>
+        <h2 id="claude">Applying with your agent</h2>
         <p>In Claude Code, in the same project:</p>
         <pre><code>/redline</code></pre>
         <p>
-          The command tells Claude Code to read <code>.redlining/annotations.md</code>, look at the
+          The command tells the agent to read <code>.redlining/annotations.md</code>, look at the
           screenshot if there is one, apply every annotation in order at the exact anchor, reuse
           existing components and design tokens, change nothing that is not listed, verify in the
           running app, report done / partial / skipped per annotation, write that report to
@@ -268,8 +268,8 @@ export const { GET, POST } = createHandlers({ outDir: '.redlining', maxBytes: 16
     </div>
     <footer>
       <div class="wrap">
-        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
-        that changes your codebase.
+        Redlining is MIT licensed. Redlining never edits code — your coding agent stays the only
+        thing that changes your codebase.
       </div>
     </footer>
     <script>

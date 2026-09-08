@@ -4,9 +4,9 @@
 
 <h1 align="center">redlining</h1>
 
-<p align="center">Mark up the running app. Hand Claude Code the exact file and line.</p>
+<p align="center">Mark up the running app. Hand your coding agent the exact file and line.</p>
 
-Redlining, in the proofreader's sense: mark up your **running** app the way you would mark up a proof, and hand Claude Code a spec that names the exact file, line, host element and component owner chain for every note (built for Next.js; works on any page). No guessing which component "the form on the right" is.
+Redlining, in the proofreader's sense: mark up your **running** app the way you would mark up a proof, and hand your coding agent (Claude Code first, any other through the same file) a spec that names the exact file, line, host element and component owner chain for every note (built for Next.js; works on any page). No guessing which component "the form on the right" is.
 
 ```sh
 pnpm add -D redlining && npx redlining init
@@ -35,13 +35,13 @@ export default function RootLayout({ children }) {
 
 ![Redlining in use: open the overlay, click the nav and write a note, drag a box and write a note, open the list, save to the project](docs/images/overlay.gif)
 
-Press **Alt+R** in the running app. Click an element or drag a box, write a note, and press **Save**. Then, in Claude Code:
+Press **Alt+R** in the running app. Click an element or drag a box, write a note, and press **Save**. Then, in Claude Code (any other agent reads the same file or the copied prompt):
 
 ```
 /redline
 ```
 
-Claude Code reads `.redlining/annotations.md`, which looks like this:
+The agent reads `.redlining/annotations.md`, which looks like this:
 
 ```md
 # Redlining — /dashboard (2026-09-06 14:12 · viewport 1440×900)
@@ -71,11 +71,11 @@ Claude Code reads `.redlining/annotations.md`, which looks like this:
 Apply in order. Reuse existing components and design tokens. Do not touch anything not listed.
 ```
 
-Redlining never edits code. Claude Code stays the only thing that changes your codebase. Tweak mode previews changes in the browser and exports the numbers with their provenance (`font-size: 14px → 16px (class text-sm → text-base)`, `width: auto (96px, laid out by the parent grid) → 128px — … prefer changing the layout`) beside the element's classes, never inline styles. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
+Redlining never edits code. Your agent stays the only thing that changes your codebase. Tweak mode previews changes in the browser and exports the numbers with their provenance (`font-size: 14px → 16px (class text-sm → text-base)`, `width: auto (96px, laid out by the parent grid) → 128px — … prefer changing the layout`) beside the element's classes, never inline styles. The session lives in `localStorage` per route until you clear it, so you can re-send with tweaks after a `/redline` run.
 
 ## Set up with an agent
 
-Prefer to have Claude Code do the setup? Paste the prompt from the docs' [Set up with an agent](site/getting-started.html#agent) section (copy button included; published with the site). It installs, wires, initialises and verifies Redlining in the current repository and reports back without committing.
+Prefer to have an agent do the setup? Paste the prompt from the docs' [Set up with an agent](site/getting-started.html#agent) section (copy button included; published with the site). It installs, wires, initialises and verifies Redlining in the current repository and reports back without committing.
 
 ## Works with
 

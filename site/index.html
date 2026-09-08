@@ -6,7 +6,7 @@
     <title>Redlining</title>
     <meta
       name="description"
-      content="Figma-style comments on your running app, exported as a file-anchored spec Claude Code can execute without asking questions. Built for Next.js; runs on any page."
+      content="Figma-style comments on your running app, exported as a file-anchored spec any coding agent can execute without asking questions. Built for Next.js; runs on any page."
     />
     <link rel="stylesheet" href="site.css" />
     <link rel="icon" href="favicons/favicon.svg" type="image/svg+xml" />
@@ -35,12 +35,12 @@
     </header>
     <section class="hero">
       <div class="wrap">
-        <h1>Mark up the running app. Hand Claude Code the exact file and line.</h1>
+        <h1>Mark up the running app. Hand your coding agent the exact file and line.</h1>
         <p class="lead">
           Redlining, in the proofreader's sense: click an element or draw a box in your running app,
           write a note, and every annotation resolves to the file, line, host element and component
-          owner chain. Claude Code applies the batch in one pass. Built for Next.js; runs on any
-          page.
+          owner chain. Your coding agent — Claude Code first, any other through the same file —
+          applies the batch in one pass. Built for Next.js; runs on any page.
         </p>
         <p>
           <a class="btn" href="getting-started.html">Get started</a>
@@ -92,7 +92,8 @@
           <h3>One command to apply</h3>
           <p>
             <code>/redline</code> in Claude Code reads <code>.redlining/annotations.md</code>, edits
-            exactly the anchors listed, verifies in the running app, and reports per annotation.
+            exactly the anchors listed, verifies in the running app, and reports per annotation. Any
+            other agent gets the same file, or the prompt from the Copy button.
           </p>
         </div>
       </div>
@@ -108,8 +109,8 @@
           <code>.redlining/</code>.
         </li>
         <li>
-          <strong>Apply.</strong> Run <code>/redline</code>. Claude Code edits the named files in
-          order, verifies, and deletes the files.
+          <strong>Apply.</strong> Run <code>/redline</code>, or hand <code>.redlining/</code> to
+          your agent. It edits the named files in order, verifies, and deletes the files.
         </li>
         <li>
           <strong>Repeat.</strong> Hot reload shows the result; the session stays until you clear
@@ -162,8 +163,8 @@
     </div>
     <footer>
       <div class="wrap">
-        Redlining is MIT licensed. Redlining never edits code — Claude Code stays the only thing
-        that changes your codebase.
+        Redlining is MIT licensed. Redlining never edits code — your coding agent stays the only
+        thing that changes your codebase.
       </div>
     </footer>
   </body>

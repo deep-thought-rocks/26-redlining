@@ -48,8 +48,8 @@ export function HelpPopover(p: HelpPopoverProps) {
       </header>
       <p className="rl-help-lead">
         Mark up the running app; the export names file, line, element and owner for every note.
-        Save, run <code>/redline</code> in Claude Code, reopen the overlay to verify. Nothing here
-        edits code.
+        Save, run <code>/redline</code> in Claude Code (or hand <code>.redlining/</code> to any
+        agent), reopen the overlay to verify. Nothing here edits code.
       </p>
       <table className="rl-help-keys">
         <tbody>

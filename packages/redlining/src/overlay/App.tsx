@@ -291,7 +291,7 @@ export function App({
       if (res.ok) markSaved(window.location.pathname)
       notify(
         res.ok
-          ? 'Saved — run /redline in Claude Code.'
+          ? 'Saved — run /redline, or hand .redlining/ to your agent.'
           : `Save failed: ${res.status} ${await res.text()}`,
       )
     } catch (err) {
