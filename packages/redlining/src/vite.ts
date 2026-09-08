@@ -13,7 +13,13 @@ export interface RedliningVitePluginOptions {
    */
   endpoint?: true | string
   outDir?: string
+  /** Request body cap for the endpoint, in bytes. Default 16 MB. */
+  maxBytes?: number
 }
+
+const DEFAULT_MAX_BYTES = 16 * 1024 * 1024
+
+class BodyTooLarge extends Error {}
 
 /** The slice of Node's request/response the middleware touches. */
 export interface NodeRequestLike {
@@ -23,6 +29,7 @@ export interface NodeRequestLike {
   on(event: 'data', listener: (chunk: Buffer | string) => void): unknown
   on(event: 'end', listener: () => void): unknown
   on(event: 'error', listener: (err: Error) => void): unknown
+  destroy?(): unknown
 }
 export interface NodeResponseLike {
   statusCode: number
@@ -48,12 +55,32 @@ export interface VitePluginLike {
   transform(code: string, id: string): { code: string; map: object } | null
 }
 
-function readBody(req: NodeRequestLike): Promise<string> {
+/** Buffers the body up to `maxBytes`; stops reading and rejects as soon as the cap is passed. */
+function readBody(req: NodeRequestLike, maxBytes: number): Promise<string> {
+  const declared = Number(req.headers['content-length'] ?? 0)
+  if (declared > maxBytes) return Promise.reject(new BodyTooLarge())
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
-    req.on('data', (c) => chunks.push(typeof c === 'string' ? Buffer.from(c) : c))
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-    req.on('error', reject)
+    let size = 0
+    let done = false
+    req.on('data', (c) => {
+      if (done) return
+      const chunk = typeof c === 'string' ? Buffer.from(c) : c
+      size += chunk.length
+      if (size > maxBytes) {
+        done = true
+        req.destroy?.()
+        reject(new BodyTooLarge())
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      if (!done) resolve(Buffer.concat(chunks).toString('utf8'))
+    })
+    req.on('error', (err) => {
+      if (!done) reject(err)
+    })
   })
 }
 
@@ -63,28 +90,39 @@ export async function serveRedlining(
   req: NodeRequestLike,
   res: NodeResponseLike,
   next: () => void,
+  maxBytes = DEFAULT_MAX_BYTES,
 ): Promise<void> {
   const method = (req.method ?? 'GET').toUpperCase()
-  let response: Response
-  if (method === 'GET') response = await handlers.GET()
-  else if (method === 'POST') {
-    const headers = new Headers()
-    for (const [k, v] of Object.entries(req.headers)) {
-      if (typeof v === 'string') headers.set(k, v)
-    }
-    const body = await readBody(req)
-    // The request's own origin comes from the Host header, so the same-origin check works.
-    const host = typeof req.headers.host === 'string' ? req.headers.host : 'localhost'
-    response = await handlers.POST(
-      new Request(`http://${host}${req.url ?? '/'}`, { method: 'POST', headers, body }),
-    )
-  } else {
-    next()
-    return
+  const reply = (status: number, body: string) => {
+    res.statusCode = status
+    res.setHeader('content-type', 'text/plain; charset=utf-8')
+    res.end(body)
   }
-  res.statusCode = response.status
-  res.setHeader('content-type', response.headers.get('content-type') ?? 'text/plain')
-  res.end(await response.text())
+  try {
+    let response: Response
+    if (method === 'GET') response = await handlers.GET()
+    else if (method === 'POST') {
+      const headers = new Headers()
+      for (const [k, v] of Object.entries(req.headers)) {
+        if (typeof v === 'string') headers.set(k, v)
+      }
+      const body = await readBody(req, maxBytes)
+      // The request's own origin comes from the Host header, so the same-origin check works.
+      const host = typeof req.headers.host === 'string' ? req.headers.host : 'localhost'
+      response = await handlers.POST(
+        new Request(`http://${host}${req.url ?? '/'}`, { method: 'POST', headers, body }),
+      )
+    } else {
+      next()
+      return
+    }
+    res.statusCode = response.status
+    res.setHeader('content-type', response.headers.get('content-type') ?? 'text/plain')
+    res.end(await response.text())
+  } catch (err) {
+    if (err instanceof BodyTooLarge) reply(413, `Body exceeds ${maxBytes} bytes`)
+    else reply(500, `redlining: ${err instanceof Error ? err.message : String(err)}`)
+  }
 }
 
 /**
@@ -104,8 +142,17 @@ export function redlining(options: RedliningVitePluginOptions = {}): VitePluginL
     configureServer(server) {
       if (!options.endpoint) return
       const url = options.endpoint === true ? '/api/redlining' : options.endpoint
-      const handlers = createHandlers({ projectRoot: root, outDir: options.outDir, enabled: true })
-      server.middlewares.use(url, (req, res, next) => void serveRedlining(handlers, req, res, next))
+      const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES
+      const handlers = createHandlers({
+        projectRoot: root,
+        outDir: options.outDir,
+        maxBytes,
+        enabled: true,
+      })
+      server.middlewares.use(
+        url,
+        (req, res, next) => void serveRedlining(handlers, req, res, next, maxBytes),
+      )
     },
     transform(code, id) {
       const file = id.split('?')[0]!

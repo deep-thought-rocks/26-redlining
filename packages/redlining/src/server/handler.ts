@@ -67,7 +67,8 @@ export function createHandlers(options: RouteOptions = {}) {
     const declared = Number(request.headers.get('content-length') ?? 0)
     if (declared > maxBytes) return text(413, `Body exceeds ${maxBytes} bytes`)
     const raw = await request.text()
-    if (raw.length > maxBytes) return text(413, `Body exceeds ${maxBytes} bytes`)
+    if (Buffer.byteLength(raw, 'utf8') > maxBytes)
+      return text(413, `Body exceeds ${maxBytes} bytes`)
 
     let body: { session?: unknown }
     try {

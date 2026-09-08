@@ -200,6 +200,12 @@ describe('route handler', () => {
     const POST = createHandler({ projectRoot: root, enabled: true, maxBytes: 64 })
     expect((await POST(post({ session }, { 'content-length': '999' }))).status).toBe(413)
     expect((await POST(post({ session, pad: 'x'.repeat(100) }))).status).toBe(413)
+    // The cap counts UTF-8 bytes, not string length: 40 chars of "ä" are 80 bytes.
+    const body = JSON.stringify({ session, pad: 'ä'.repeat(40) })
+    const cap = body.length + 10 // under the byte size (each ä is two bytes), over the string length
+    const tight = createHandler({ projectRoot: root, enabled: true, maxBytes: cap })
+    expect(Buffer.byteLength(body)).toBeGreaterThan(cap)
+    expect((await tight(post(body))).status).toBe(413)
     expect((await POST(post('{not json'))).status).toBe(400)
     expect((await POST(post({ session: { route: 1 } }))).status).toBe(400)
   })

@@ -114,6 +114,26 @@ test('endpoint: serves GET and POST from the dev server and writes under the roo
       handler!(req, forged.like, () => {})
     })
     expect(forged.res.statusCode).toBe(403)
+    // The body cap applies while reading: a declared or actual size over the cap is 413.
+    const capped = redlining({ endpoint: true, maxBytes: 64 })
+    capped.configResolved({ root })
+    let cappedHandler:
+      ((req: NodeRequestLike, res: NodeResponseLike, next: () => void) => void) | null = null
+    capped.configureServer!({ middlewares: { use: (_u, h) => (cappedHandler = h) } })
+    const big = response()
+    await new Promise<void>((done) => {
+      big.like.end = (b) => {
+        big.res.body = b ?? ''
+        done()
+      }
+      cappedHandler!(
+        request('POST', JSON.stringify({ session, pad: 'x'.repeat(200) })),
+        big.like,
+        () => {},
+      )
+    })
+    expect(big.res.statusCode).toBe(413)
+    expect(big.res.body).toContain('Body exceeds 64 bytes')
     let passed = false
     handler!(request('DELETE', ''), response().like, () => (passed = true))
     expect(passed).toBe(true)
