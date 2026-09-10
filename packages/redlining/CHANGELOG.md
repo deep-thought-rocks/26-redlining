@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.1
+
+### Patch Changes
+
+- The archive toggle in the list panel uses a history icon; it looked identical to _Archive session_ next to it.
+
 ## 0.7.0
 
 ### Minor Changes
