@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.3
+
+### Patch Changes
+
+- The list panel shows only the current page's annotations. Sessions still open on other pages moved into the history view (clock icon), listed above the archive with their counts and an × that archives them, so an annotation is always either visible, open on another page, or archived.
+
 ## 0.7.2
 
 ### Patch Changes
