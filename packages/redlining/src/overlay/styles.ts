@@ -149,6 +149,7 @@ button { font: inherit; color: inherit; }
 .rl-chip:disabled, .rl-action:disabled { opacity: 0.5; cursor: default; }
 .rl-chip svg { vertical-align: -2px; margin-right: 3px; }
 .rl-pin--tweak::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-warning); border: 1px solid var(--color-background); }
+.rl-row-actions { display: flex; flex-direction: column; gap: 2px; }
 .rl-panel-actions { display: flex; align-items: center; gap: 2px; }
 .rl-panel-verify { display: flex; align-items: center; justify-content: space-between; gap: var(--sbm-space-2); padding: 6px var(--sbm-space-4); border-bottom: var(--sbm-border-w) solid var(--color-border-default); font-size: var(--sbm-text-xs); color: var(--color-text-secondary); }
 .rl-verdicts { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px; }
@@ -178,6 +179,8 @@ button { font: inherit; color: inherit; }
 .rl-settings header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sbm-space-2); font-family: var(--sbm-font-heading); font-weight: var(--sbm-weight-semibold); }
 .rl-setting { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sbm-space-2); padding: 6px 0; border-top: var(--sbm-border-w) solid var(--color-border-subtle); color: var(--color-text-secondary); }
 .rl-setting > span > small { display: block; color: var(--color-text-muted); font-size: 11px; }
+.rl-setting--version { margin: 0; grid-template-columns: 1fr; }
+.rl-setting--version small { white-space: normal; }
 .rl-setting select { max-width: 160px; }
 .rl-toast { left: 50%; bottom: 24px; transform: translateX(-50%); padding: var(--sbm-space-2) var(--sbm-space-4); background: var(--color-background-elevated); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-lg); box-shadow: var(--shadow-4); font-family: var(--sbm-font-heading); font-weight: var(--sbm-weight-medium); animation: sbmSlideUp var(--sbm-duration-slow) var(--sbm-ease-out) both; }
 `

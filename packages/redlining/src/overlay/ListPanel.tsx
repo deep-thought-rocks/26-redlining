@@ -1,4 +1,13 @@
-import { CheckCheck, ChevronDown, ChevronRight, Eye, ScanSearch, Trash2, X } from 'lucide-react'
+import {
+  CheckCheck,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Eye,
+  ScanSearch,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useState } from 'react'
 import { describe } from '../export/changes'
 import type { ReplyLine } from '../export/reply'
@@ -16,6 +25,10 @@ export interface ListPanelProps {
   reply: Map<number, ReplyLine>
   onVerify(): void
   onRemoveApplied(): void
+  /** Copy the whole prompt (same as the toolbar button). */
+  onCopy(): void
+  /** Copy one annotation as a self-contained prompt. */
+  onCopyOne(id: string): void
   onNote(id: string, note: string): void
   onRemove(id: string): void
   onClearRoute(route: string): void
@@ -38,6 +51,8 @@ export function ListPanel({
   reply,
   onVerify,
   onRemoveApplied,
+  onCopy,
+  onCopyOne,
   onNote,
   onRemove,
   onClearRoute,
@@ -60,6 +75,17 @@ export function ListPanel({
       <header>
         <span>Annotations ({entries.length})</span>
         <span className="rl-panel-actions">
+          {entries.length ? (
+            <button
+              type="button"
+              className="rl-btn rl-icon"
+              aria-label="Copy all annotations"
+              title="Copy the whole prompt (⌘⇧C)"
+              onClick={onCopy}
+            >
+              <Copy size={16} />
+            </button>
+          ) : null}
           {entries.length ? (
             <button
               type="button"
@@ -254,14 +280,25 @@ export function ListPanel({
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                className="rl-btn rl-icon"
-                aria-label={`Delete annotation ${e.index}`}
-                onClick={() => onRemove(e.id)}
-              >
-                <X size={14} />
-              </button>
+              <span className="rl-row-actions">
+                <button
+                  type="button"
+                  className="rl-btn rl-icon"
+                  aria-label={`Copy annotation ${e.index}`}
+                  title="Copy this annotation as its own prompt"
+                  onClick={() => onCopyOne(e.id)}
+                >
+                  <Copy size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="rl-btn rl-icon"
+                  aria-label={`Delete annotation ${e.index}`}
+                  onClick={() => onRemove(e.id)}
+                >
+                  <X size={14} />
+                </button>
+              </span>
             </li>
           )
         })}

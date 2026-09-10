@@ -126,6 +126,7 @@ or call it: `import { mount } from 'redlining/standalone'; mount({ endpoint: fal
 | `⌘⇧C`                                             | Copy the prompt to the clipboard                                                                |
 | `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)                |
 | `?`                                               | In-package help: keys, the loop, links to the docs                                              |
+| List panel copy icons                             | Copy the whole prompt, or one annotation as its own prompt                                      |
 | `Esc`                                             | Close popover → panel → overlay                                                                 |
 
 ## Options

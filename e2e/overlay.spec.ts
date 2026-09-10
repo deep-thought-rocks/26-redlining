@@ -237,6 +237,15 @@ test('dashboard: the owner chain names client components and the anchor points i
   const row = page.getByTestId('rl-row')
   await expect(row.locator('.rl-row-note--clamp')).toBeVisible()
   await expect(page.getByTestId('rl-row-details')).toHaveCount(0)
+  // Copy one annotation as its own prompt, and everything from the panel header.
+  await page.getByRole('button', { name: 'Copy annotation 1' }).click()
+  const one = await page.evaluate(() => navigator.clipboard.readText())
+  expect(one).toMatch(/^# Redlining/)
+  expect(one).toContain('## 1 · REMOVE')
+  expect(one).not.toContain('## 2 ·')
+  expect(one).toContain('Apply in order.')
+  await page.getByRole('button', { name: 'Copy all annotations' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('## 1 · REMOVE')
   await page.getByRole('button', { name: 'Expand annotation 1' }).click()
   const details = page.getByTestId('rl-row-details')
   await expect(details).toContainText('components/toolbar.tsx:')
@@ -508,6 +517,9 @@ test('settings: the styling idiom is detected, can be overridden, persists, and 
   const settings = page.getByTestId('rl-settings')
   await expect(settings).toContainText('no Tailwind tokens, no hashed class names')
   await expect(page.getByTestId('rl-setting-framework')).toHaveValue('auto')
+  // The version row; under automation the registry is never asked.
+  await expect(page.getByTestId('rl-version')).toContainText(/Version \d+\.\d+\.\d+/)
+  await expect(page.getByTestId('rl-version')).toContainText('latest not checked yet')
   await expect(page.getByTestId('rl-setting-framework').locator('option[value="auto"]')).toHaveText(
     'Auto — Plain CSS (detected)',
   )
