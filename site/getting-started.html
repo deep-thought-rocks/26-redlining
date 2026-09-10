@@ -30,6 +30,7 @@
           <a href="guide.html">Guide</a>
           <a href="format.html">Annotation format</a>
           <a href="help.html">Help</a>
+          <a href="changelog.html">Versions</a>
           <a href="https://github.com/deep-thought-rocks/26-redlining">GitHub</a>
         </nav>
       </div>
@@ -50,8 +51,12 @@
         </p>
 
         <h2 id="install">Install</h2>
-        <pre><code>pnpm add -D redlining
+        <pre><code>npm i -D redlining        # or: pnpm add -D redlining · yarn add -D redlining · bun add -d redlining
 npx redlining init</code></pre>
+        <p>
+          Use the package manager your project already uses; the lockfile tells you which.
+          <code>npx</code> works under every one of them.
+        </p>
         <p>
           <code>redlining init</code> is idempotent. It writes three things and skips whatever
           already exists:
@@ -85,9 +90,9 @@ npx redlining init</code></pre>
             id="setup-prompt"
           ><code>Set up Redlining in this repository. Redlining is a development-only overlay for Next.js (and Vite + React) that lets me annotate the running app; the annotations become a file-anchored spec you apply with the /redline command. Do exactly the steps below, verify, and report. Do not commit.
 
-1. Detect the setup. Look for next.config.* or vite.config.*, and for the lockfile to learn the package manager (pnpm-lock.yaml, yarn.lock, package-lock.json, bun.lockb). Use that package manager for everything; never switch it.
+1. Detect the setup. Look for next.config.* or vite.config.*, and for the lockfile to learn the package manager (package-lock.json → npm, pnpm-lock.yaml → pnpm, yarn.lock → yarn, bun.lockb → bun). Use that package manager for everything; never switch it.
 
-2. Install: add `redlining` as a dev dependency (e.g. `pnpm add -D redlining`). If the registry does not have the package, stop and tell me instead of improvising.
+2. Install `redlining` as a dev dependency with the package manager from step 1: `npm i -D redlining`, `pnpm add -D redlining`, `yarn add -D redlining` or `bun add -d redlining`. Never run a different package manager in this repo, even once; a second lockfile is a bug. If the registry does not have the package, stop and tell me instead of improvising.
 
 3. Wire it in.
    Next.js (16 or newer, React 19):

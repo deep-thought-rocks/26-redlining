@@ -9,7 +9,7 @@
 Redlining, in the proofreader's sense: mark up your **running** app the way you would mark up a proof, and hand your coding agent (Claude Code first, any other through the same file) a spec that names the exact file, line, host element and component owner chain for every note (built for Next.js; works on any page). No guessing which component "the form on the right" is.
 
 ```sh
-pnpm add -D redlining && npx redlining init
+npm i -D redlining && npx redlining init     # or pnpm add -D / yarn add -D / bun add -d: whatever your lockfile says
 ```
 
 ```ts
