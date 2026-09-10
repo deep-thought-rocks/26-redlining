@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.4
+
+### Patch Changes
+
+- Confirmations (Archive session, Delete all archived) use the overlay's own dialog instead of the browser's alert box; Enter confirms, Escape cancels.
+
 ## 0.7.3
 
 ### Patch Changes
