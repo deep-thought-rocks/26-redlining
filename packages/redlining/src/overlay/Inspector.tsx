@@ -4,6 +4,7 @@ import { captionFor, describe } from '../export/changes'
 import type { Anchor, Change, ChangeSource } from '../types'
 import { provenance, scaleFor, suggestClass } from './cascade'
 import { isModuleClass, type FrameworkKind } from './framework'
+import { placeNear } from './placement'
 import { classFor, themeScale, type ThemeContext } from './theme'
 import {
   canEditText,
@@ -319,31 +320,15 @@ export function Inspector(p: InspectorProps) {
   }
 
   const r = anchor.rect
-  // Never cover the element: below it, else above, else beside (left, then right),
-  // else clamped; always clear of the toolbar corner (bottom 80px) and the edges.
+  // Never cover the element (placement.ts): below, above, beside, clamped; clear of the toolbar.
   const height = Math.min(window.innerHeight * 0.7, 640)
-  const clampX = (x: number) => Math.max(8, Math.min(x, window.innerWidth - WIDTH - 8))
-  const clampY = (y: number) => Math.max(8, Math.min(y, window.innerHeight - 80 - height))
-  let left: number
-  let top: number
-  if (r.y + r.h + 8 + height <= window.innerHeight - 80) {
-    left = clampX(r.x)
-    top = r.y + r.h + 8
-  } else if (r.y - 8 - height >= 8) {
-    left = clampX(r.x)
-    top = r.y - 8 - height
-  } else if (r.x - WIDTH - 8 >= 8) {
-    left = r.x - WIDTH - 8
-    top = clampY(r.y)
-  } else if (r.x + r.w + 8 + WIDTH <= window.innerWidth - 8) {
-    left = r.x + r.w + 8
-    top = clampY(r.y)
-  } else {
-    left = clampX(r.x)
-    top = clampY(r.y + r.h + 8)
-  }
-  left += window.scrollX
-  top += window.scrollY
+  const placed = placeNear(
+    r,
+    { w: WIDTH, h: height },
+    { w: window.innerWidth, h: window.innerHeight },
+  )
+  const left = placed.left + window.scrollX
+  const top = placed.top + window.scrollY
   const owner = anchor.owners[anchor.owners.length - 1]
 
   return (

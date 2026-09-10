@@ -1,6 +1,7 @@
 import { ImagePlus, X } from 'lucide-react'
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ClipboardEvent,
@@ -10,6 +11,7 @@ import {
 import { describe } from '../export/changes'
 import type { Action, Anchor } from '../types'
 import { dataUrlBytes, imageFiles, MAX_REF_BYTES, MAX_REFS, shrinkImage } from './image'
+import { placeNear } from './placement'
 import type { Draft, Position } from './session'
 
 const HINTS = ['Table', 'Form', 'Button', 'Card', 'Modal', 'Nav', 'List', 'Chart']
@@ -105,14 +107,28 @@ export function NotePopover({ draft, onSave, onCancel, refBytes = 0 }: NotePopov
   }
 
   const r = draft.box ?? draft.target?.anchor.rect ?? draft.anchor.rect
-  const left = Math.max(
-    8,
-    Math.min(r.x + window.scrollX, window.innerWidth - WIDTH - 8 + window.scrollX),
+  // Placed after measuring: the height depends on chips, the changes list and the thumbnails.
+  const box = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(320)
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    // The observer reports the initial size too, and every change (chips, thumbnails, text).
+    const ro = new ResizeObserver(() => setHeight(el.offsetHeight))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const placed = placeNear(
+    r,
+    { w: WIDTH, h: height },
+    { w: window.innerWidth, h: window.innerHeight },
   )
-  const top = r.y + r.h + 8 + window.scrollY
+  const left = placed.left + window.scrollX
+  const top = placed.top + window.scrollY
 
   return (
     <div
+      ref={box}
       className="rl-popover"
       data-testid="rl-popover"
       role="dialog"

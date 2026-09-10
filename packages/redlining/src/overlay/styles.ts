@@ -76,7 +76,7 @@ button { font: inherit; color: inherit; }
 .rl-color select { min-width: 0; font: inherit; font-size: var(--sbm-text-xs); padding: 2px 4px; border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-md); background: var(--color-background-sunken); color: var(--color-text-primary); }
 .rl-pinbox { position: absolute; pointer-events: none; border: var(--sbm-border-w) dashed var(--color-border-focus); border-radius: var(--sbm-radius-sm); }
 
-.rl-popover { position: absolute; pointer-events: auto; width: 340px; padding: var(--sbm-space-3); background: var(--color-background-overlay); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-xl); box-shadow: var(--shadow-3); animation: sbmSlideUp var(--sbm-duration-slow) var(--sbm-ease-out) both; }
+.rl-popover { position: absolute; pointer-events: auto; width: 340px; max-height: calc(100vh - 96px); overflow: auto; padding: var(--sbm-space-3); background: var(--color-background-overlay); border: var(--sbm-border-w) solid var(--color-border-default); border-radius: var(--sbm-radius-xl); box-shadow: var(--shadow-3); animation: sbmSlideUp var(--sbm-duration-slow) var(--sbm-ease-out) both; }
 .rl-popover header { display: flex; align-items: baseline; gap: var(--sbm-space-2); margin-bottom: var(--sbm-space-2); font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); color: var(--color-text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .rl-popover header b { color: var(--color-text-primary); font-weight: var(--sbm-weight-semibold); }
 .rl-chips { display: flex; flex-wrap: wrap; gap: var(--sbm-space-1); margin-bottom: var(--sbm-space-2); }
