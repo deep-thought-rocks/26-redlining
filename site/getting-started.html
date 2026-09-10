@@ -40,8 +40,9 @@
         <h4>On this page</h4>
         <a href="#install">Install</a><a href="#agent">Set up with an agent</a
         ><a href="#next">Next.js setup</a><a href="#vite">Vite setup</a
-        ><a href="#other">Other stacks</a><a href="#first">Your first session</a
-        ><a href="#claude">Applying with your agent</a><a href="#options">Options</a>
+        ><a href="#other">Other stacks</a><a href="#loader">What the loader adds</a
+        ><a href="#first">Your first session</a><a href="#claude">Applying with your agent</a
+        ><a href="#options">Options</a>
       </aside>
       <main>
         <h1>Getting started</h1>
@@ -192,6 +193,38 @@ const unmount = mount({ endpoint: false, hotkey: 'Alt+R' })</code></pre>
           dev server hosts the handler (<code>createHandlers</code> from
           <code>redlining/next/route</code> takes a Fetch <code>Request</code>; the Vite plugin
           shows how to adapt Node's).
+        </p>
+
+        <h3 id="loader">What the loader adds</h3>
+        <p>
+          The <code>file:line</code> is planted at build time, not worked out at click time. In a
+          Next.js or Vite project the loader rewrites every host element while the dev server
+          compiles the file. This line of the example app,
+        </p>
+        <pre><code>// components/toolbar.tsx, line 10
+&lt;button type="button" className="btn btn-primary" onClick={() =&gt; alert('New report')}&gt;</code></pre>
+        <p>reaches the browser as</p>
+        <pre><code>&lt;button data-rl="components/toolbar.tsx:10:7" class="btn btn-primary"&gt;</code></pre>
+        <p>
+          and a click on it exports the exact place to edit plus, from React's fiber tree, the
+          component that rendered it:
+        </p>
+        <pre><code>- Anchor: `&lt;button&gt;` · components/toolbar.tsx:10 · owners: DashboardPage › Toolbar</code></pre>
+        <p>
+          On a page without the loader, a plain HTML page or an Angular template, nothing rewrote
+          the markup, so the same click can only describe the element:
+        </p>
+        <pre><code>- Anchor: `&lt;h1&gt;` · unresolved
+- Text: "A page without a framework"
+- Resolved: unresolved — locate by selector `#title` and text</code></pre>
+        <p>
+          Everything else in the annotation is identical: the note, the tweak values with their
+          provenance, the reference images, the screenshot crop. Only the address is weaker; the
+          agent greps for the selector or the text, which works on small pages and gets ambiguous on
+          large ones with repeated components, the very case the stamp exists for. Stamping needs a
+          hook in the build (the Next.js loader, Vite's <code>transform</code>); HTML and Angular
+          templates have none yet, though Angular still contributes component names at runtime, so
+          its anchors read <code>owners: AppComponent › CardComponent</code> plus the selector.
         </p>
 
         <h2 id="first">Your first session</h2>

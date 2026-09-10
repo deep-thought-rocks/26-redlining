@@ -97,7 +97,12 @@ Everything DOM-based works everywhere: select, draw, move, tweak with provenance
 ></script>
 ```
 
-or call it: `import { mount } from 'redlining/standalone'; mount({ endpoint: false })`. With `endpoint: false` (or when no endpoint answers) Save downloads `annotations.md`, `annotations.json` and the images; move them into `.redlining/` and run `/redline`. HTML templates are not stamped yet, so those anchors are selector-only.
+or call it: `import { mount } from 'redlining/standalone'; mount({ endpoint: false })`. With `endpoint: false` (or when no endpoint answers) Save downloads `annotations.md`, `annotations.json` and the images; move them into `.redlining/` and run `/redline`. HTML templates are not stamped yet, so those anchors are selector-only. The difference in the export:
+
+```
+- Anchor: `<button>` · components/toolbar.tsx:10 · owners: DashboardPage › Toolbar   # with the loader
+- Anchor: `<h1>` · unresolved — locate by selector `#title` and text                # without
+```
 
 ## How it works
 
