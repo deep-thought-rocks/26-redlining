@@ -16,7 +16,8 @@
     "e2e": "playwright test",
     "smoke": "node scripts/smoke-pack.mjs",
     "e2e:webpack": "playwright test --config playwright.webpack.config.ts",
-    "e2e:vite": "playwright test --config playwright.vite.config.ts"
+    "e2e:vite": "playwright test --config playwright.vite.config.ts",
+    "site:changelog": "node scripts/site-changelog.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.2",

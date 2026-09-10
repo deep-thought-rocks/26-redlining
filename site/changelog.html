@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Versions · Redlining</title>
+    <meta
+      name="description"
+      content="Version history of the redlining npm package: what each release added, fixed or changed."
+    />
+    <link rel="canonical" href="https://redlining.deep-thought.rocks/changelog" />
+    <link rel="stylesheet" href="site.css" />
+    <link rel="icon" href="favicons/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicons/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="favicons/favicon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="favicons/apple-touch-icon-180x180.png" />
+    <link rel="mask-icon" href="favicons/safari-pinned-tab.svg" color="#0a0a0a" />
+    <link rel="manifest" href="favicons/site.webmanifest" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="index.html"
+          ><img src="images/silverballmania-mark.svg" alt="" width="24" height="24" /><span
+            >red<b>lining</b></span
+          ></a
+        >
+        <nav>
+          <a href="getting-started.html">Getting started</a>
+          <a href="guide.html">Guide</a>
+          <a href="format.html">Annotation format</a>
+          <a href="help.html">Help</a>
+          <a href="changelog.html" aria-current="page">Versions</a>
+          <a href="https://github.com/deep-thought-rocks/26-redlining">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap layout">
+      <aside class="toc">
+        <h4>Releases</h4>
+        <a href="#v0-6-3">0.6.3</a><a href="#v0-6-2">0.6.2</a><a href="#v0-6-1">0.6.1</a
+        ><a href="#v0-6-0">0.6.0</a><a href="#v0-5-0">0.5.0</a><a href="#v0-4-0">0.4.0</a
+        ><a href="#v0-3-1">0.3.1</a><a href="#v0-3-0">0.3.0</a><a href="#v0-2-0">0.2.0</a
+        ><a href="#v0-1-1">0.1.1</a><a href="#v0-1-0">0.1.0</a>
+      </aside>
+      <main>
+        <h1>Versions</h1>
+        <p>
+          Every release of the <code>redlining</code> package, newest first, as published on
+          <a href="https://www.npmjs.com/package/redlining">npm</a>. Generated from the package
+          changelog; dates are the release tags. Upgrade with
+          <code>npm i -D redlining@latest</code> (or your package manager's equivalent): a caret
+          range does not pick up a new minor on its own.
+        </p>
+
+        <h2 id="v0-6-3">0.6.3 <small>2026-09-10</small></h2>
+        <h3>Patch Changes</h3>
+        <ul>
+          <li>
+            A keydown event without a <code>key</code> (dispatched by an extension or test tooling)
+            no longer throws inside the overlay's hotkey handler, the window listener or the tweak
+            layer; it is ignored.
+          </li>
+        </ul>
+
+        <h2 id="v0-6-2">0.6.2 <small>2026-09-08</small></h2>
+        <h3>Patch Changes</h3>
+        <ul>
+          <li>
+            Vite endpoint: the request body is capped while it streams (413 past
+            <code>maxBytes</code>, now a plugin option) and adapter errors become a 500 instead of
+            an unhandled rejection; the Next.js route counts UTF-8 bytes, not string length.
+          </li>
+          <li>
+            A failing screenshot no longer aborts the save or leaves the before/after previews
+            reset; the export continues without the image.
+          </li>
+          <li>
+            Nudges are previewed on the CSS <code>translate</code> property, so an element's own
+            <code>transform</code> (rotation, scale) is kept; older sessions with
+            <code>translate(x, y)</code> values still load.
+          </li>
+          <li>
+            Two tweak annotations on one element now show together: previews are grouped per element
+            and applied from one snapshot; deleting one keeps the other.
+          </li>
+          <li>
+            The overlay restores the page's own inline <code>cursor</code> and
+            <code>user-select</code> after an interaction instead of clearing them.
+          </li>
+          <li>A blocked clipboard shows a toast instead of failing silently.</li>
+          <li>
+            <code>withRedlining()</code> appends to a consumer's existing <code>*.tsx</code> /
+            <code>*.jsx</code> Turbopack rule instead of replacing it.
+          </li>
+          <li>
+            Provenance: a stylesheet <code>!important</code> now wins over a normal inline style,
+            and among <code>!important</code> declarations a layered one wins over an unlayered one.
+          </li>
+          <li>
+            <code>react-dom</code> is a declared peer dependency and <code>next</code> is optional,
+            so Vite and standalone consumers no longer pull Next.
+          </li>
+          <li>
+            Tests: the packed CLI's usage exit and <code>redlining init</code> are asserted in the
+            smoke test; the anchor and save scenarios also run under
+            <code>next dev --webpack</code>; a Vite fixture exercises the transform and the
+            dev-server endpoint. <code>SECURITY.md</code> describes the reporting process.
+          </li>
+        </ul>
+
+        <h2 id="v0-6-1">0.6.1 <small>2026-09-08</small></h2>
+        <h3>Patch Changes</h3>
+        <ul>
+          <li>
+            <strong>Security.</strong> The save endpoint validates the whole session before anything
+            reaches the filesystem: every annotation index must be a positive integer, crop keys
+            likewise, and every asset file name is checked to stay inside <code>outDir</code>. A
+            crafted index could previously write an image outside <code>.redlining/</code>.
+          </li>
+          <li>
+            <strong>Security.</strong> Cross-origin browser requests to the save endpoint are
+            refused (<code>Origin</code> must be this server, <code>Sec-Fetch-Site</code> must be
+            same-origin), in the Next.js route and the Vite middleware alike; requests without those
+            headers (curl, tests) still pass. A hostile page could previously post a forged export
+            to a running dev server.
+          </li>
+          <li>
+            The in-package help links to the docs at
+            <a href="https://redlining.deep-thought.rocks">https://redlining.deep-thought.rocks</a>
+            (was the never-enabled GitHub Pages URL); the package <code>homepage</code> follows.
+          </li>
+        </ul>
+
+        <h2 id="v0-6-0">0.6.0 <small>2026-09-08</small></h2>
+        <h3>Minor Changes</h3>
+        <ul>
+          <li>
+            <strong>Snap to scale</strong> (on by default): the Inspector's plus and minus buttons
+            step through the classes your stylesheet offers for that property (<code>text-sm</code>
+            → <code>text-base</code> → <code>text-lg</code>) instead of by 1px, so a tweak lands on
+            a real class; turn it off for free values.
+          </li>
+          <li>
+            <strong>Styling settings.</strong> The overlay detects the page's styling idiom
+            (Tailwind 4 from its theme tokens, Tailwind 3 from the preflight variables, CSS Modules
+            from hashed class names, else plain CSS), shows it in a new Settings popover (gear in
+            the toolbar) where you can override it, and the
+            <code>&lt;Redlining framework&gt;</code> prop sets it in code. The export header states
+            <code>Styling: Tailwind 4 (detected: …)</code> and the footer tells the agent the
+            matching idiom. Under Tailwind, values map through the theme even when the utility is
+            not emitted yet:
+            <code>padding-left: 12px → 24px (from class btn; add class pl-6)</code>,
+            <code>text-[17px]</code> for off-scale values, <code>bg-brand-500</code> for a
+            <code>--color-*</code> token; steppers snap to the theme scale (<code
+              >pl-3 → pl-3.5</code
+            >, <code>text-sm → text-base</code>). The settings also hold the Snap-to-scale default.
+          </li>
+          <li>
+            <strong>Multi-route export.</strong> Sessions stay per route, but Save and Copy now
+            include every other route that has annotations in this browser, each under its own
+            <code># Redlining — /route</code> heading with one footer, and
+            <code>annotations.json</code> carries them as <code>others</code>. The list panel shows
+            those routes with a per-route Clear; the setting "Include other routes" turns it off.
+            The <code>/redline</code> command template says the file may hold several routes.
+          </li>
+          <li>
+            <strong>Reference images and crops.</strong> Paste or drop a mockup into a note (up to
+            three, shrunk to 1600px); it shows as a thumbnail, persists with the session, and Save
+            writes it as <code>ref-N-i.jpg</code> with a <code>Reference:</code> line telling the
+            agent to match it. With the camera on, Save also writes <code>crop-N.png</code> per
+            annotation (the element with a margin, no pins) and a <code>Crop:</code> line. The route
+            prunes stale images, accepts 16 MB bodies (was 8), and the
+            <code>/redline</code> template asks the agent to view both.
+          </li>
+          <li>
+            <strong>Verify loop.</strong> The <code>/redline</code> command now ends by writing
+            <code>.redlining/reply.md</code> (<code
+              >## N · done | partial | skipped — what changed</code
+            >). The route gained <code>GET</code> (<code>createHandlers()</code> returns
+            <code>{ GET, POST }</code>; <code>redlining init</code> writes
+            <code>export { GET, POST }</code> and points out routes and commands that predate this).
+            When the overlay opens and the reply is newer than the last save, it checks every
+            annotation against the page with its previews removed and opens the list:
+            <code>applied</code>, <code>differs · font-size is 15px, expected 16px</code>,
+            <code>missing</code>, or <code>check by eye</code>, beside the agent's line. The panel
+            has a Verify button and <em>Remove applied</em>.
+          </li>
+          <li>
+            <strong>Beyond Next.js.</strong> <code>redlining/standalone</code> bundles React and
+            mounts from a script tag (<code>data-redlining data-endpoint="off"</code>) or
+            <code>mount()</code>, so the overlay runs on Angular, Vue and plain pages with selector
+            anchors; component names come from Angular's <code>ng.getComponent</code> (dev mode) and
+            Vue 3's instance chain, React's owner chain as before. <code>endpoint: false</code>, a
+            404 or an unreachable endpoint make Save download <code>annotations.md</code>,
+            <code>annotations.json</code> and the images instead. <code>redlining/vite</code> can
+            serve the save endpoint from the dev server (<code>redlining({ endpoint: true })</code
+            >); the handler moved to <code>src/server/handler.ts</code> and
+            <code>redlining/next/route</code> re-exports it unchanged.
+          </li>
+          <li>
+            <strong>Red.</strong> The accent is now a redline red (<code>#9e2018</code> fills,
+            <code>#b92b22</code> / <code>#66150f</code> text), a recorded divergence from the design
+            canon; pins in screenshots and the docs site follow.
+          </li>
+          <li>
+            <strong>Toolbar.</strong> Grouped as modes · list · frame and camera · copy and save ·
+            help, settings, corner, close. Clear session moved into the list panel's header. A
+            <code>?</code> key and a help button open an in-package help popover with the keys, the
+            loop and links to the docs.
+          </li>
+          <li>
+            Copy speaks to any coding agent: the save toast, the help popover and the package
+            description say "run /redline, or hand .redlining/ to your agent"; Claude Code stays the
+            first-class path.
+          </li>
+          <li>
+            <code>class A → B</code> is printed only when B is on A's scale (<code
+              >text-sm → text-lg</code
+            >); a utility from another family is <code>add class pl-6</code>, so component classes
+            are never told to be replaced.
+          </li>
+        </ul>
+
+        <h2 id="v0-5-0">0.5.0 <small>2026-09-07</small></h2>
+        <h3>Minor Changes</h3>
+        <ul>
+          <li>
+            <strong>Value provenance</strong> in tweak mode: every Inspector field says where its
+            value comes from (<code>from .text-lg</code>, <code>var(--leading) · .prose</code>,
+            <code>inherited from &lt;section&gt;</code>, <code>inline style</code>), and sizes
+            nobody sets are labelled <code>auto · from grid|flex|block</code>. The export carries
+            it: <code>font-size: 15px → 17px (class text-base → text-lg)</code> when a single-class
+            rule in your stylesheet matches the new value, <code>(from class btn)</code> otherwise,
+            and
+            <code
+              >width: auto (180px, laid out by the parent grid) → 220px — … prefer changing the
+              layout</code
+            >
+            for layout-derived sizes. <code>Change</code> gains <code>source</code> and
+            <code>suggestion</code>.
+          </li>
+          <li>
+            Inspector sections (Type, Box, Padding, Margin, Colour, Layout) are collapsed by default
+            and show their values in one line, e.g. <code>margin 10 0 20 0</code>; click the heading
+            to open one. Displayed values round to one decimal.
+          </li>
+        </ul>
+
+        <h2 id="v0-4-0">0.4.0 <small>2026-09-07</small></h2>
+        <h3>Minor Changes</h3>
+        <ul>
+          <li>
+            The viewport preset is now a <strong>device frame</strong>: the width select (375 / 768
+            / 1280) opens the same page in an iframe of that width, so media queries, fixed bars and
+            mobile layouts behave as on a device. The overlay inside the frame opens by itself, its
+            annotations sync into the same session, and each carries
+            <code>Applies at: ≤ 375px (made in a 375px device frame)</code>. The earlier max-width
+            approximation is gone.
+          </li>
+          <li>
+            The toolbar and pen button can be moved between corners (button in the toolbar); the
+            position is remembered.
+          </li>
+        </ul>
+
+        <h2 id="v0-3-1">0.3.1</h2>
+        <h3>Patch Changes</h3>
+        <ul>
+          <li>
+            A move saves without a note (its From/To carry the intent). For change, add and remove,
+            the Save button is disabled until a note exists and Enter shows "Write what should
+            change first" instead of silently doing nothing. Choosing a chip hands focus back to the
+            textarea so Enter saves right after.
+          </li>
+        </ul>
+
+        <h2 id="v0-3-0">0.3.0 <small>2026-09-07</small></h2>
+        <h3>Minor Changes</h3>
+        <ul>
+          <li>
+            <strong>Tweak mode</strong> (<code>T</code>): change values directly in the running page
+            and export the numbers. An Inspector with steppers for type, box, padding and margin,
+            weight chips, a text field, colour pickers with your <code>:root</code> tokens, and
+            gap/justify/align chips on flex and grid containers; resize handles, Alt-drag spacing,
+            drag and arrow-key nudging (exported as an honest <em>visual nudge</em>), Alt-hover
+            rulers, Undo and Reset. Every change is recorded as computed
+            <em>before → after</em> beside the element's class list (<code>Classes:</code>),
+            previews survive reload and hot reload, and a footer tells the agent to implement values
+            in the project's idiom, never inline styles. Viewport presets (375 / 768 / 1280) stamp
+            <code>Applies at</code> on annotations; the camera can also save a
+            <code>screenshot-before.png</code>. Anchors gain <code>classes</code> and
+            <code>display</code>; annotations gain <code>changes</code> and <code>appliesAt</code>.
+          </li>
+        </ul>
+
+        <h2 id="v0-2-0">0.2.0 <small>2026-09-07</small></h2>
+        <h3>Minor Changes</h3>
+        <ul>
+          <li>
+            Anchors carry a <strong>usage site</strong> (<code>context</code>): the nearest
+            decorated ancestor from another file and the branch's position among its children. The
+            Markdown prints it as <code>instance 2 of 3 in </code>&lt;section&gt;<code>
+              · app/page.tsx:41</code
+            >, and the <code>To</code> line of a move adds the target's text, so instances of one
+            reusable component are no longer ambiguous. The list panel rows expand to the full
+            anchor, owners, usage site, target or box, and the complete note.
+          </li>
+        </ul>
+
+        <h2 id="v0-1-1">0.1.1 <small>2026-09-07</small></h2>
+        <h3>Patch Changes</h3>
+        <ul>
+          <li>
+            1a4994b: <code>redlining/next</code> now imports <code>next/constants.js</code> with its
+            extension, so an ESM <code>next.config.mjs</code> (plain Node resolution, no bundler)
+            loads <code>withRedlining</code> again. A packed-tarball smoke test in CI now imports
+            every entry with plain Node.
+          </li>
+        </ul>
+
+        <h2 id="v0-1-0">0.1.0 <small>2026-09-07</small></h2>
+        <h3>Minor Changes</h3>
+        <ul>
+          <li>
+            First release. Figma-style comments on a running Next.js app, exported as a
+            file-anchored spec for Claude Code.
+          </li>
+        </ul>
+      </main>
+    </div>
+    <footer>
+      <div class="wrap">
+        Redlining is MIT licensed. Redlining never edits code — your coding agent stays the only
+        thing that changes your codebase.
+      </div>
+    </footer>
+  </body>
+</html>

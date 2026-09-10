@@ -374,3 +374,11 @@ details pre:last-child {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Version history: the tag date beside each release heading. */
+h2 small {
+  margin-left: 0.5rem;
+  font-size: 0.6em;
+  font-weight: 400;
+  color: var(--text-muted);
+}

@@ -23,6 +23,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm format:check
+      - name: site/changelog.html is generated from the package changelog
+        run: node scripts/site-changelog.mjs && git diff --exit-code -- site/changelog.html
       - run: pnpm test
       - name: Packed tarball resolves in plain Node
         run: node scripts/smoke-pack.mjs
