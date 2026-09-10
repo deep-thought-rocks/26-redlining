@@ -3,6 +3,7 @@ import { parseReply, toMarkdown, type ReplyLine } from '../export'
 import type { Action, Change, Styling } from '../types'
 import { findByAnchor, pageRect } from './dom'
 import { DeviceFrame, frameWidth } from './DeviceFrame'
+import { ConfirmDialog } from './ConfirmDialog'
 import { DrawLayer } from './DrawLayer'
 import { HelpPopover } from './HelpPopover'
 import { detectFramework, FRAMEWORK_LABEL, type FrameworkKind } from './framework'
@@ -146,6 +147,13 @@ export function App({
     })
   }, [])
   const [toast, setToast] = useState<string | null>(null)
+  /** A pending confirmation, shown as the overlay's own dialog. */
+  const [confirm, setConfirm] = useState<{
+    message: string
+    action: string
+    danger?: boolean
+    run: () => void
+  } | null>(null)
   const [routesTick, setRoutesTick] = useState(0)
   /** Verify results by entry id and the agent's reply lines by index. */
   const [verdicts, setVerdicts] = useState<Map<string, Verdict>>(() => new Map())
@@ -509,11 +517,16 @@ export function App({
   }, [active])
 
   const clear = useCallback(() => {
-    if (entries.length === 0 || window.confirm(`Archive ${entries.length} annotation(s)?`)) {
-      resetPreviews(entries)
-      setArchive(archiveEntries(window.localStorage, routeRef.current, entries, 'archived'))
-      dispatch({ type: 'clear' })
-    }
+    if (entries.length === 0) return
+    setConfirm({
+      message: `Archive ${entries.length} annotation${entries.length === 1 ? '' : 's'} on this page?`,
+      action: 'Archive',
+      run: () => {
+        resetPreviews(entries)
+        setArchive(archiveEntries(window.localStorage, routeRef.current, entries, 'archived'))
+        dispatch({ type: 'clear' })
+      },
+    })
   }, [entries])
 
   const cancelTweak = useCallback(() => {
@@ -824,13 +837,30 @@ export function App({
           onRestore={restore}
           onCopyArchived={(id) => void copyArchived(id)}
           onDeleteArchived={(id) => setArchive(deleteArchived(window.localStorage, [id]))}
-          onDeleteArchive={() => {
-            if (window.confirm(`Delete all ${archive.length} archived annotation(s) for good?`)) {
-              clearArchive(window.localStorage)
-              setArchive([])
-            }
-          }}
+          onDeleteArchive={() =>
+            setConfirm({
+              message: `Delete all ${archive.length} archived annotation${archive.length === 1 ? '' : 's'} for good?`,
+              action: 'Delete',
+              danger: true,
+              run: () => {
+                clearArchive(window.localStorage)
+                setArchive([])
+              },
+            })
+          }
           onClose={() => setPanel(false)}
+        />
+      ) : null}
+      {confirm ? (
+        <ConfirmDialog
+          message={confirm.message}
+          action={confirm.action}
+          danger={confirm.danger}
+          onConfirm={() => {
+            confirm.run()
+            setConfirm(null)
+          }}
+          onCancel={() => setConfirm(null)}
         />
       ) : null}
       {toast ? (

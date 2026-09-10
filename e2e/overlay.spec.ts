@@ -160,8 +160,14 @@ test('the session survives a reload and can be cleared', async ({ page }) => {
   await page.keyboard.press('l')
   await expect(page.getByTestId('rl-panel')).toContainText('Shorter copy.')
 
-  page.once('dialog', (d) => d.accept())
   await page.getByRole('button', { name: 'Archive session' }).click() // in the panel header
+  // The overlay's own dialog, not the browser's alert; Escape only closes the dialog.
+  await expect(page.getByTestId('rl-confirm')).toContainText('Archive 1 annotation on this page?')
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('rl-confirm')).toHaveCount(0)
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  await page.getByRole('button', { name: 'Archive session' }).click()
+  await page.getByTestId('rl-confirm').getByRole('button', { name: 'Archive' }).click()
   await expect(page.getByTestId('rl-pin')).toHaveCount(0)
   await page.reload()
   await openOverlay(page)
@@ -228,10 +234,14 @@ test('the note popover stays on screen for an element near the bottom', async ({
   await last.locator('h3').click()
   const popover = page.getByTestId('rl-popover')
   await expect(popover).toBeVisible()
-  const box = (await popover.boundingBox())!
   const viewport = page.viewportSize()!
-  expect(box.y).toBeGreaterThanOrEqual(0)
-  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 80 + 1)
+  // The popover measures itself after the first paint and may move once; wait for it to settle.
+  await expect
+    .poll(async () => {
+      const box = (await popover.boundingBox())!
+      return box.y >= 0 && box.y + box.height <= viewport.height - 80 + 1
+    })
+    .toBe(true)
   await expect(page.getByTestId('rl-note-save')).toBeInViewport()
 })
 
