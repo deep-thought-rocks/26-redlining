@@ -417,7 +417,7 @@ export function App({
         toggle()
         return
       }
-      if (!active) return
+      if (!active || typeof e.key !== 'string') return
       const mod = e.metaKey || e.ctrlKey
       if (e.key === 'Escape') {
         if (draft) setDraft(null)

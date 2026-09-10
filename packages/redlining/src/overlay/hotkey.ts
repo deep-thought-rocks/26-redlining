@@ -15,9 +15,11 @@ export function matchesHotkey(e: KeyboardEvent, hotkey: string): boolean {
     meta: parts.includes('meta') || parts.includes('cmd'),
     shift: parts.includes('shift'),
   }
+  // Synthetic events (extensions, test tooling) may carry no `key` at all.
+  const pressed = typeof e.key === 'string' ? e.key.toLowerCase() : ''
   const keyMatches = /^[a-z]$/.test(key)
-    ? e.code === `Key${key.toUpperCase()}` || e.key.toLowerCase() === key
-    : e.key.toLowerCase() === key
+    ? e.code === `Key${key.toUpperCase()}` || pressed === key
+    : pressed === key
   return (
     keyMatches &&
     e.altKey === want.alt &&

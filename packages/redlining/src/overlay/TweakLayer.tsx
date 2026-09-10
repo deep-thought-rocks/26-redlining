@@ -236,7 +236,7 @@ export function TweakLayer({
       }
     }
     const key = (e: KeyboardEvent) => {
-      if (!e.key.startsWith('Arrow')) return
+      if (!e.key?.startsWith('Arrow')) return
       const t = e.target as HTMLElement | null
       if (t && typeof t.closest === 'function' && t.closest('input, textarea, select')) return
       e.preventDefault()

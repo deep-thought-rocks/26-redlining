@@ -118,6 +118,12 @@ test('Escape unwinds popover, panel and overlay; the host page is untouched when
   page,
 }) => {
   await openOverlay(page)
+  // A synthetic keydown without a key (extensions, test tooling) must not throw in the overlay.
+  const errors: string[] = []
+  page.on('pageerror', (err) => errors.push(err.message))
+  await page.evaluate(() => window.dispatchEvent(new Event('keydown')))
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  expect(errors).toEqual([])
   await page.locator('[data-spike="8"]').click()
   await expect(page.getByTestId('rl-popover')).toBeVisible()
   await page.keyboard.press('Escape')
