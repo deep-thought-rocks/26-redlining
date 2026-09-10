@@ -1,5 +1,11 @@
 # redlining
 
+## 0.6.3
+
+### Patch Changes
+
+- A keydown event without a `key` (dispatched by an extension or test tooling) no longer throws inside the overlay's hotkey handler, the window listener or the tweak layer; it is ignored.
+
 ## 0.6.2
 
 ### Patch Changes
