@@ -38,10 +38,10 @@
     <div class="wrap layout">
       <aside class="toc">
         <h4>Releases</h4>
-        <a href="#v0-6-3">0.6.3</a><a href="#v0-6-2">0.6.2</a><a href="#v0-6-1">0.6.1</a
-        ><a href="#v0-6-0">0.6.0</a><a href="#v0-5-0">0.5.0</a><a href="#v0-4-0">0.4.0</a
-        ><a href="#v0-3-1">0.3.1</a><a href="#v0-3-0">0.3.0</a><a href="#v0-2-0">0.2.0</a
-        ><a href="#v0-1-1">0.1.1</a><a href="#v0-1-0">0.1.0</a>
+        <a href="#v0-6-4">0.6.4</a><a href="#v0-6-3">0.6.3</a><a href="#v0-6-2">0.6.2</a
+        ><a href="#v0-6-1">0.6.1</a><a href="#v0-6-0">0.6.0</a><a href="#v0-5-0">0.5.0</a
+        ><a href="#v0-4-0">0.4.0</a><a href="#v0-3-1">0.3.1</a><a href="#v0-3-0">0.3.0</a
+        ><a href="#v0-2-0">0.2.0</a><a href="#v0-1-1">0.1.1</a><a href="#v0-1-0">0.1.0</a>
       </aside>
       <main>
         <h1>Versions</h1>
@@ -52,6 +52,23 @@
           <code>npm i -D redlining@latest</code> (or your package manager's equivalent): a caret
           range does not pick up a new minor on its own.
         </p>
+
+        <h2 id="v0-6-4">0.6.4 <small>2026-09-10</small></h2>
+        <h3>Patch Changes</h3>
+        <ul>
+          <li>
+            Sessions no longer leak across routes. The overlay lives in the root layout and survives
+            client-side navigation; it used to keep the previous page's annotations in memory and
+            save them under every route it was navigated to, so pins from one page appeared on
+            others and the export repeated them per route. Navigation now swaps to the new route's
+            session (and back), previews included.
+          </li>
+          <li>
+            The export header and the help popover show the package version (<code
+              ># Redlining 0.6.4 — /route</code
+            >), and <code>annotations.json</code> carries it as <code>version</code>.
+          </li>
+        </ul>
 
         <h2 id="v0-6-3">0.6.3 <small>2026-09-10</small></h2>
         <h3>Patch Changes</h3>
