@@ -217,6 +217,24 @@ test('move mode: source, target and a position produce a MOVE with from and to',
   expect(clipboard).toContain(`- To: after \`<nav>\` · ${at['4']}`)
 })
 
+test('the note popover stays on screen for an element near the bottom', async ({ page }) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  const rows = page.locator('.report')
+  const last = rows.last()
+  // Scroll so the last row sits just above the bottom edge, where "below" cannot fit.
+  await last.evaluate((el) => el.scrollIntoView({ block: 'end' }))
+  await last.locator('h3').click()
+  const popover = page.getByTestId('rl-popover')
+  await expect(popover).toBeVisible()
+  const box = (await popover.boundingBox())!
+  const viewport = page.viewportSize()!
+  expect(box.y).toBeGreaterThanOrEqual(0)
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 80 + 1)
+  await expect(page.getByTestId('rl-note-save')).toBeInViewport()
+})
+
 test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
   await openOverlay(page)
   const at = await stampsOf(page)
@@ -601,6 +619,7 @@ test('client-side navigation swaps the session: each route keeps its own annotat
   await page.keyboard.press('l')
   await expect(page.getByTestId('rl-panel')).toContainText('Annotations (1)')
   await expect(page.getByTestId('rl-panel-routes')).toContainText('/spike (1)')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText('not copied or saved')
   await page.keyboard.press('l')
 
   // Back again: the spike session returns, the dashboard one is listed as another route.
@@ -636,8 +655,13 @@ test("multi-route: other routes' sessions ride along on Save and can be cleared 
   await page.locator('.page-head h1').click()
   await page.getByTestId('rl-note').fill('Shorter title.')
   await page.getByTestId('rl-note').press('Enter')
+  // Off by default: Copy and Save carry exactly what the panel shows. Opt in for this scenario.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByTestId('rl-setting-routes').check()
+  await page.keyboard.press('Escape')
   await page.keyboard.press('l')
   await expect(page.getByTestId('rl-panel-routes')).toContainText('/spike (1)')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText('Also copied and saved')
 
   await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
   await expect(page.getByTestId('rl-toast')).toContainText('Saved')
@@ -651,8 +675,9 @@ test("multi-route: other routes' sessions ride along on Save and can be cleared 
   }
   expect(json.others.map((o) => o.route)).toEqual(['/spike'])
 
-  await page.getByRole('button', { name: 'Clear /spike' }).click()
+  await page.getByRole('button', { name: 'Archive /spike' }).click()
   await expect(page.getByTestId('rl-panel-routes')).toHaveCount(0)
+  await expect(page.getByTestId('rl-archive-toggle')).toContainText('1')
   await page.goto('/spike')
   await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
   await page.keyboard.press('Alt+r')
