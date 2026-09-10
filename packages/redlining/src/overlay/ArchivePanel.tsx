@@ -1,4 +1,4 @@
-import { ArchiveRestore, ChevronDown, ChevronRight, Copy, Trash2 } from 'lucide-react'
+import { ArchiveRestore, ChevronDown, ChevronRight, Copy, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { describe } from '../export/changes'
 import type { ArchivedAnnotation } from '../types'
@@ -9,6 +9,11 @@ export interface ArchivePanelProps {
   items: ArchivedAnnotation[]
   /** The current route: only its own items can be restored here. */
   route: string
+  /** Other routes whose sessions are still open, with their counts. */
+  open: { route: string; count: number }[]
+  /** Whether Copy and Save on the current page carry those sessions too. */
+  othersIncluded: boolean
+  onArchiveRoute(route: string): void
   onRestore(id: string): void
   onCopy(id: string): void
   onDelete(id: string): void
@@ -19,6 +24,9 @@ export interface ArchivePanelProps {
 export function ArchivePanel({
   items,
   route,
+  open,
+  othersIncluded,
+  onArchiveRoute,
   onRestore,
   onCopy,
   onDelete,
@@ -39,6 +47,32 @@ export function ArchivePanel({
   }
   return (
     <div className="rl-archive" data-testid="rl-archive">
+      {open.length ? (
+        <section className="rl-panel-routes rl-archive-open" data-testid="rl-panel-routes">
+          <h4>Still open on other pages</h4>
+          <span>
+            {othersIncluded
+              ? 'Copied and saved with this page too (Include other routes is on)'
+              : 'Not copied or saved from this page; open the page to work on them'}
+          </span>
+          <ul>
+            {open.map((o) => (
+              <li key={o.route}>
+                <code>{o.route}</code> ({o.count})
+                <button
+                  type="button"
+                  className="rl-btn rl-icon"
+                  aria-label={`Archive ${o.route}`}
+                  title="Move that page's annotations to the archive"
+                  onClick={() => onArchiveRoute(o.route)}
+                >
+                  <X size={12} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {items.length === 0 ? (
         <p className="rl-empty">Nothing archived yet. The × on an annotation moves it here.</p>
       ) : null}

@@ -106,7 +106,7 @@ export function ListPanel({
             title={
               archiveOpen
                 ? 'Back to the annotations'
-                : 'The archive: everything that left a session'
+                : 'History: what is still open on other pages, and everything archived'
             }
             data-testid="rl-archive-toggle"
             onClick={() => setArchiveOpen((o) => !o)}
@@ -173,6 +173,9 @@ export function ListPanel({
         <ArchivePanel
           items={archive}
           route={route}
+          open={others}
+          othersIncluded={othersIncluded}
+          onArchiveRoute={onClearRoute}
           onRestore={onRestore}
           onCopy={onCopyArchived}
           onDelete={onDeleteArchived}
@@ -353,31 +356,6 @@ export function ListPanel({
           )
         })}
       </ol>
-      {!archiveOpen && others.length ? (
-        <footer className="rl-panel-routes" data-testid="rl-panel-routes">
-          <span>
-            {othersIncluded
-              ? 'Also copied and saved with this session'
-              : 'Other routes with their own sessions (not copied or saved from here)'}
-          </span>
-          <ul>
-            {others.map((o) => (
-              <li key={o.route}>
-                <code>{o.route}</code> ({o.count})
-                <button
-                  type="button"
-                  className="rl-btn rl-icon"
-                  aria-label={`Archive ${o.route}`}
-                  title="Move that route's annotations to the archive"
-                  onClick={() => onClearRoute(o.route)}
-                >
-                  <X size={12} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </footer>
-      ) : null}
     </aside>
   )
 }

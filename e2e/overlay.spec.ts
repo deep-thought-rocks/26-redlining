@@ -618,8 +618,11 @@ test('client-side navigation swaps the session: each route keeps its own annotat
   await expect(page.getByTestId('rl-pin')).toHaveCount(1)
   await page.keyboard.press('l')
   await expect(page.getByTestId('rl-panel')).toContainText('Annotations (1)')
+  // Other pages' open sessions live in the history view, not beside the visible ones.
+  await page.getByTestId('rl-archive-toggle').click()
   await expect(page.getByTestId('rl-panel-routes')).toContainText('/spike (1)')
-  await expect(page.getByTestId('rl-panel-routes')).toContainText('not copied or saved')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText('Not copied or saved')
+  await page.getByTestId('rl-archive-toggle').click()
   await page.keyboard.press('l')
 
   // Back again: the spike session returns, the dashboard one is listed as another route.
@@ -630,7 +633,9 @@ test('client-side navigation swaps the session: each route keeps its own annotat
   await expect(page.getByTestId('rl-pin')).toHaveCount(1)
   await page.keyboard.press('l')
   await expect(page.getByTestId('rl-panel')).toContainText('Spike note.')
+  await page.getByTestId('rl-archive-toggle').click()
   await expect(page.getByTestId('rl-panel-routes')).toContainText('/dashboard (1)')
+  await page.getByTestId('rl-archive-toggle').click()
   const stored = await page.evaluate(() => ({
     spike: JSON.parse(localStorage.getItem('redlining:/spike') ?? '[]').length,
     dashboard: JSON.parse(localStorage.getItem('redlining:/dashboard') ?? '[]').length,
@@ -660,8 +665,12 @@ test("multi-route: other routes' sessions ride along on Save and can be cleared 
   await page.getByTestId('rl-setting-routes').check()
   await page.keyboard.press('Escape')
   await page.keyboard.press('l')
+  await page.getByTestId('rl-archive-toggle').click()
   await expect(page.getByTestId('rl-panel-routes')).toContainText('/spike (1)')
-  await expect(page.getByTestId('rl-panel-routes')).toContainText('Also copied and saved')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText(
+    'Copied and saved with this page too',
+  )
+  await page.getByTestId('rl-archive-toggle').click()
 
   await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
   await expect(page.getByTestId('rl-toast')).toContainText('Saved')
@@ -675,9 +684,11 @@ test("multi-route: other routes' sessions ride along on Save and can be cleared 
   }
   expect(json.others.map((o) => o.route)).toEqual(['/spike'])
 
+  await page.getByTestId('rl-archive-toggle').click()
   await page.getByRole('button', { name: 'Archive /spike' }).click()
   await expect(page.getByTestId('rl-panel-routes')).toHaveCount(0)
-  await expect(page.getByTestId('rl-archive-toggle')).toContainText('1')
+  await expect(page.getByTestId('rl-archive-row')).toHaveCount(1)
+  await page.getByTestId('rl-archive-toggle').click()
   await page.goto('/spike')
   await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
   await page.keyboard.press('Alt+r')

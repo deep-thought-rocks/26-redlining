@@ -158,6 +158,8 @@ button { font: inherit; color: inherit; }
 .rl-verdict[data-state="differs"], .rl-verdict[data-state="missing"], .rl-verdict[data-state="skipped"] { color: var(--color-text-warning); }
 .rl-verdict--agent { font-style: italic; }
 .rl-archive { flex: 1; min-height: 0; overflow-y: auto; }
+.rl-archive-open { border-top: 0; border-bottom: var(--sbm-border-w) solid var(--color-border-default); }
+.rl-archive-open h4 { margin: 0 0 2px; font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); font-weight: var(--sbm-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--sbm-tracking-wide); }
 .rl-archive > ol, .rl-archive-day > ol { margin: 0; padding: var(--sbm-space-2); list-style: none; }
 .rl-archive-day > h4 { margin: var(--sbm-space-2) var(--sbm-space-2) 0; font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); font-weight: var(--sbm-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--sbm-tracking-wide); }
 .rl-verdict--reason { align-self: flex-start; margin-top: 4px; }
