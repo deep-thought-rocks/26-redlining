@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # site/changelog.html is dated from the release tags; a shallow, tagless checkout regenerates it without dates.
+          fetch-depth: 0
+          fetch-tags: true
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
