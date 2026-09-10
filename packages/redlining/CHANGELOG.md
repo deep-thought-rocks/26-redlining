@@ -1,5 +1,12 @@
 # redlining
 
+## 0.7.2
+
+### Patch Changes
+
+- Copy and Save carry exactly what the list panel shows. "Include other routes" is now off by default; when it is on, the panel footer says so. The × beside another route moves its annotations to the archive instead of deleting them.
+- The note popover stays on screen: for an element near the bottom it opens above it (or beside, or clamped), clear of the toolbar, like the Inspector already did; on very small windows it scrolls inside.
+
 ## 0.7.1
 
 ### Patch Changes
