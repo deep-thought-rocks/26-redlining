@@ -20,8 +20,10 @@ import type { Entry } from './session'
 
 export interface ListPanelProps {
   entries: Entry[]
-  /** Other routes with saved sessions in this browser; exported together when enabled. */
+  /** Other routes with saved sessions in this browser. */
   others: { route: string; count: number }[]
+  /** Whether Copy and Save carry them (the "Include other routes" setting). */
+  othersIncluded: boolean
   /** Verify results by entry id, once a check ran. */
   verdicts: Map<string, Verdict>
   /** The agent's reply lines by annotation index, when `reply.md` exists. */
@@ -58,6 +60,7 @@ const VERDICT_LABEL: Record<Verdict['state'], string> = {
 export function ListPanel({
   entries,
   others,
+  othersIncluded,
   verdicts,
   reply,
   onVerify,
@@ -352,7 +355,11 @@ export function ListPanel({
       </ol>
       {!archiveOpen && others.length ? (
         <footer className="rl-panel-routes" data-testid="rl-panel-routes">
-          <span>Also saved with this session</span>
+          <span>
+            {othersIncluded
+              ? 'Also copied and saved with this session'
+              : 'Other routes with their own sessions (not copied or saved from here)'}
+          </span>
           <ul>
             {others.map((o) => (
               <li key={o.route}>
@@ -360,7 +367,8 @@ export function ListPanel({
                 <button
                   type="button"
                   className="rl-btn rl-icon"
-                  aria-label={`Clear ${o.route}`}
+                  aria-label={`Archive ${o.route}`}
+                  title="Move that route's annotations to the archive"
                   onClick={() => onClearRoute(o.route)}
                 >
                   <X size={12} />

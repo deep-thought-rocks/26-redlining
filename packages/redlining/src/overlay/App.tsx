@@ -250,7 +250,10 @@ export function App({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- storage is read, not a dependency
     [routesTick, panel],
   )
+  /** Another route's session goes to the archive (nothing is deleted), then its key is removed. */
   const clearOther = useCallback((route: string) => {
+    const theirs = loadEntries(window.localStorage, route)
+    setArchive(archiveEntries(window.localStorage, route, theirs, 'archived'))
     clearRoute(window.localStorage, route)
     setRoutesTick((n) => n + 1)
   }, [])
@@ -804,11 +807,8 @@ export function App({
       {active && panel ? (
         <ListPanel
           entries={entries}
-          others={
-            settings.routes
-              ? others.map((o) => ({ route: o.route, count: o.annotations.length }))
-              : []
-          }
+          others={others.map((o) => ({ route: o.route, count: o.annotations.length }))}
+          othersIncluded={settings.routes}
           onClearRoute={clearOther}
           onClear={clear}
           verdicts={verdicts}

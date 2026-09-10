@@ -93,7 +93,9 @@ export function SettingsPopover(p: SettingsPopoverProps) {
       <label className="rl-setting">
         <span>
           Include other routes
-          <small>Save exports every route's session in one file</small>
+          <small>
+            Copy and Save also carry the other routes' sessions (off: exactly what the panel shows)
+          </small>
         </span>
         <input
           type="checkbox"

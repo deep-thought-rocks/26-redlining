@@ -258,20 +258,21 @@
           (file and line, owner chain, usage site, element text), the target of a move or the box of
           an add, and the complete note. Click the note to edit it inline (<kbd>⏎</kbd> saves,
           <kbd>Esc</kbd> cancels); the × deletes and renumbers the rest. The toolbar moves aside
-          while the panel is open. Sessions are kept per route; when other routes in this browser
-          have annotations, the panel lists them at the bottom and Save and Copy include them, each
+          while the panel is open. Sessions are kept per route. Copy and Save carry exactly what the
+          panel shows; other routes with annotations are listed at the bottom for orientation, and
+          the × beside one moves its annotations to the archive. Turn on
+          <em>Include other routes</em> in the settings to have Copy and Save carry them too, each
           under its own <code># Redlining — /route</code> heading, so one <code>/redline</code> run
-          covers the whole pass. The × next to a route clears it. Nothing is deleted from a session:
-          the × on a row and <em>Archive session</em> in the header move annotations to the
-          <strong>archive</strong>, and <em>Remove applied</em> after a verify does the same,
-          keeping the verdict and the agent's reply. The archive button in the header opens it:
-          every archived annotation with its route, day, anchor, note and changes;
-          <em>Restore</em> puts one back into the session of its own route (open that page first),
-          the copy icon copies it as a prompt of its own, and delete there is final. It lives in the
-          browser next to the sessions, without reference images, capped at 300 items. The copy icon
-          in the panel header copies the whole prompt, like <kbd>⌘⇧C</kbd>; the copy icon on a row
-          copies that one annotation as a complete prompt of its own, header and footer included,
-          for handing a single item to an agent.
+          covers a whole pass. Nothing is deleted from a session: the × on a row and
+          <em>Archive session</em> in the header move annotations to the <strong>archive</strong>,
+          and <em>Remove applied</em> after a verify does the same, keeping the verdict and the
+          agent's reply. The archive button in the header opens it: every archived annotation with
+          its route, day, anchor, note and changes; <em>Restore</em> puts one back into the session
+          of its own route (open that page first), the copy icon copies it as a prompt of its own,
+          and delete there is final. It lives in the browser next to the sessions, without reference
+          images, capped at 300 items. The copy icon in the panel header copies the whole prompt,
+          like <kbd>⌘⇧C</kbd>; the copy icon on a row copies that one annotation as a complete
+          prompt of its own, header and footer included, for handing a single item to an agent.
         </p>
 
         <h2 id="settings">Settings</h2>
@@ -286,11 +287,11 @@
           (<em>bg-brand-500</em>), and the steppers snap to the theme scale. The export header
           states the idiom and the footer tells the agent how to apply it.
           <strong>Snap to scale</strong> sets the Inspector's default,
-          <strong>Include other routes</strong> controls the multi-route export, and
-          <strong>Check npm for updates</strong> asks the registry once a day for the newest version
-          number (nothing about you is sent; switch it off and nothing leaves the machine). The last
-          row shows the installed version and, when a newer one exists, the install command; the
-          first sighting of a new version also shows a toast.
+          <strong>Include other routes</strong> (off by default) makes Copy and Save carry the other
+          routes' sessions, and <strong>Check npm for updates</strong> asks the registry once a day
+          for the newest version number (nothing about you is sent; switch it off and nothing leaves
+          the machine). The last row shows the installed version and, when a newer one exists, the
+          install command; the first sighting of a new version also shows a toast.
         </p>
 
         <h2 id="export">Copy and Save</h2>

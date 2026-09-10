@@ -9,7 +9,7 @@ export interface Settings {
   framework: 'auto' | 'tailwind4' | 'tailwind3' | 'css-modules' | 'css'
   /** Inspector steppers snap to the stylesheet's scale by default. */
   snap: boolean
-  /** Save includes the other routes' sessions. */
+  /** Copy and Save also carry the other routes' sessions; off, so they match what the panel shows. */
   routes: boolean
   /** Ask npm once a day whether a newer version exists (no data is sent). */
   updates: boolean
@@ -18,7 +18,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   framework: 'auto',
   snap: true,
-  routes: true,
+  routes: false,
   updates: true,
 }
 
