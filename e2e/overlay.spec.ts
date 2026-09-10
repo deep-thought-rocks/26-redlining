@@ -70,7 +70,7 @@ test('select mode: hover badge, click, note, pin, list, save to project @webpack
   await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
   await expect(page.getByTestId('rl-toast')).toContainText('Saved')
   const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
-  expect(md).toContain('# Redlining — /spike')
+  expect(md).toMatch(/^# Redlining \d+\.\d+\.\d+ — \/spike/)
   expect(md).toContain('## 1 · CHANGE — "DashboardReports" nav')
   // The nav lives in page.tsx; its usage site is the layout's <section>, where <main> is the 2nd of 2 children.
   expect(md).toContain(
@@ -542,6 +542,48 @@ test('settings: the styling idiom is detected, can be overridden, persists, and 
   await expect(page.getByTestId('rl-setting-framework')).toHaveValue('tailwind4')
 })
 
+test('client-side navigation swaps the session: each route keeps its own annotations', async ({
+  page,
+}) => {
+  await openOverlay(page)
+  await page.locator('nav').first().click()
+  await page.getByTestId('rl-note').fill('Spike note.')
+  await page.getByTestId('rl-note').press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveCount(1)
+
+  // A Next <Link>: the page changes, the overlay component stays mounted. While the overlay
+  // is active a click is a pick, so close it around the navigation.
+  await page.keyboard.press('Escape')
+  await page.locator('.fixture-nav').getByRole('link', { name: 'Dashboard' }).click()
+  await expect(page.locator('.page-head h1')).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+  await page.locator('.page-head h1').click()
+  await page.getByTestId('rl-note').fill('Dashboard note.')
+  await page.getByTestId('rl-note').press('Enter')
+  await expect(page.getByTestId('rl-pin')).toHaveCount(1)
+  await page.keyboard.press('l')
+  await expect(page.getByTestId('rl-panel')).toContainText('Annotations (1)')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText('/spike (1)')
+  await page.keyboard.press('l')
+
+  // Back again: the spike session returns, the dashboard one is listed as another route.
+  await page.keyboard.press('Escape')
+  await page.locator('.fixture-nav').getByRole('link', { name: 'Spike' }).click()
+  await expect(page.locator('[data-spike="1"]')).toBeVisible()
+  await page.keyboard.press('Alt+r')
+  await expect(page.getByTestId('rl-pin')).toHaveCount(1)
+  await page.keyboard.press('l')
+  await expect(page.getByTestId('rl-panel')).toContainText('Spike note.')
+  await expect(page.getByTestId('rl-panel-routes')).toContainText('/dashboard (1)')
+  const stored = await page.evaluate(() => ({
+    spike: JSON.parse(localStorage.getItem('redlining:/spike') ?? '[]').length,
+    dashboard: JSON.parse(localStorage.getItem('redlining:/dashboard') ?? '[]').length,
+  }))
+  expect(stored).toEqual({ spike: 1, dashboard: 1 })
+})
+
 test("multi-route: other routes' sessions ride along on Save and can be cleared from the panel", async ({
   page,
 }) => {
@@ -565,7 +607,7 @@ test("multi-route: other routes' sessions ride along on Save and can be cleared 
   await page.getByRole('button', { name: 'Save to project (⌘⏎)' }).click()
   await expect(page.getByTestId('rl-toast')).toContainText('Saved')
   const md = readFileSync(path.join(OUT, 'annotations.md'), 'utf8')
-  expect(md).toContain('# Redlining — /dashboard')
+  expect(md).toMatch(/# Redlining \d+\.\d+\.\d+ — \/dashboard/)
   expect(md).toContain('# Redlining — /spike  (1 annotation, made earlier in the same browser)')
   expect(md).toContain('- Note: Horizontal nav.')
   expect(md.split('Apply in order.')).toHaveLength(2)

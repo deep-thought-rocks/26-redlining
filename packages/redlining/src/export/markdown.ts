@@ -29,7 +29,7 @@ export function toMarkdown(session: Session, options: MarkdownOptions = {}): str
   const lines: string[] = []
   const preset = session.preset ? ` · preset ≤ ${session.preset}px` : ''
   lines.push(
-    `# Redlining — ${session.route}  (${stamp(now)} · viewport ${session.viewport.w}×${session.viewport.h}${preset})`,
+    `# Redlining${session.version ? ` ${session.version}` : ''} — ${session.route}  (${stamp(now)} · viewport ${session.viewport.w}×${session.viewport.h}${preset})`,
   )
   lines.push('')
   if (session.styling) {

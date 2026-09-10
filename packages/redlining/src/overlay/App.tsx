@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { parseReply, toMarkdown, type ReplyLine } from '../export'
 import type { Action, Change, Styling } from '../types'
 import { findByAnchor, pageRect } from './dom'
@@ -33,6 +33,7 @@ import {
 } from './storage'
 import type { ThemeContext } from './theme'
 import { verifyEntry, type Verdict } from './verify'
+import { VERSION } from '../version'
 
 const CORNERS: Corner[] = ['bottom-right', 'bottom-left', 'top-left', 'top-right']
 const CORNER_KEY = 'redlining:position'
@@ -100,6 +101,11 @@ export function App({
       entries: loadEntries(window.localStorage, window.location.pathname),
     }),
   )
+  /**
+   * The route the entries in memory belong to. The overlay lives in the root layout and
+   * survives client-side navigation, so the pathname can change without a remount.
+   */
+  const routeRef = useRef(window.location.pathname)
   const [draft, setDraft] = useState<Draft | null>(null)
   /** Move mode, step one: the element to move; the next pick is its destination. */
   const [moveSource, setMoveSource] = useState<Draft | null>(null)
@@ -159,7 +165,7 @@ export function App({
 
   useEffect(() => {
     try {
-      saveEntries(window.localStorage, window.location.pathname, entries)
+      saveEntries(window.localStorage, routeRef.current, entries)
     } catch (err) {
       const message = `Browser storage is full; the session will not survive a reload (${String(err)})`
       queueMicrotask(() => notify(message))
@@ -171,14 +177,37 @@ export function App({
     return () => clearTimeout(t)
   }, [toast])
 
+  // Client-side navigation: swap the session for the new route instead of carrying the old
+  // one along (and saving it under the new key). Detected on popstate and on any DOM change.
+  const syncRoute = useCallback(() => {
+    const next = window.location.pathname
+    if (next === routeRef.current) return
+    resetPreviews(entries)
+    routeRef.current = next
+    setDraft(null)
+    setMoveSource(null)
+    setTweak(null)
+    setVerdicts(new Map())
+    setReply(new Map())
+    dispatch({ type: 'load', entries: loadEntries(window.localStorage, next) })
+    setRoutesTick((n) => n + 1)
+  }, [entries])
+
   // Tweak previews are re-applied to their elements on load and after HMR replaces them.
   useEffect(() => {
-    const reapply = () => applyPreviews(entries, true)
-    reapply()
-    const mo = new MutationObserver(reapply)
+    const observe = () => {
+      syncRoute()
+      applyPreviews(entries, true)
+    }
+    observe()
+    const mo = new MutationObserver(observe)
     mo.observe(document.body, { childList: true, subtree: true })
-    return () => mo.disconnect()
-  }, [entries])
+    window.addEventListener('popstate', syncRoute)
+    return () => {
+      mo.disconnect()
+      window.removeEventListener('popstate', syncRoute)
+    }
+  }, [entries, syncRoute])
 
   // Annotations made in the device frame (another document, same storage key) show up here.
   useEffect(() => {
@@ -212,6 +241,7 @@ export function App({
   const session = useCallback(() => {
     const out = toSession(entries, window.location, { w: window.innerWidth, h: window.innerHeight })
     if (framed) out.preset = framed
+    out.version = VERSION
     out.styling = styling
     if (settings.routes && others.length) out.others = others
     return out

@@ -376,6 +376,13 @@ Apply in order. Reuse existing components and design tokens. Do not touch anythi
     expect(md.indexOf('/settings')).toBeLessThan(md.indexOf('Apply in order.'))
   })
 
+  test('the header carries the package version when the session has one', () => {
+    expect(toMarkdown({ ...session, version: '0.6.4' }, { now: NOW })).toContain(
+      '# Redlining 0.6.4 — /dashboard  (',
+    )
+    expect(toMarkdown(session, { now: NOW })).toContain('# Redlining — /dashboard  (')
+  })
+
   test('header names the viewport preset and the screenshot line the before image', () => {
     const md = toMarkdown(
       { ...session, preset: 768, screenshotBefore: 'data:image/png;base64,AA' },

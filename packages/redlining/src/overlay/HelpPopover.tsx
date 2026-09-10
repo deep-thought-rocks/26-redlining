@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { VERSION } from '../version'
 import type { Position } from './Toolbar'
 
 export interface HelpPopoverProps {
@@ -36,7 +37,7 @@ export function HelpPopover(p: HelpPopoverProps) {
       aria-label="Help"
     >
       <header>
-        Redlining
+        Redlining {VERSION}
         <button
           type="button"
           className="rl-btn rl-icon"

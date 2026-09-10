@@ -123,6 +123,8 @@ export interface Session {
   screenshotBefore?: string
   /** Viewport preset width (px) active at save time, when one was. */
   preset?: number
+  /** The redlining package version that produced the export. */
+  version?: string
   /** The styling idiom the export speaks in; detected from the page unless set by hand. */
   styling?: Styling
   /** Sessions of the other routes in this browser, exported together with this one. */
