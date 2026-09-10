@@ -1,6 +1,8 @@
 import { X } from 'lucide-react'
 import type { Framework, FrameworkKind } from './framework'
 import { FRAMEWORK_LABEL } from './framework'
+import { VERSION } from '../version'
+import { isNewer } from './update'
 import type { Settings } from './storage'
 import type { Position } from './Toolbar'
 
@@ -11,6 +13,8 @@ export interface SettingsPopoverProps {
   fromProp?: FrameworkKind
   position: Position
   panelOpen: boolean
+  /** The newest version on npm when known; null before the check or when it is off. */
+  latest: string | null
   onChange(settings: Settings): void
   onClose(): void
 }
@@ -76,6 +80,18 @@ export function SettingsPopover(p: SettingsPopoverProps) {
       </label>
       <label className="rl-setting">
         <span>
+          Check npm for updates
+          <small>Once a day, version number only; nothing about you is sent</small>
+        </span>
+        <input
+          type="checkbox"
+          data-testid="rl-setting-updates"
+          checked={settings.updates}
+          onChange={(e) => set({ updates: e.target.checked })}
+        />
+      </label>
+      <label className="rl-setting">
+        <span>
           Include other routes
           <small>Save exports every route's session in one file</small>
         </span>
@@ -86,6 +102,20 @@ export function SettingsPopover(p: SettingsPopoverProps) {
           onChange={(e) => set({ routes: e.target.checked })}
         />
       </label>
+      <p className="rl-setting rl-setting--version" data-testid="rl-version">
+        <span>
+          Version {VERSION}
+          <small>
+            {!settings.updates
+              ? 'update check off'
+              : p.latest === null
+                ? 'latest not checked yet'
+                : p.latest === VERSION || !isNewer(p.latest, VERSION)
+                  ? 'up to date'
+                  : `${p.latest} available — npm i -D redlining@latest (or your package manager's equivalent)`}
+          </small>
+        </span>
+      </p>
     </div>
   )
 }

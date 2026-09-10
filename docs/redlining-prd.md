@@ -396,7 +396,7 @@ export { GET, POST } from 'redlining/next/route'
 - **Zero prod footprint.** CI asserts 0 bytes of Redlining in the production client bundle and no `data-rl` attributes in `next build` output.
 - **Dev overhead.** Loader median < 5 ms/file; no measurable HMR regression; overlay idle CPU ≈ 0.
 - **Isolation.** No global CSS; no listeners when inactive except the hotkey; z-index above Next DevTools; never captures pointer events when inactive.
-- **Privacy / security.** Localhost only; nothing leaves the machine; route handler validates dev mode and target path; no telemetry.
+- **Privacy / security.** Localhost only; nothing leaves the machine except, since 0.6.4, an optional once-a-day `GET` of `registry.npmjs.org/redlining/latest` for the update notice (version number only, no payload, off with one setting, skipped under automation); route handler validates dev mode and target path; no telemetry.
 - **Compatibility.** Current Chrome, Edge, Safari, Firefox. Server and Client Components (§8.1–8.2).
 - **Accessibility.** Fully keyboard-operable; focus managed in popovers; respects `prefers-reduced-motion`.
 - **Snapshot hygiene.** `data-rl` exists only in dev; a `stripRedlining()` helper is exported for tests that render dev HTML.

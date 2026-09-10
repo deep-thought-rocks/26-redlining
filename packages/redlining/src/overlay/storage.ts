@@ -11,9 +11,16 @@ export interface Settings {
   snap: boolean
   /** Save includes the other routes' sessions. */
   routes: boolean
+  /** Ask npm once a day whether a newer version exists (no data is sent). */
+  updates: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { framework: 'auto', snap: true, routes: true }
+export const DEFAULT_SETTINGS: Settings = {
+  framework: 'auto',
+  snap: true,
+  routes: true,
+  updates: true,
+}
 
 export function loadSettings(storage: Storage): Settings {
   try {

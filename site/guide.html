@@ -261,7 +261,10 @@
           while the panel is open. Sessions are kept per route; when other routes in this browser
           have annotations, the panel lists them at the bottom and Save and Copy include them, each
           under its own <code># Redlining — /route</code> heading, so one <code>/redline</code> run
-          covers the whole pass. The × next to a route clears it.
+          covers the whole pass. The × next to a route clears it. The copy icon in the panel header
+          copies the whole prompt, like <kbd>⌘⇧C</kbd>; the copy icon on a row copies that one
+          annotation as a complete prompt of its own, header and footer included, for handing a
+          single item to an agent.
         </p>
 
         <h2 id="settings">Settings</h2>
@@ -275,8 +278,12 @@
           values become <em>pl-[13px]</em>, colours use their <code>--color-*</code> token
           (<em>bg-brand-500</em>), and the steppers snap to the theme scale. The export header
           states the idiom and the footer tells the agent how to apply it.
-          <strong>Snap to scale</strong> sets the Inspector's default, and
-          <strong>Include other routes</strong> controls the multi-route export.
+          <strong>Snap to scale</strong> sets the Inspector's default,
+          <strong>Include other routes</strong> controls the multi-route export, and
+          <strong>Check npm for updates</strong> asks the registry once a day for the newest version
+          number (nothing about you is sent; switch it off and nothing leaves the machine). The last
+          row shows the installed version and, when a newer one exists, the install command; the
+          first sighting of a new version also shows a toast.
         </p>
 
         <h2 id="export">Copy and Save</h2>

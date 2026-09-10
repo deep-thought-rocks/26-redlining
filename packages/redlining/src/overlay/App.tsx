@@ -32,6 +32,7 @@ import {
   type Settings,
 } from './storage'
 import type { ThemeContext } from './theme'
+import { fetchLatest, markUpdateSeen, updateNotice, updateSeen } from './update'
 import { verifyEntry, type Verdict } from './verify'
 import { VERSION } from '../version'
 
@@ -141,6 +142,8 @@ export function App({
   const [reply, setReply] = useState<Map<number, ReplyLine>>(() => new Map())
   const [settings, setSettings] = useState<Settings>(() => loadSettings(window.localStorage))
   const [settingsOpen, setSettingsOpen] = useState(false)
+  /** Newest version on npm, when the check is on and answered. */
+  const [latest, setLatest] = useState<string | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const updateSettings = useCallback((next: Settings) => {
     setSettings(next)
@@ -257,6 +260,26 @@ export function App({
       )
     }
   }, [session, notify])
+
+  /** One annotation as a complete prompt: header, styling, the block, the footer. */
+  const copyOne = useCallback(
+    async (id: string) => {
+      const entry = entries.find((e) => e.id === id)
+      if (!entry) return
+      const whole = session()
+      delete whole.others // one annotation, this route only
+      const one = { ...whole, annotations: whole.annotations.filter((a) => a.id === id) }
+      try {
+        await navigator.clipboard.writeText(toMarkdown(one))
+        notify(`Copied annotation ${entry.index}`)
+      } catch (err) {
+        notify(
+          `Clipboard blocked by the browser (${err instanceof Error ? err.message : String(err)}).`,
+        )
+      }
+    },
+    [entries, session, notify],
+  )
 
   const send = useCallback(async () => {
     try {
@@ -379,6 +402,24 @@ export function App({
     for (const e of entries) if (!keep.includes(e)) dispatch({ type: 'remove', id: e.id })
     setVerdicts(new Map())
   }, [entries, verdicts])
+
+  // Once per opening: is there a newer redlining on npm? One toast per new version.
+  useEffect(() => {
+    if (!active || !settings.updates) return
+    let cancelled = false
+    void fetchLatest().then((version) => {
+      if (cancelled || !version) return
+      setLatest(version)
+      const notice = updateNotice(version)
+      if (notice && !updateSeen(window.localStorage, version)) {
+        markUpdateSeen(window.localStorage, version)
+        notify(`redlining ${notice} — npm i -D redlining@latest`)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [active, settings.updates, notify])
 
   // A reply newer than the last save means the agent ran: verify when the overlay opens.
   useEffect(() => {
@@ -688,6 +729,7 @@ export function App({
           fromProp={frameworkProp}
           position={corner}
           panelOpen={panel}
+          latest={latest}
           onChange={updateSettings}
           onClose={() => setSettingsOpen(false)}
         />
@@ -706,6 +748,8 @@ export function App({
           reply={reply}
           onVerify={() => void verify()}
           onRemoveApplied={removeApplied}
+          onCopy={() => void copy()}
+          onCopyOne={(id) => void copyOne(id)}
           onNote={(id, note) => dispatch({ type: 'note', id, note })}
           onRemove={(id) => {
             removePreview(entries, id)
