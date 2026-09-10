@@ -1,13 +1,18 @@
 # redlining
 
+## 0.6.5
+
+### Patch Changes
+
+- Settings show the installed version and, once a day, whether a newer one is on npm (a toast the first time a new version appears; the check sends nothing and can be switched off).
+- The list panel has a Copy button in its header (the whole prompt, like ⌘⇧C) and one per annotation that copies that annotation alone as a complete prompt with header and footer.
+
 ## 0.6.4
 
 ### Patch Changes
 
 - Sessions no longer leak across routes. The overlay lives in the root layout and survives client-side navigation; it used to keep the previous page's annotations in memory and save them under every route it was navigated to, so pins from one page appeared on others and the export repeated them per route. Navigation now swaps to the new route's session (and back), previews included.
 - The export header and the help popover show the package version (`# Redlining 0.6.4 — /route`), and `annotations.json` carries it as `version`.
-- Settings show the installed version and, once a day, whether a newer one is on npm (a toast the first time a new version appears; the check sends nothing and can be switched off).
-- The list panel has a Copy button in its header (the whole prompt, like ⌘⇧C) and one per annotation that copies that annotation alone as a complete prompt with header and footer.
 
 ## 0.6.3
 
