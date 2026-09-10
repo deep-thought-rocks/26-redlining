@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.5
+
+### Patch Changes
+
+- Archive rows show their state as an icon with a tooltip (box: archived by hand; check: applied per verify) instead of a clipped text chip.
+
 ## 0.7.4
 
 ### Patch Changes
