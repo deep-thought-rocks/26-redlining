@@ -1,5 +1,12 @@
 # redlining
 
+## 0.6.4
+
+### Patch Changes
+
+- Sessions no longer leak across routes. The overlay lives in the root layout and survives client-side navigation; it used to keep the previous page's annotations in memory and save them under every route it was navigated to, so pins from one page appeared on others and the export repeated them per route. Navigation now swaps to the new route's session (and back), previews included.
+- The export header and the help popover show the package version (`# Redlining 0.6.4 — /route`), and `annotations.json` carries it as `version`.
+
 ## 0.6.3
 
 ### Patch Changes
