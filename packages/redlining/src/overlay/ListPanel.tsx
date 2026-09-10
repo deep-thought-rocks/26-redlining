@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Copy,
   Eye,
+  History,
   ScanSearch,
   X,
 } from 'lucide-react'
@@ -107,7 +108,7 @@ export function ListPanel({
             data-testid="rl-archive-toggle"
             onClick={() => setArchiveOpen((o) => !o)}
           >
-            <Archive size={16} />
+            <History size={16} />
             {archive.length ? <span className="rl-count">{archive.length}</span> : null}
           </button>
           {!archiveOpen && entries.length ? (
