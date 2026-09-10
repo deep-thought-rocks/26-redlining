@@ -1,4 +1,13 @@
-import { ArchiveRestore, ChevronDown, ChevronRight, Copy, Trash2, X } from 'lucide-react'
+import {
+  Archive,
+  ArchiveRestore,
+  CheckCheck,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useState } from 'react'
 import { describe } from '../export/changes'
 import type { ArchivedAnnotation } from '../types'
@@ -89,13 +98,19 @@ export function ArchivePanel({
                     key={item.id}
                     className="rl-row"
                     data-testid="rl-archive-row"
+                    data-reason={item.reason}
                     data-expanded={open || undefined}
                   >
                     <span
-                      className={`rl-verdict rl-verdict--reason`}
+                      className="rl-archive-state"
                       data-state={item.verdict ?? item.reason}
+                      title={
+                        item.reason === 'applied'
+                          ? 'Removed after a verify said the agent applied it'
+                          : 'Archived by hand'
+                      }
                     >
-                      {item.verdict ?? item.reason}
+                      {item.reason === 'applied' ? <CheckCheck size={14} /> : <Archive size={14} />}
                     </span>
                     <div style={{ minWidth: 0 }}>
                       <button

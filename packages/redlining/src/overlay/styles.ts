@@ -162,7 +162,8 @@ button { font: inherit; color: inherit; }
 .rl-archive-open h4 { margin: 0 0 2px; font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); font-weight: var(--sbm-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--sbm-tracking-wide); }
 .rl-archive > ol, .rl-archive-day > ol { margin: 0; padding: var(--sbm-space-2); list-style: none; }
 .rl-archive-day > h4 { margin: var(--sbm-space-2) var(--sbm-space-2) 0; font-family: var(--sbm-font-heading); font-size: var(--sbm-text-xs); font-weight: var(--sbm-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--sbm-tracking-wide); }
-.rl-verdict--reason { align-self: flex-start; margin-top: 4px; }
+.rl-archive-state { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-top: 2px; border-radius: var(--sbm-radius-full); color: var(--color-text-muted); background: var(--color-background-sunken); }
+.rl-archive-state[data-state="applied"] { color: var(--color-on-accent); background: var(--color-accent-fill); }
 .rl-btn:disabled { opacity: 0.4; cursor: default; }
 .rl-panel-routes { padding: var(--sbm-space-2) var(--sbm-space-4) var(--sbm-space-3); border-top: var(--sbm-border-w) solid var(--color-border-default); font-size: var(--sbm-text-xs); color: var(--color-text-muted); }
 .rl-panel-routes ul { margin: 4px 0 0; padding: 0; list-style: none; }

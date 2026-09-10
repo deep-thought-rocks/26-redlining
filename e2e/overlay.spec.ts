@@ -179,7 +179,7 @@ test('the session survives a reload and can be cleared', async ({ page }) => {
   const row = page.getByTestId('rl-archive-row')
   await expect(row).toContainText('/spike')
   await expect(row).toContainText('Shorter copy.')
-  await expect(row.locator('.rl-verdict')).toHaveText('archived')
+  await expect(row).toHaveAttribute('data-reason', 'archived')
   await row.getByRole('button', { name: /^Restore/ }).click()
   await expect(page.getByTestId('rl-panel')).toContainText('Archive (0)')
   await page.getByTestId('rl-archive-toggle').click()
@@ -808,7 +808,7 @@ test("verify loop: the agent's reply.md opens the panel, differing values are na
   await page.getByTestId('rl-archive-toggle').click()
   const archived = page.getByTestId('rl-archive-row')
   await expect(archived).toHaveCount(1)
-  await expect(archived.locator('.rl-verdict').first()).toHaveText('applied')
+  await expect(archived).toHaveAttribute('data-reason', 'applied')
   await expect(archived).toContainText('agent: text-sm → text-base')
   // Restore is only offered on the item's own route; here we are on it.
   await expect(archived.getByRole('button', { name: /^Restore/ })).toBeEnabled()
