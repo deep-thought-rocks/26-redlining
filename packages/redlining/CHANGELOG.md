@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.0
+
+### Minor Changes
+
+- **Archive.** Annotations are no longer deleted from a session: the × on a row, _Archive session_ and _Remove applied_ after a verify move them to an archive that keeps the route, the day, the anchor, the note, the tweak changes, the verdict and the agent's reply line. The archive button in the list panel header opens it: restore an item into the session of its own route, copy it as a prompt of its own, or delete it for good (also all at once). It lives in the browser next to the sessions, without reference images, and keeps the newest 300 items.
+
 ## 0.6.5
 
 ### Patch Changes
