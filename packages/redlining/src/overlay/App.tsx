@@ -19,6 +19,14 @@ import { isEditable, matchesHotkey } from './hotkey'
 import { dataUrlBytes } from './image'
 import { apply, remPx, reset, rootTokens, snapshot, type Snapshot } from './preview'
 import { applyPreviews, removePreview, resetPreviews } from './previews'
+import {
+  archiveEntries,
+  ARCHIVE_KEY,
+  clearArchive,
+  deleteArchived,
+  loadArchive,
+  toAnnotation,
+} from './archive'
 import { captureScreenshot } from './screenshot'
 import { reduce, toSession, type Draft, type Entry, type Position } from './session'
 import {
@@ -107,6 +115,8 @@ export function App({
    * survives client-side navigation, so the pathname can change without a remount.
    */
   const routeRef = useRef(window.location.pathname)
+  /** Same value as `routeRef`, for rendering. */
+  const [route, setRoute] = useState(window.location.pathname)
   const [draft, setDraft] = useState<Draft | null>(null)
   /** Move mode, step one: the element to move; the next pick is its destination. */
   const [moveSource, setMoveSource] = useState<Draft | null>(null)
@@ -142,6 +152,8 @@ export function App({
   const [reply, setReply] = useState<Map<number, ReplyLine>>(() => new Map())
   const [settings, setSettings] = useState<Settings>(() => loadSettings(window.localStorage))
   const [settingsOpen, setSettingsOpen] = useState(false)
+  /** The history: annotations that left a session (any route). */
+  const [archive, setArchive] = useState(() => loadArchive(window.localStorage))
   /** Newest version on npm, when the check is on and answered. */
   const [latest, setLatest] = useState<string | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -187,6 +199,7 @@ export function App({
     if (next === routeRef.current) return
     resetPreviews(entries)
     routeRef.current = next
+    setRoute(next)
     setDraft(null)
     setMoveSource(null)
     setTweak(null)
@@ -216,6 +229,7 @@ export function App({
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       setRoutesTick((n) => n + 1)
+      if (e.key === ARCHIVE_KEY) setArchive(loadArchive(window.localStorage))
       if (e.key !== storageKey(window.location.pathname)) return
       dispatch({
         type: 'load',
@@ -396,12 +410,64 @@ export function App({
   }, [entries, fetchReply, notify])
 
   const removeApplied = useCallback(() => {
-    const keep = entries.filter((e) => verdicts.get(e.id)?.state !== 'applied')
+    const done = entries.filter((e) => verdicts.get(e.id)?.state === 'applied')
+    const keep = entries.filter((e) => !done.includes(e))
     resetPreviews(entries)
     applyPreviews(keep)
-    for (const e of entries) if (!keep.includes(e)) dispatch({ type: 'remove', id: e.id })
+    setArchive(
+      archiveEntries(window.localStorage, routeRef.current, done, 'applied', (e) => ({
+        verdict: 'applied',
+        reply: reply.get(e.index)?.text,
+      })),
+    )
+    for (const e of done) dispatch({ type: 'remove', id: e.id })
     setVerdicts(new Map())
-  }, [entries, verdicts])
+  }, [entries, verdicts, reply])
+
+  /** One annotation to the archive (the row ×). */
+  const archiveOne = useCallback(
+    (id: string) => {
+      const e = entries.find((x) => x.id === id)
+      if (!e) return
+      removePreview(entries, id)
+      setArchive(archiveEntries(window.localStorage, routeRef.current, [e], 'archived'))
+      dispatch({ type: 'remove', id })
+    },
+    [entries],
+  )
+
+  const restore = useCallback(
+    (id: string) => {
+      const item = archive.find((a) => a.id === id)
+      if (!item || item.route !== routeRef.current) return
+      dispatch({ type: 'restore', annotation: toAnnotation(item) })
+      setArchive(deleteArchived(window.localStorage, [id]))
+    },
+    [archive],
+  )
+
+  const copyArchived = useCallback(
+    async (id: string) => {
+      const item = archive.find((a) => a.id === id)
+      if (!item) return
+      const whole = session()
+      delete whole.others
+      const one = {
+        ...whole,
+        route: item.route,
+        annotations: [{ ...toAnnotation(item), index: 1 }],
+      }
+      try {
+        await navigator.clipboard.writeText(toMarkdown(one))
+        notify('Copied archived annotation')
+      } catch (err) {
+        notify(
+          `Clipboard blocked by the browser (${err instanceof Error ? err.message : String(err)}).`,
+        )
+      }
+    },
+    [archive, session, notify],
+  )
 
   // Once per opening: is there a newer redlining on npm? One toast per new version.
   useEffect(() => {
@@ -440,8 +506,9 @@ export function App({
   }, [active])
 
   const clear = useCallback(() => {
-    if (entries.length === 0 || window.confirm(`Discard ${entries.length} annotation(s)?`)) {
+    if (entries.length === 0 || window.confirm(`Archive ${entries.length} annotation(s)?`)) {
       resetPreviews(entries)
+      setArchive(archiveEntries(window.localStorage, routeRef.current, entries, 'archived'))
       dispatch({ type: 'clear' })
     }
   }, [entries])
@@ -751,9 +818,17 @@ export function App({
           onCopy={() => void copy()}
           onCopyOne={(id) => void copyOne(id)}
           onNote={(id, note) => dispatch({ type: 'note', id, note })}
-          onRemove={(id) => {
-            removePreview(entries, id)
-            dispatch({ type: 'remove', id })
+          onRemove={archiveOne}
+          archive={archive}
+          route={route}
+          onRestore={restore}
+          onCopyArchived={(id) => void copyArchived(id)}
+          onDeleteArchived={(id) => setArchive(deleteArchived(window.localStorage, [id]))}
+          onDeleteArchive={() => {
+            if (window.confirm(`Delete all ${archive.length} archived annotation(s) for good?`)) {
+              clearArchive(window.localStorage)
+              setArchive([])
+            }
           }}
           onClose={() => setPanel(false)}
         />

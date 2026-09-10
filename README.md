@@ -113,21 +113,22 @@ or call it: `import { mount } from 'redlining/standalone'; mount({ endpoint: fal
 
 ## Overlay
 
-| Key                                               | Action                                                                                          |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `Alt+R`                                           | Toggle the overlay (`hotkey` option)                                                            |
-| `S` / `D` / `M` / `T`                             | Select / Draw / Move / Tweak mode                                                               |
-| `[` / `]` or `⌥` + scroll                         | Walk the selection up / down the ancestor chain                                                 |
-| `⇧` + click                                       | Add another element to the open note (one note, several anchors)                                |
-| `L`                                               | Annotation list                                                                                 |
-| Tweak: handles, `⌥` drag, arrows, `⌘Z`, `⌥` hover | Resize, spacing, nudge, undo, measure; the export lists every change as before → after          |
-| Width select (375 / 768 / 1280)                   | Open the page in a real narrow viewport (an iframe); annotations made inside carry `Applies at` |
-| Move button                                       | Cycle the toolbar through the four corners (remembered); Clear session sits in the list panel   |
-| `⌘⇧C`                                             | Copy the prompt to the clipboard                                                                |
-| `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)                |
-| `?`                                               | In-package help: keys, the loop, links to the docs                                              |
-| List panel copy icons                             | Copy the whole prompt, or one annotation as its own prompt                                      |
-| `Esc`                                             | Close popover → panel → overlay                                                                 |
+| Key                                               | Action                                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `Alt+R`                                           | Toggle the overlay (`hotkey` option)                                                             |
+| `S` / `D` / `M` / `T`                             | Select / Draw / Move / Tweak mode                                                                |
+| `[` / `]` or `⌥` + scroll                         | Walk the selection up / down the ancestor chain                                                  |
+| `⇧` + click                                       | Add another element to the open note (one note, several anchors)                                 |
+| `L`                                               | Annotation list                                                                                  |
+| Tweak: handles, `⌥` drag, arrows, `⌘Z`, `⌥` hover | Resize, spacing, nudge, undo, measure; the export lists every change as before → after           |
+| Width select (375 / 768 / 1280)                   | Open the page in a real narrow viewport (an iframe); annotations made inside carry `Applies at`  |
+| Move button                                       | Cycle the toolbar through the four corners (remembered); Clear session sits in the list panel    |
+| `⌘⇧C`                                             | Copy the prompt to the clipboard                                                                 |
+| `⌘⏎`                                              | Save to `.redlining/` (with a pinned screenshot unless the camera toggle is off)                 |
+| `?`                                               | In-package help: keys, the loop, links to the docs                                               |
+| List panel copy icons                             | Copy the whole prompt, or one annotation as its own prompt                                       |
+| List panel archive                                | Rows are archived, not deleted; the archive keeps route, note, changes and verdict, and restores |
+| `Esc`                                             | Close popover → panel → overlay                                                                  |
 
 ## Options
 

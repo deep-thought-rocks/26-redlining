@@ -112,6 +112,9 @@ Each ambiguity costs a round-trip: Claude Code guesses, edits the wrong componen
 
 ## 6. Core concepts and data model
 
+> Added 0.7.0: annotations that leave a session are archived in the browser (`redlining:archive`) with route, timestamp, verdict and the agent's reply, and can be restored, copied or deleted from the list panel's archive view.
+
+
 - **Session** — all annotations for one route + viewport. Persisted in `localStorage` per route until sent or cleared.
 - **Annotation** — one intent: an action, an anchor, an optional box, a note.
 - **Anchor** — *where*: file:line, host element, owner chain, fallback selector, rect at capture time.

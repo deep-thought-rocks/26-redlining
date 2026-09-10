@@ -161,11 +161,34 @@ test('the session survives a reload and can be cleared', async ({ page }) => {
   await expect(page.getByTestId('rl-panel')).toContainText('Shorter copy.')
 
   page.once('dialog', (d) => d.accept())
-  await page.getByRole('button', { name: 'Clear session' }).click() // in the panel header now
+  await page.getByRole('button', { name: 'Archive session' }).click() // in the panel header
   await expect(page.getByTestId('rl-pin')).toHaveCount(0)
   await page.reload()
   await openOverlay(page)
   await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+  // Nothing is lost: the session went to the archive, where it can be restored or deleted.
+  await page.keyboard.press('l')
+  await page.getByTestId('rl-archive-toggle').click()
+  await expect(page.getByTestId('rl-panel')).toContainText('Archive (1)')
+  const row = page.getByTestId('rl-archive-row')
+  await expect(row).toContainText('/spike')
+  await expect(row).toContainText('Shorter copy.')
+  await expect(row.locator('.rl-verdict')).toHaveText('archived')
+  await row.getByRole('button', { name: /^Restore/ }).click()
+  await expect(page.getByTestId('rl-panel')).toContainText('Archive (0)')
+  await page.getByTestId('rl-archive-toggle').click()
+  await expect(page.getByTestId('rl-panel')).toContainText('Annotations (1)')
+  await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  // The row × archives too; deleting from the archive is final.
+  await page.getByRole('button', { name: 'Archive annotation 1' }).click()
+  await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+  await page.getByTestId('rl-archive-toggle').click()
+  await page
+    .getByTestId('rl-archive-row')
+    .getByRole('button', { name: /^Delete archived/ })
+    .click()
+  await expect(page.getByTestId('rl-archive')).toContainText('Nothing archived yet')
+  expect(await page.evaluate(() => localStorage.getItem('redlining:archive'))).toBeNull()
 })
 
 test('move mode: source, target and a position produce a MOVE with from and to', async ({
@@ -349,7 +372,7 @@ test('tweak mode: steppers and text edit preview live, export deltas with classe
     'text: "Export CSV" → "Download CSV"',
   )
   // Deleting the annotation resets the element.
-  await page.getByRole('button', { name: 'Delete annotation 1' }).click()
+  await page.getByRole('button', { name: 'Archive annotation 1' }).click()
   await expect(page.getByRole('button', { name: 'Export CSV' })).toHaveCSS('font-size', before.size)
 })
 
@@ -735,6 +758,14 @@ test("verify loop: the agent's reply.md opens the panel, differing values are na
   await page.getByRole('button', { name: 'Remove applied' }).click()
   await expect(panel).toContainText('Annotations (0)')
   await expect(page.getByTestId('rl-pin')).toHaveCount(0)
+  // The applied annotation is in the archive with its verdict and the agent's line.
+  await page.getByTestId('rl-archive-toggle').click()
+  const archived = page.getByTestId('rl-archive-row')
+  await expect(archived).toHaveCount(1)
+  await expect(archived.locator('.rl-verdict').first()).toHaveText('applied')
+  await expect(archived).toContainText('agent: text-sm → text-base')
+  // Restore is only offered on the item's own route; here we are on it.
+  await expect(archived.getByRole('button', { name: /^Restore/ })).toBeEnabled()
 })
 
 test('standalone: the bundled overlay runs on a plain page, anchors by selector, and downloads the export', async ({

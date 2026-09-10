@@ -1,17 +1,19 @@
 import {
+  Archive,
   CheckCheck,
   ChevronDown,
   ChevronRight,
   Copy,
   Eye,
   ScanSearch,
-  Trash2,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { describe } from '../export/changes'
 import type { ReplyLine } from '../export/reply'
-import type { Anchor } from '../types'
+import type { ArchivedAnnotation } from '../types'
+import { Detail, short } from './anchorText'
+import { ArchivePanel } from './ArchivePanel'
 import type { Verdict } from './verify'
 import type { Entry } from './session'
 
@@ -30,11 +32,19 @@ export interface ListPanelProps {
   /** Copy one annotation as a self-contained prompt. */
   onCopyOne(id: string): void
   onNote(id: string, note: string): void
+  /** Move one annotation to the archive. */
   onRemove(id: string): void
   onClearRoute(route: string): void
-  /** Discard this route's session (asks first). */
+  /** Move this route's whole session to the archive (asks first). */
   onClear(): void
   onClose(): void
+  /** The archive (history) and its actions. */
+  archive: ArchivedAnnotation[]
+  route: string
+  onRestore(id: string): void
+  onCopyArchived(id: string): void
+  onDeleteArchived(id: string): void
+  onDeleteArchive(): void
 }
 
 const VERDICT_LABEL: Record<Verdict['state'], string> = {
@@ -58,7 +68,14 @@ export function ListPanel({
   onClearRoute,
   onClear,
   onClose,
+  archive,
+  route,
+  onRestore,
+  onCopyArchived,
+  onDeleteArchived,
+  onDeleteArchive,
 }: ListPanelProps) {
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const applied = entries.filter((e) => verdicts.get(e.id)?.state === 'applied').length
   const [editing, setEditing] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
@@ -73,9 +90,27 @@ export function ListPanel({
   return (
     <aside className="rl-fixed rl-panel" data-testid="rl-panel" aria-label="Annotations">
       <header>
-        <span>Annotations ({entries.length})</span>
+        <span>
+          {archiveOpen ? `Archive (${archive.length})` : `Annotations (${entries.length})`}
+        </span>
         <span className="rl-panel-actions">
-          {entries.length ? (
+          <button
+            type="button"
+            className="rl-btn rl-icon"
+            aria-label={archiveOpen ? 'Back to the annotations' : `Archive (${archive.length})`}
+            aria-pressed={archiveOpen}
+            title={
+              archiveOpen
+                ? 'Back to the annotations'
+                : 'The archive: everything that left a session'
+            }
+            data-testid="rl-archive-toggle"
+            onClick={() => setArchiveOpen((o) => !o)}
+          >
+            <Archive size={16} />
+            {archive.length ? <span className="rl-count">{archive.length}</span> : null}
+          </button>
+          {!archiveOpen && entries.length ? (
             <button
               type="button"
               className="rl-btn rl-icon"
@@ -86,18 +121,18 @@ export function ListPanel({
               <Copy size={16} />
             </button>
           ) : null}
-          {entries.length ? (
+          {!archiveOpen && entries.length ? (
             <button
               type="button"
               className="rl-btn rl-icon"
-              aria-label="Clear session"
-              title="Discard every annotation on this route"
+              aria-label="Archive session"
+              title="Move every annotation on this route to the archive"
               onClick={onClear}
             >
-              <Trash2 size={16} />
+              <Archive size={16} />
             </button>
           ) : null}
-          {entries.length ? (
+          {!archiveOpen && entries.length ? (
             <button
               type="button"
               className="rl-btn rl-icon"
@@ -118,7 +153,7 @@ export function ListPanel({
           </button>
         </span>
       </header>
-      {verdicts.size ? (
+      {!archiveOpen && verdicts.size ? (
         <div className="rl-panel-verify" data-testid="rl-verify-summary">
           <span>
             {applied} of {entries.length} applied
@@ -130,10 +165,20 @@ export function ListPanel({
           ) : null}
         </div>
       ) : null}
-      {entries.length === 0 ? (
+      {archiveOpen ? (
+        <ArchivePanel
+          items={archive}
+          route={route}
+          onRestore={onRestore}
+          onCopy={onCopyArchived}
+          onDelete={onDeleteArchived}
+          onDeleteAll={onDeleteArchive}
+        />
+      ) : null}
+      {!archiveOpen && entries.length === 0 ? (
         <p className="rl-empty">Click an element or draw a box to add one.</p>
       ) : null}
-      <ol>
+      <ol hidden={archiveOpen}>
         {entries.map((e) => {
           const open = expanded.has(e.id)
           const verdict = verdicts.get(e.id)
@@ -293,7 +338,8 @@ export function ListPanel({
                 <button
                   type="button"
                   className="rl-btn rl-icon"
-                  aria-label={`Delete annotation ${e.index}`}
+                  aria-label={`Archive annotation ${e.index}`}
+                  title="Move to the archive"
                   onClick={() => onRemove(e.id)}
                 >
                   <X size={14} />
@@ -303,7 +349,7 @@ export function ListPanel({
           )
         })}
       </ol>
-      {others.length ? (
+      {!archiveOpen && others.length ? (
         <footer className="rl-panel-routes" data-testid="rl-panel-routes">
           <span>Also saved with this session</span>
           <ul>
@@ -324,30 +370,5 @@ export function ListPanel({
         </footer>
       ) : null}
     </aside>
-  )
-}
-
-function short(a: Anchor): string {
-  const owner = a.owners[a.owners.length - 1]
-  const where = a.file ? `${a.file}:${a.line}` : 'unresolved'
-  return `${owner ?? `<${a.tag}>`} · ${where}`
-}
-
-function Detail({ label, anchor: a }: { label: string; anchor: Anchor }) {
-  return (
-    <>
-      <dt>{label}</dt>
-      <dd>
-        <code>&lt;{a.tag}&gt;</code> {a.file ? `${a.file}:${a.line}` : 'unresolved'}
-        {a.owners.length ? <div>owners: {a.owners.join(' › ')}</div> : null}
-        {a.context ? (
-          <div>
-            instance {a.context.index} of {a.context.count} in <code>&lt;{a.context.tag}&gt;</code>{' '}
-            {a.context.file}:{a.context.line}
-          </div>
-        ) : null}
-        {a.text ? <div className="rl-row-text">“{a.text}”</div> : null}
-      </dd>
-    </>
   )
 }

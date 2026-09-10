@@ -46,6 +46,8 @@ export type SessionAction =
   | { type: 'changes'; id: string; changes: Change[] }
   | { type: 'remove'; id: string }
   | { type: 'clear' }
+  /** Back from the archive; appended and reindexed, the element re-found by anchor later. */
+  | { type: 'restore'; annotation: Annotation }
 
 export function reduce(entries: Entry[], a: SessionAction): Entry[] {
   switch (a.type) {
@@ -93,6 +95,11 @@ export function reduce(entries: Entry[], a: SessionAction): Entry[] {
       return reindex(entries.filter((e) => e.id !== a.id))
     case 'clear':
       return []
+    case 'restore':
+      return reindex([
+        ...entries.filter((e) => e.id !== a.annotation.id),
+        { ...a.annotation, element: null },
+      ])
   }
 }
 

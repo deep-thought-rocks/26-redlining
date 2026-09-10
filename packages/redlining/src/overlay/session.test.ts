@@ -24,6 +24,18 @@ const add = (entries: Entry[], id: string, draft: Partial<Draft> = {}) =>
   })
 
 describe('session reducer', () => {
+  test('restore appends an archived annotation without a live element and reindexes', () => {
+    let s = add([], 'a')
+    s = reduce(s, {
+      type: 'restore',
+      annotation: { ...s[0]!, id: 'z', index: 9, element: undefined } as never,
+    })
+    expect(s.map((e) => [e.id, e.index, e.element])).toEqual([
+      ['a', 1, expect.any(Object)],
+      ['z', 2, null],
+    ])
+  })
+
   test('keeps reference images on the entry', () => {
     const s = reduce([], {
       type: 'add',

@@ -112,6 +112,18 @@ export interface Annotation {
   createdAt: string
 }
 
+/** An annotation that left its session: the browser-side history. */
+export interface ArchivedAnnotation extends Omit<Annotation, 'refs'> {
+  route: string
+  /** ISO timestamp. */
+  archivedAt: string
+  /** Archived by hand, or removed after a verify said the agent applied it. */
+  reason: 'archived' | 'applied'
+  verdict?: 'applied' | 'differs' | 'missing' | 'manual'
+  /** The agent's reply line at the time, when there was one. */
+  reply?: string
+}
+
 export interface Session {
   route: string
   url: string
