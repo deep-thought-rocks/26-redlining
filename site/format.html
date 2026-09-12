@@ -10,6 +10,7 @@
     />
     <link rel="canonical" href="https://redlining.deep-thought.rocks/format" />
     <link rel="stylesheet" href="site.css" />
+    <script src="site.js" defer></script>
     <link rel="icon" href="favicons/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="favicons/favicon.ico" sizes="32x32" />
     <link rel="icon" href="favicons/favicon-32x32.png" type="image/png" sizes="32x32" />
@@ -25,7 +26,16 @@
             >red<b>lining</b></span
           ></a
         >
-        <nav>
+        <button
+          class="menu"
+          type="button"
+          aria-label="Menu"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav id="site-nav">
           <a href="getting-started.html">Getting started</a>
           <a href="guide.html">Guide</a>
           <a href="format.html" aria-current="page">Annotation format</a>
