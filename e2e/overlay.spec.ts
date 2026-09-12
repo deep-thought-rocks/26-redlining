@@ -824,10 +824,23 @@ test('standalone: the bundled overlay runs on a plain page, anchors by selector,
   await page.getByTestId('rl-note').fill('Shorter, and centred.')
   await page.getByTestId('rl-note').press('Enter')
   await expect(page.getByTestId('rl-pin')).toHaveText('1')
+  // Draw needs no loader either: the box resolves to the undecorated <main> around it.
+  await page.keyboard.press('d')
+  const main = (await page.locator('main').boundingBox())!
+  await page.mouse.move(main.x + 10, main.y + main.height - 30)
+  await page.mouse.down()
+  await page.mouse.move(main.x + main.width - 10, main.y + main.height - 4, { steps: 6 })
+  await page.mouse.up()
+  await expect(page.getByTestId('rl-popover')).toContainText('Add inside')
+  await page.getByTestId('rl-note').fill('A footer note.')
+  await page.getByTestId('rl-note').press('Enter')
+  await expect(page.getByTestId('rl-pin').nth(1)).toHaveText('2')
   await page.getByRole('button', { name: 'Copy prompt (⌘⇧C)' }).click()
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain('## 1 · CHANGE — "A page without a framework" h1')
   expect(clipboard).toContain('- Resolved: unresolved — locate by selector `#title` and text')
+  expect(clipboard).toContain('## 2 · ADD — inside <main>')
+  expect(clipboard).toMatch(/- Position: (at end|after child \d+) · full width/)
   expect(clipboard).toContain('Styling: Plain CSS (detected')
   // No endpoint: Save hands the files to the browser.
   const download = page.waitForEvent('download')

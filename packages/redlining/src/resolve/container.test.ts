@@ -70,9 +70,34 @@ describe('resolveContainer', () => {
     ).toEqual({ container: empty, childIndex: 0 })
   })
 
-  test('returns null when there is no decorated element anywhere', () => {
+  test('without the loader, picks the deepest undecorated element covering ≥ 60 % of the box', () => {
+    document.body.innerHTML = '<div><section><p></p><p></p></section></div>'
+    const div = document.querySelector('div')!
+    const section = document.querySelector('section')!
+    const [p1, p2] = Array.from(section.children)
+    const plain = new Map<Element, Rect>([
+      [div, { x: 0, y: 0, w: 1000, h: 1000 }],
+      [section, { x: 0, y: 0, w: 500, h: 400 }],
+      [p1!, { x: 0, y: 0, w: 500, h: 100 }],
+      [p2!, { x: 0, y: 100, w: 500, h: 100 }],
+    ])
+    const box = { x: 10, y: 60, w: 400, h: 80 } // straddles p1/p2 (50 % each); section covers all
+    expect(resolveContainer(box, layoutWith(plain, [p2!, section, div]))).toEqual({
+      container: section,
+      childIndex: 1, // centre y = 100: below p1's midpoint (50), above p2's (150)
+    })
+    const wide = { x: 300, y: 0, w: 500, h: 100 } // section covers 40 %, div covers all
+    expect(resolveContainer(wide, layoutWith(plain, [section, div]))!.container).toBe(div)
+  })
+
+  test('without the loader, falls back to the centre element when nothing covers enough', () => {
     document.body.innerHTML = '<div><p></p></div>'
     const p = document.querySelector('p')!
-    expect(resolveContainer({ x: 0, y: 0, w: 10, h: 10 }, layoutWith(new Map(), [p]))).toBeNull()
+    const r = resolveContainer({ x: 0, y: 0, w: 2000, h: 2000 }, layoutWith(new Map(), [p]))
+    expect(r).toEqual({ container: p, childIndex: 0 })
+  })
+
+  test('returns null only when nothing lies under the box centre', () => {
+    expect(resolveContainer({ x: 0, y: 0, w: 10, h: 10 }, layoutWith(new Map(), []))).toBeNull()
   })
 })

@@ -13,17 +13,20 @@ export interface Placement {
 /**
  * Draw-mode container resolution (PRD §8.4): among decorated elements under
  * the box centre, the deepest whose rect covers ≥ 60 % of the box; else the
- * centre element's nearest decorated ancestor. The child index is how many
- * children lie above the box's vertical centre.
+ * centre element's nearest decorated ancestor. Pages without the loader
+ * (standalone, Angular, Vue, plain HTML) have no decorated elements, so the
+ * same rule then runs over the raw stack and the anchor is selector-only.
+ * The child index is how many children lie above the box's vertical centre.
  */
 export function resolveContainer(box: Rect, layout: Layout): Placement | null {
   const cx = box.x + box.w / 2
   const cy = box.y + box.h / 2
   const stack = layout.elementsFromPoint(cx, cy) // top-most (deepest) first
+  const covers = (el: Element) => coverage(layout.rectOf(el), box) >= MIN_COVERAGE
   const decorated = stack.filter((el) => el.hasAttribute('data-rl'))
-  let container: Element | null =
-    decorated.find((el) => coverage(layout.rectOf(el), box) >= MIN_COVERAGE) ?? null
+  let container: Element | null = decorated.find(covers) ?? null
   if (!container) container = stack[0]?.closest('[data-rl]') ?? null
+  if (!container) container = stack.find(covers) ?? stack[0] ?? null
   if (!container) return null
   return { container, childIndex: childIndexFor(container, cy, layout) }
 }
