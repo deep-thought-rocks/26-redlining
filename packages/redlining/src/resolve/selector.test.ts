@@ -21,4 +21,15 @@ describe('cssPath', () => {
     document.body.innerHTML = '<header></header>'
     expect(cssPath(document.querySelector('header')!)).toBe('header')
   })
+
+  test('survives a form whose field is named "id"', () => {
+    document.body.innerHTML = '<form><input name="id"><span></span></form>'
+    // In browsers, named access on <form> shadows the id property with the input element
+    // (form.id is the <input>, not a string). jsdom does not implement that override, so
+    // the shadowing is simulated here.
+    const form = document.querySelector('form')!
+    Object.defineProperty(form, 'id', { value: form.querySelector('input'), configurable: true })
+    expect(typeof form.id).toBe('object')
+    expect(cssPath(document.querySelector('span')!)).toBe('form > span')
+  })
 })

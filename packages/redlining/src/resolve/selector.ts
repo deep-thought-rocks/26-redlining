@@ -4,7 +4,9 @@ export function cssPath(el: Element): string {
   let cur: Element | null = el
   const body = el.ownerDocument.body
   while (cur && cur !== body) {
-    if (cur.id) {
+    // Not a truthiness check: on a <form> with a field named "id", named access shadows the
+    // property and `cur.id` is that <input>, not a string.
+    if (typeof cur.id === 'string' && cur.id) {
       parts.unshift(idSelector(cur.id))
       break
     }
