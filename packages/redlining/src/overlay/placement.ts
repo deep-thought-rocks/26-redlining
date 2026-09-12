@@ -27,7 +27,8 @@ export function placeNear(
     return { left: clampX(rect.x), top: rect.y + rect.h + margin }
   }
   if (rect.y - margin - size.h >= margin) {
-    return { left: clampX(rect.x), top: rect.y - margin - size.h }
+    // An element inside the toolbar band pushes the popover further up, never over the toolbar.
+    return { left: clampX(rect.x), top: clampY(rect.y - margin - size.h) }
   }
   if (rect.x - size.w - margin >= margin) {
     return { left: rect.x - size.w - margin, top: clampY(rect.y) }

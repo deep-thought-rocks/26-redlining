@@ -17,6 +17,13 @@ describe('placeNear', () => {
       top: 292,
     })
   })
+  test('above an element inside the toolbar band still clears the band', () => {
+    // Above would end at 682, inside the bottom 80px; the element is below the popover either way.
+    expect(placeNear({ x: 100, y: 690, w: 200, h: 20 }, size, viewport)).toEqual({
+      left: 100,
+      top: 720 - 80 - 300,
+    })
+  })
   test('beside for a tall element that fills the height', () => {
     expect(placeNear({ x: 500, y: 20, w: 200, h: 680 }, size, viewport)).toEqual({
       left: 152,
