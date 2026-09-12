@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.6
+
+### Patch Changes
+
+- Annotating inside a form that has a field named `id` no longer throws; the selector walk now checks that an element's id is a string.
+
 ## 0.7.5
 
 ### Patch Changes
