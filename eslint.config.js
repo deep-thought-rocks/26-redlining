@@ -27,4 +27,9 @@ export default tseslint.config(
     files: ['**/scripts/**/*.mjs'],
     languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly' } },
   },
+  {
+    // The docs site's browser script.
+    files: ['site/**/*.js'],
+    languageOptions: { globals: { document: 'readonly' } },
+  },
 )
