@@ -194,6 +194,12 @@ const unmount = mount({ endpoint: false, hotkey: 'Alt+R' })</code></pre>
           <code>redlining/next/route</code> takes a Fetch <code>Request</code>; the Vite plugin
           shows how to adapt Node's).
         </p>
+        <p>
+          On a site served as plain files, with no bundler and no <code>node_modules</code> on the
+          server, copy <code>dist/standalone.js</code> next to the pages and point
+          <code>src</code> at it. Such a site has no development/production switch, so add the tag
+          while you annotate and remove it, and the copied file, before you deploy.
+        </p>
 
         <h3 id="loader">What the loader adds</h3>
         <p>
