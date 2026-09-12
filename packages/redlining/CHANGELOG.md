@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.7
+
+### Patch Changes
+
+- Draw mode works on pages without the loader (standalone, Angular, Vue, plain HTML): a drawn box now resolves to the deepest element covering it, with a selector anchor, instead of ending silently.
+
 ## 0.7.6
 
 ### Patch Changes
