@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.8
+
+### Patch Changes
+
+- A note popover placed above an element near the bottom edge stays clear of the toolbar band.
+
 ## 0.7.7
 
 ### Patch Changes
