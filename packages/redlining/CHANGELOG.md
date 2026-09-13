@@ -1,5 +1,11 @@
 # redlining
 
+## 0.7.9
+
+### Patch Changes
+
+- Clicking or focusing anything in the overlay no longer counts as an outside click for the page's own dismissable UI: a dialog or menu that closes on pointer-down or focus outside stays open when you open Redlining.
+
 ## 0.7.8
 
 ### Patch Changes
