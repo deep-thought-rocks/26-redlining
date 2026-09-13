@@ -245,6 +245,25 @@ test('the note popover stays on screen for an element near the bottom', async ({
   await expect(page.getByTestId('rl-note-save')).toBeInViewport()
 })
 
+test('clicks inside the overlay are not "outside" clicks for the page\'s dismissable UI', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  await expect(page.getByRole('button', { name: 'Redlining (Alt+R)' })).toBeVisible()
+  const menu = page.locator('.main-nav')
+  await menu.locator('summary').click()
+  await expect(menu).toHaveAttribute('open', '')
+  // The toggle sits in the overlay's host in <body>; the menu's document handler must not see it.
+  await page.getByRole('button', { name: 'Redlining (Alt+R)' }).click()
+  await expect(page.getByRole('toolbar', { name: 'Redlining' })).toBeVisible()
+  await expect(menu).toHaveAttribute('open', '')
+  await page.getByRole('button', { name: 'Close (Esc)' }).click()
+  await expect(menu).toHaveAttribute('open', '')
+  // A pointer down on the page itself still closes it (the avatar is never under the open list).
+  await page.locator('.avatar').click()
+  await expect(menu).not.toHaveAttribute('open', '')
+})
+
 test('multi-select: Shift+click adds anchors to one note', async ({ page }) => {
   await openOverlay(page)
   const at = await stampsOf(page)

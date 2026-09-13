@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { App } from './App'
+import { containEvents } from './dom'
 import { brandCss, overlayCss } from './styles'
 import type { Position } from './Toolbar'
 import { tokensCss } from './tokens.generated'
@@ -71,6 +72,7 @@ function Host({
       root.appendChild(style)
     }
     setMount({ host, root })
+    return containEvents(host)
   }, [])
   return (
     <div ref={ref} data-redlining="" data-theme={theme} style={HOST_STYLE}>

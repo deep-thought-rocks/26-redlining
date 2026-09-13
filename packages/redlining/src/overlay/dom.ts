@@ -63,6 +63,33 @@ export function isOverlay(host: Element, el: Element | null): boolean {
   return !!el && (el === host || host.contains(el))
 }
 
+const CONTAINED = [
+  'pointerdown',
+  'pointerup',
+  'mousedown',
+  'mouseup',
+  'touchstart',
+  'touchend',
+  'click',
+  'focusin',
+  'focusout',
+]
+
+/**
+ * Pointer and focus events that start inside the overlay stop at the host. The host sits in
+ * <body>, so to the page's dismiss logic (a Radix dialog's "pointer down outside", a menu's
+ * document mousedown handler) a click on the toolbar would look like a click outside their
+ * element and close it. Capture-phase listeners on `document` and React's delegation on the
+ * shadow root run before the host and are unaffected.
+ */
+export function containEvents(host: Element): () => void {
+  const stop = (e: Event) => e.stopPropagation()
+  for (const type of CONTAINED) host.addEventListener(type, stop)
+  return () => {
+    for (const type of CONTAINED) host.removeEventListener(type, stop)
+  }
+}
+
 function cssEscape(value: string): string {
   return typeof CSS !== 'undefined' && CSS.escape
     ? CSS.escape(value)
